@@ -101,3 +101,8 @@ SDD en borrador: `docs/sdd/G1`, `B2`, `D3`. Propuestas: G1 contra `make up` (sin
 **Fecha:** 2026-11-12 · **Fuente:** usuario · **Estado:** activa
 
 Aprobados con las propuestas de Claude: (G1) `make up`, job `integration` no obligatorio al principio, logs solo en el job; (B2) `OutboxMessage.id = eventId`, `withTransaction` en `@bidstream/db`, consultas de pendientes del relay en el mismo repositorio; (D3) 4 intentos totales (200 ms, factor 2, jitter), paquete `@bidstream/consumer`, gancho de logger ahora y métricas en H4; ante fallo persistente del `projector`, DLQ y seguir (como pide la spec), mitigado con D7 y G2. G1 implementado: `@bidstream/testing` y job `integration`. **Pendiente de decidir más adelante:** hacer `integration` check requerido de `main` tras una semana estable.
+
+## DEC-019 — B2 implementado
+**Fecha:** 2026-11-12 · **Fuente:** Claude · **Estado:** activa
+
+B2 implementado: `PrismaLotRepository`, `PrismaAuctionRepository`, `PrismaOutbox` y `withTransaction` en `@bidstream/db`. Uso: `withTransaction(prisma, async ({ lots, outbox }) => { ... outbox.enqueue(events, TOPICS.eventsLot) })` (el topic lo pasa la app; `db` no depende de `kafka`). Atomicidad lectura + outbox verificada; la carrera entre pujas sigue ligada a Q2.
