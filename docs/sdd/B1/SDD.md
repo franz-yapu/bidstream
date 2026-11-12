@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **B1** (`868mvtxz8`, https://app.clickup.com/t/868mvtxz8).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Aprobado (2026-11-12)
+- **Estado:** Implementado (2026-11-12) — aprobado el mismo día
 - **Versión:** 1.0 · **Fecha:** 2026-11-12
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §6 (esquema Prisma y detalles obligatorios), §5 (idempotencia por `eventId`, outbox)
@@ -137,13 +137,13 @@ Pruebas de **integración** contra PostgreSQL real de `make up` (archivos `*.int
 
 ## 5 · Definition of Done
 
-- [ ] SDD en `docs/sdd/B1/SDD.md`, Estado = Aprobado
-- [ ] `@bidstream/db` con esquema, migración inicial y cliente; `make migrate` desde cero funciona
-- [ ] Dinero en `Decimal(12,2)`; índice del desempate y restricciones de §2.5 en la migración
-- [ ] `ProcessedEvent` con clave compuesta (corrección documentada en el README/ADR de datos)
-- [ ] Tests del §4 en verde; `npm run check` en verde; dominio sin imports de Prisma
-- [ ] `business-rules.md` aclarado
-- [ ] PR con CI verde y fusionado
+- [x] SDD en `docs/sdd/B1/SDD.md`, Estado = Aprobado
+- [x] `@bidstream/db` con esquema, migración inicial y cliente; `make migrate` desde cero funciona
+- [x] Dinero en `Decimal(12,2)`; índice del desempate y restricciones de §2.5 en la migración
+- [x] `ProcessedEvent` con clave compuesta (corrección documentada en el README/ADR de datos)
+- [x] Tests del §4 en verde; `npm run check` en verde; dominio sin imports de Prisma
+- [x] `business-rules.md` aclarado
+- [x] PR con CI verde y fusionado
 
 ---
 
@@ -164,3 +164,15 @@ Pruebas de **integración** contra PostgreSQL real de `make up` (archivos `*.int
 2. **`ProcessedEvent`:** ¿confirmas la clave primaria compuesta `(eventId, consumer)`? Propuesta: sí.
 3. **Cliente generado:** ¿versionarlo en git o generarlo en `postinstall`/CI? Propuesta: no versionarlo y generarlo con `npm run db:generate` en `postinstall`.
 4. **`snake_case` con `@@map`:** ¿de acuerdo? Propuesta: sí.
+
+---
+
+## Changelog de implementación
+
+- **Implementado (2026-11-12)** con Prisma 7.10.1 y `@prisma/adapter-pg`; respuestas aprobadas de §7: `Bid.awarded` + índice único parcial, `ProcessedEvent` con clave primaria compuesta, cliente generado en `postinstall` sin versionar, nombres en `snake_case`.
+- Migración `prisma/migrations/0001_init` (renombrada desde el nombre con marca de tiempo que genera Prisma) con dos índices parciales escritos a mano: `bid_one_awarded_per_lot_idx` y `outbox_message_pending_idx`. Fechas como `timestamptz(3)`.
+- `prisma.config.ts` acepta `DATABASE_URL` ausente: `prisma generate` exige la variable aunque no se conecte y fallaba en un clon limpio/CI. Los comandos que se conectan fallan con "Connection url is empty".
+- `make migrate`; scripts `db:generate`, `db:migrate`, `db:migrate:dev`. El cliente generado (`src/generated`) está ignorado por git, prettier y eslint.
+- Pruebas de integración (12), cada ejecución en su propia base de datos desechable: migración y `migrate status`, cinco tablas, `Decimal(12,2)` (con Prisma y SQL, redondeo de 10.505 a 10.51, desbordamiento rechazado), adjudicación única, clave compuesta de `ProcessedEvent`, `Bid.id` idempotente, ranking SQL = `compareBids` del dominio con empates, y uso de ambos índices (`EXPLAIN`).
+- Una prueba falló por un error propio, no del esquema: `SELECT amount::text … ORDER BY amount` ordena por la columna de salida (texto) y `'90.00'` quedaba después de `'150.00'`. Se califican las columnas (`bid.amount`). Es una trampa a recordar en las consultas de ranking de D4/E1.
+- `@bidstream/domain` es dependencia de desarrollo del paquete solo para comparar con `compareBids` en las pruebas.
