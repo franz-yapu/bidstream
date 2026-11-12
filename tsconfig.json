@@ -21,6 +21,9 @@
     },
     {
       "path": "apps/relay/tsconfig.build.json"
+    },
+    {
+      "path": "apps/projector/tsconfig.build.json"
     }
   ]
 }

@@ -32,7 +32,6 @@ model Auction {
   opensAt  DateTime      @map("opens_at") @db.Timestamptz(3)
   closesAt DateTime      @map("closes_at") @db.Timestamptz(3)
   status   AuctionStatus
-  lots     Lot[]
 
   @@index([tenantId, status])
   @@map("auction")
@@ -40,6 +39,8 @@ model Auction {
 
 model Lot {
   id            String    @id @db.Uuid
+  /// Sin clave foránea: los eventos de subasta y de lote viajan por particiones distintas y, en un
+  /// reproceso, el lote puede procesarse antes que su subasta (docs/sdd/D4/SDD.md §2.4).
   auctionId     String    @map("auction_id") @db.Uuid
   tenantId      String    @map("tenant_id") @db.Uuid
   title         String
@@ -51,7 +52,6 @@ model Lot {
   currentBidder String?   @map("current_bidder") @db.Uuid
   status        LotStatus
   winnerId      String?   @map("winner_id") @db.Uuid
-  auction       Auction   @relation(fields: [auctionId], references: [id])
   bids          Bid[]
 
   @@index([tenantId, status, closesAt])
