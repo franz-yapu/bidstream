@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **D3** (`868mvty09`, https://app.clickup.com/t/868mvty09).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Aprobado (2026-11-12)
+- **Estado:** Implementado (2026-11-12) — aprobado el mismo día
 - **Versión:** 1.0 · **Fecha:** 2026-11-12
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §5 (idempotencia por `eventId` con clave única; "Kafka garantiza al menos una vez"; tres reintentos con backoff exponencial, al cuarto fallo al dead-letter topic con el error adjunto y reproceso administrativo), §4 (grupos `projector`/`notifier`/`auditor`)
@@ -147,12 +147,12 @@ Clave del mensaje DLQ = la clave original (`lotId`/`auctionId`). Cabeceras: `eve
 
 ## 5 · Definition of Done
 
-- [ ] SDD en `docs/sdd/D3/SDD.md`, Estado = Aprobado
-- [ ] `createEventConsumer` implementa el flujo de §2.1, reutilizable por los tres consumidores
-- [ ] Idempotencia en la misma transacción que el handler
-- [ ] DLQ con el error adjunto y `dlqMessageSchema` exportado
-- [ ] Tests del §4 en verde; `npm run check` y `npm run test:integration` en verde
-- [ ] PR con CI verde y fusionado
+- [x] SDD en `docs/sdd/D3/SDD.md`, Estado = Aprobado
+- [x] `createEventConsumer` implementa el flujo de §2.1, reutilizable por los tres consumidores
+- [x] Idempotencia en la misma transacción que el handler
+- [x] DLQ con el error adjunto y `dlqMessageSchema` exportado
+- [x] Tests del §4 en verde; `npm run check` y `npm run test:integration` en verde
+- [x] PR con CI verde y fusionado
 
 ---
 
@@ -174,3 +174,14 @@ Clave del mensaje DLQ = la clave original (`lotId`/`auctionId`). Cabeceras: `eve
 2. **Fallo persistente en el `projector`:** ¿seguir la spec y enviar al DLQ continuando con los siguientes eventos (propuesta), o **pausar la partición** hasta que alguien intervenga (más seguro para la coherencia, pero bloquea ese lote y las pujas de los demás lotes de esa partición)?
 3. ¿El paquete se llama `@bidstream/consumer` (propuesta) u otro nombre?
 4. ¿Hace falta que `createEventConsumer` exponga un gancho de métricas (contadores de éxito/reintento/DLQ) ya, o se deja para H4? Propuesta: gancho de logger ahora, métricas en H4.
+
+---
+
+## Changelog de implementación
+
+- **Implementado (2026-11-12)** con las respuestas aprobadas de §7: 4 intentos totales (200 ms, factor 2, tope 5 s, jitter completo), paquete `@bidstream/consumer`, gancho de logger ahora y métricas en H4, y ante un fallo persistente se sigue la spec (DLQ y continuar), mitigado con D7 y G2.
+- Estructura: `backoff.ts`, `dlq.ts`, `processor.ts` (`createMessageProcessor`: validación, idempotencia, reintentos, DLQ) y `event-consumer.ts` (`createEventConsumer`: unión con Kafka). Separar el procesador del cliente de Kafka permitió probar cada fallo con precisión (por ejemplo, el DLQ caído) sin depender del tiempo ni del broker.
+- Añadidos que no estaban en el diseño: `onOutcome` (observabilidad por mensaje, base de las métricas de H4 y de las esperas en las pruebas) y la validación de los mensajes sin valor como veneno.
+- 22 pruebas nuevas: 9 unitarias (backoff, formato DLQ) y 11 de integración contra PostgreSQL y Kafka reales: duplicado, dos consumidores, fallo transitorio, fallo permanente con DLQ completo y continuidad, atomicidad del efecto del handler, veneno, orden con reintento en medio, DLQ caído, verificación fallida, mensaje sin valor y backoff inyectado. Estables en tres ejecuciones seguidas.
+- Una prueba falló por una carrera propia, no del consumidor: esperar a que los handlers **retornen** no garantiza que la transacción ya haya hecho commit; se espera a los `outcomes`, que se emiten después del commit.
+- Sin cambios respecto al riesgo del §6 (un evento en DLQ no detiene a los siguientes del mismo lote): sigue siendo la decisión aprobada y se mitiga con D7 y G2.
