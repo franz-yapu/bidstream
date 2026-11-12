@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **A2** (`868mvtfqz`, https://app.clickup.com/t/868mvtfqz).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Aprobado (2026-11-12)
+- **Estado:** Implementado (2026-11-12) — aprobado el mismo día
 - **Versión:** 1.0 · **Fecha:** 2026-11-12
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §3 (modelo de eventos), §4 (clave de partición), §6 (Decimal(12,2))
@@ -130,13 +130,13 @@ El sobre es cerrado (`strictObject`). Añadir la firma (F3) o metadatos de corre
 
 ## 5 · Definition of Done
 
-- [ ] SDD en `docs/sdd/A2/SDD.md`, Estado = Aprobado
-- [ ] Los 7 esquemas con sobre común, tipos derivados y `parseEvent`/`buildEvent`/`partitionKey`
-- [ ] Dinero nunca como `number` en ningún tipo del contrato
-- [ ] Tests del §4 en verde
-- [ ] `npm run check` en verde; `packages/domain` sin imports de infraestructura
-- [ ] Preguntas de §7 respondidas y reflejadas en `docs/decisions/LOG.md`
-- [ ] Commit con conventional commits
+- [x] SDD en `docs/sdd/A2/SDD.md`, Estado = Aprobado
+- [x] Los 7 esquemas con sobre común, tipos derivados y `parseEvent`/`buildEvent`/`partitionKey`
+- [x] Dinero nunca como `number` en ningún tipo del contrato
+- [x] Tests del §4 en verde
+- [x] `npm run check` en verde; `packages/domain` sin imports de infraestructura
+- [x] Preguntas de §7 respondidas y reflejadas en `docs/decisions/LOG.md`
+- [x] Commit con conventional commits
 
 ---
 
@@ -159,3 +159,13 @@ El sobre es cerrado (`strictObject`). Añadir la firma (F3) o metadatos de corre
 3. **`LotClosed` sin pujas.** La spec da `winnerId` y `finalAmount`; un lote sin pujas se cierra sin ganador. Propuesta: `winnerId` y `finalAmount` anulables (`null`) y la regla "sin pujas = sin adjudicación" en A1.
 4. **Valores de `BidRejected.reason`.** La spec no los enumera. Propuesta: `BID_TOO_LOW`, `LOT_CLOSED`, `LOT_NOT_OPEN`, `LOT_NOT_FOUND`, `DUPLICATE_BID`. A cerrar junto con Q2 (autoridad de la puja).
 5. **Ubicación:** el contrato vive en `packages/domain/src/events/` (no en `packages/contracts`). Si luego los clientes externos necesitan solo los tipos, se extrae.
+
+---
+
+## Changelog de implementación
+
+- **Implementado (2026-11-12):** respuestas aprobadas de §7 aplicadas (ver DEC-006): `AuctionOpened`/`AuctionClosed` con clave `auctionId` en el mismo topic; `meta` opcional (`correlationId`, `signature`) reservado en el sobre; `LotClosed` con `winnerId` y `finalAmount` anulables; `BidRejected.reason` = `BID_TOO_LOW | LOT_CLOSED | LOT_NOT_OPEN | LOT_NOT_FOUND | DUPLICATE_BID`.
+- Añadidas dos reglas de coherencia no previstas en el diseño: `AuctionOpened.closesAt` debe ser posterior a `opensAt`, y `LotClosed` exige que `winnerId` y `finalAmount` sean ambos `null` o ambos con valor.
+- Versiones: Zod 4.6.7, uuid 14.0.3. `z.uuidv7()` valida UUID v7 estricto.
+- 53 tests nuevos (55 en total), todos en verde; `npm run check` en verde.
+- Ubicación final: `packages/domain/src/events/{primitives,envelope,auction,lot,bid,index}.ts`; se reexporta desde `packages/domain/src/index.ts`.

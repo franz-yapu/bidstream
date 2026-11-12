@@ -46,3 +46,8 @@ SDD en borrador: `docs/sdd/0.2/SDD.md` y `docs/sdd/A2/SDD.md`. Pendientes de dec
 **Fecha:** 2026-11-12 · **Fuente:** usuario · **Estado:** activa
 
 Aprobados `docs/sdd/0.2` y `docs/sdd/A2` con las propuestas: (A2 #1) `AuctionOpened`/`AuctionClosed` van al mismo topic `events.lot` con clave `auctionId` (sin orden garantizado frente a los `LotClosed`); (A2 #2) `meta` opcional reservado en el sobre; (A2 #3) `LotClosed` con `winnerId` y `finalAmount` anulables; (A2 #4) `BidRejected.reason`: `BID_TOO_LOW`, `LOT_CLOSED`, `LOT_NOT_OPEN`, `LOT_NOT_FOUND`, `DUPLICATE_BID` (se revisa con Q2); (0.2 #1) sin UI de Kafka por ahora. Imagen Kafka fijada: `apache/kafka:4.3.2`.
+
+## DEC-007 — 0.2 y A2 implementados
+**Fecha:** 2026-11-12 · **Fuente:** Claude · **Estado:** activa
+
+0.2 implementado (commit `dce8afb`, `make verify` en verde) y A2 implementado (contrato de eventos con Zod, 55 tests). Pendiente: remoto de GitHub y PR; ClickUp sin cambio de estado.
