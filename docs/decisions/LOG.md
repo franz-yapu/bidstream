@@ -81,3 +81,8 @@ Aprobados con las propuestas de Claude: (B1) `Bid.awarded` + índice único parc
 **Fecha:** 2026-11-12 · **Fuente:** Claude · **Estado:** activa
 
 B1 implementado: `@bidstream/db` (Prisma 7.10.1), migración `0001_init`, 12 pruebas de integración. Correcciones a la spec §6 vigentes: `ProcessedEvent` con clave primaria `(event_id, consumer)`; `Bid.awarded` con índice único parcial por lote en lugar de un índice redundante sobre `Lot`; `Bid.id` = `eventId` del `BidPlaced`. Aviso para D4/E1: en consultas con `amount::text`, calificar la columna en el `ORDER BY`.
+
+## DEC-015 — C1 implementado
+**Fecha:** 2026-11-12 · **Fuente:** Claude · **Estado:** activa
+
+C1 implementado: `apps/api` (Fastify 5 + Zod), `/v1/health`, `/v1/docs`, errores `problem+json` con URN, `x-request-id` validado. Arranque: `npm run dev:api` (puerto 3000 por defecto). Las rutas de C2/C3 se añaden como plugins bajo `/v1` en `buildApp`.

@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **C1** (`868mvtxzn`, https://app.clickup.com/t/868mvtxzn).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Aprobado (2026-11-12)
+- **Estado:** Implementado (2026-11-12) — aprobado el mismo día
 - **Versión:** 1.0 · **Fecha:** 2026-11-12
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §7 (REST de comandos, `/v1/health`, `/v1/docs`), §8 A03/A05, §5 (arquitectura)
@@ -91,7 +91,7 @@ Error de validación (`400`):
 
 ```json
 {
-  "type": "https://bidstream.dev/problems/validation-error",
+  "type": "urn:bidstream:problem:validation-error",
   "title": "Solicitud inválida",
   "status": 400,
   "requestId": "…",
@@ -141,13 +141,13 @@ Todas con `app.inject()` (sin abrir puertos).
 
 ## 5 · Definition of Done
 
-- [ ] SDD en `docs/sdd/C1/SDD.md`, Estado = Aprobado
-- [ ] API arranca con `npm run dev:api`; `/v1/health` y `/v1/docs` responden
-- [ ] Errores en `problem+json` y ningún *stack trace* llega al cliente
-- [ ] Primitivas del dominio reutilizadas por los DTO (sin duplicar validaciones)
-- [ ] Tests del §4 en verde; `npm run check` en verde
-- [ ] README documenta cómo arrancarla
-- [ ] PR con CI verde y fusionado
+- [x] SDD en `docs/sdd/C1/SDD.md`, Estado = Aprobado
+- [x] API arranca con `npm run dev:api`; `/v1/health` y `/v1/docs` responden
+- [x] Errores en `problem+json` y ningún *stack trace* llega al cliente
+- [x] Primitivas del dominio reutilizadas por los DTO (sin duplicar validaciones)
+- [x] Tests del §4 en verde; `npm run check` en verde
+- [x] README documenta cómo arrancarla
+- [x] PR con CI verde y fusionado
 
 ---
 
@@ -168,3 +168,15 @@ Todas con `app.inject()` (sin abrir puertos).
 2. ¿Formato de error `problem+json` (propuesta) o un formato propio?
 3. ¿La interfaz de documentación en `/v1/docs` debe quedar también en producción (Azure), o solo en desarrollo? Propuesta: disponible siempre, es de solo lectura y es parte del valor del repositorio.
 4. ¿El servidor GraphQL (E1) irá en este mismo proceso (otra ruta) o en un `apps/graphql` aparte? Propuesta: aparte, para escalar lecturas y comandos por separado (lo decide el SDD de E1).
+
+---
+
+## Changelog de implementación
+
+- **Implementado (2026-11-12)** con Fastify 5.12.8, `fastify-type-provider-zod` 7.0.0, `@fastify/swagger` 9.9.3 y `@fastify/swagger-ui` 6.1.3; respuestas aprobadas de §7: Fastify, `problem+json`, `/v1/docs` también en producción, GraphQL en `apps/graphql` aparte (E1).
+- El campo `type` de los problemas usa URN (`urn:bidstream:problem:<slug>`) en lugar de URL: no existe un dominio propio que resuelva esas direcciones y una URL inventada confundiría.
+- Las primitivas del dominio se exponen como el espacio de nombres `primitives` (`import { primitives } from '@bidstream/domain'`) para no contaminar el índice con nombres genéricos como `uuid` o `title`.
+- `x-request-id`: el id del cliente se acepta solo si coincide con `^[A-Za-z0-9._-]{1,128}$`; si no, se genera un UUID (evita inyección en logs). Se devuelve en la cabecera y en el cuerpo de los errores.
+- Comprobado a mano contra el proceso real (`tsx`): `/v1/health` 200, `/v1/docs/json` (OpenAPI 3.0.3), `/v1/docs/` 200, 404 en `problem+json` y apagado con SIGTERM.
+- Prueba ajustada: `text/plain` sí tiene parser en Fastify (llega como string y falla la validación con 400); el 415 se prueba con `application/xml`.
+- 21 tests nuevos (134 en total); `npm run check` en verde. Pendiente a propósito: health con base de datos, Kafka y lag (B2/D2), CORS/cabeceras/limitación de tasa (F2), logs de correlación completos (F4).
