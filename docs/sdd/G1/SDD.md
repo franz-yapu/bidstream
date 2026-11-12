@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **G1** (`868mvty1g`, https://app.clickup.com/t/868mvty1g).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Aprobado (2026-11-12)
+- **Estado:** Implementado (2026-11-12) — aprobado el mismo día
 - **Versión:** 1.0 · **Fecha:** 2026-11-12
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §10 (pruebas de integración contra PostgreSQL y Kafka reales, no mocks; CI con pruebas)
@@ -125,13 +125,13 @@ collectMessages(opts: { topic: string; groupId?: string; count: number; timeoutM
 
 ## 5 · Definition of Done
 
-- [ ] SDD en `docs/sdd/G1/SDD.md`, Estado = Aprobado
-- [ ] `@bidstream/testing` con las cuatro utilidades y sus pruebas
-- [ ] Suites existentes refactorizadas, sin casos perdidos (16 siguen en verde)
-- [ ] Job `integration` en verde en un PR real y en rojo con un fallo deliberado
-- [ ] Documentación de cómo correr las pruebas en local y en CI
-- [ ] `npm run check` en verde
-- [ ] PR con CI verde y fusionado
+- [x] SDD en `docs/sdd/G1/SDD.md`, Estado = Aprobado
+- [x] `@bidstream/testing` con las cuatro utilidades y sus pruebas
+- [x] Suites existentes refactorizadas, sin casos perdidos (16 siguen en verde)
+- [x] Job `integration` en verde en un PR real y en rojo con un fallo deliberado
+- [x] Documentación de cómo correr las pruebas en local y en CI
+- [x] `npm run check` en verde
+- [x] PR con CI verde y fusionado
 
 ---
 
@@ -151,3 +151,14 @@ collectMessages(opts: { topic: string; groupId?: string; count: number; timeoutM
 1. ¿`make up` (propuesta) o testcontainers? Con `make up` quien clone el repositorio ya tiene el entorno; testcontainers haría las pruebas autocontenidas pero con una dependencia más y más tiempo por suite.
 2. ¿El job `integration` debe ser check requerido de `main`? Propuesta: no al principio; sí cuando lleve una semana estable.
 3. ¿Subimos también `docker compose logs` como artefacto del job al fallar, o solo al log? Propuesta: solo al log.
+
+---
+
+## Changelog de implementación
+
+- **Implementado (2026-11-12)** con las respuestas aprobadas de §7: `make up` (sin testcontainers), job `integration` no requerido por ahora, logs solo al log del job.
+- `@bidstream/testing`: `createTestDatabase`, `createTestTopic`, `collectMessages`, `testKafkaConfig`, `testDatabaseServerUrl` y `waitFor`. `createTestDatabase` usa `execFile` asíncrono (no `execFileSync`) para que dos llamadas simultáneas puedan migrar en paralelo.
+- Suites refactorizadas sin perder casos: 12 de base de datos y 4 de Kafka siguen en verde; 6 pruebas nuevas del propio paquete (incluido el ejemplo outbox → Kafka). Total: 22 pruebas de integración.
+- Ciclo de dependencias de desarrollo: `@bidstream/testing` depende de `@bidstream/kafka` y `@bidstream/db`, y las pruebas de ambos dependen de `@bidstream/testing`. Funciona porque las pruebas quedan fuera del build y `check` compila primero. Al tipar `prisma` en la prueba de la base de datos se usó `TestDatabase['prisma']`: usar `PrismaClient` importado desde `src` choca con el de `dist`, que son dos declaraciones distintas de la misma clase.
+- Regla de ESLint: `@bidstream/testing` solo puede importarse desde `*.test.ts` (verificada con una violación deliberada). También se ampliaron los patrones prohibidos al dominio (`@bidstream/db`, `kafka`, `consumer`, `testing`).
+- **CI:** el job `integration` pasa en GitHub en 2 min 21 s (`make up` + `npm run test:integration`), en paralelo al `check`. Comprobado el caso de fallo con un PR descartable (#14) con una prueba rota.
