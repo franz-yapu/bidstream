@@ -58,3 +58,14 @@ npm run dev:relay   # publica en Kafka lo que la API dejó en el outbox
 ```
 
 Solo un relay está activo a la vez (bloqueo asesor de PostgreSQL) para conservar el orden por lote; los demás quedan en espera y toman el relevo si el líder cae. Es al menos una vez: los consumidores son idempotentes.
+
+## Flujo completo en local
+
+```bash
+make up && make migrate
+npm run dev:api        # terminal 1: comandos HTTP
+npm run dev:relay      # terminal 2: outbox → Kafka
+npm run dev:projector  # terminal 3: Kafka → proyección en PostgreSQL
+```
+
+Los comandos devuelven `201` al aceptarse; el estado aparece en la proyección cuando el relay y el `projector` procesan el evento (un `POST …/lots` inmediato tras crear la subasta puede dar `404` con `Retry-After`).

@@ -131,3 +131,8 @@ Aprobados con todas las propuestas de Claude: (C2) tenant por cabecera solo fuer
 **Fecha:** 2026-11-12 · **Fuente:** Claude · **Estado:** activa
 
 D1 implementado: `apps/relay` (`@bidstream/relay`) publica el outbox en Kafka en orden y al menos una vez, con un solo relay activo (bloqueo asesor de sesión) y standby. Arranque: `npm run dev:relay`. **Requisito vigente para C3/Q2:** el orden de publicación es el de `(created_at, id)`, y `created_at` es el inicio de la transacción; los comandos de un mismo lote deben serializarse al escribir (`SELECT … FOR UPDATE` sobre el lote) para que ese orden sea el de decisión.
+
+## DEC-025 — D4 implementado: primer flujo completo
+**Fecha:** 2026-11-12 · **Fuente:** Claude · **Estado:** activa
+
+D4 implementado: `apps/projector` y `applyEventToProjection`/`resetProjection` en `@bidstream/db`; migración 0002 (sin FK lote → subasta). Con C2, D1 y D4 funciona el primer flujo completo API → outbox → relay → Kafka → projector → PostgreSQL, comprobado con pruebas de integración y con los tres procesos reales. Arranque local: `make up && make migrate`, y en tres terminales `npm run dev:api`, `npm run dev:relay` y `npm run dev:projector`. **Para reprocesar (G2):** `resetProjection` borra también `processed_event` del `projector`; sin eso todos los eventos se ignoran como duplicados.

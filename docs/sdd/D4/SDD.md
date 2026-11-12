@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **D4** (`868mvty0d`, https://app.clickup.com/t/868mvty0d).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Aprobado (2026-11-12)
+- **Estado:** Implementado (2026-11-12) — aprobado el mismo día
 - **Versión:** 1.0 · **Fecha:** 2026-11-12
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §4 (grupo `projector`: estado actual del lote y ranking de pujas), §5 (reproceso: borrar la proyección, reposicionar el grupo a `earliest` y reconstruir desde el log), §6 (modelo de datos y desempate)
@@ -130,13 +130,13 @@ Integración con PostgreSQL de `@bidstream/testing`; el flujo completo, también
 
 ## 5 · Definition of Done
 
-- [ ] SDD en `docs/sdd/D4/SDD.md`, Estado = Aprobado
-- [ ] Los 7 eventos aplicados; el estado coincide con el del dominio para el mismo historial
-- [ ] `resetProjection` y reconstrucción determinista verificados
-- [ ] Migración `0002` aplicada; `B1` actualizado con su revisión
-- [ ] Primer flujo completo API → outbox → relay → Kafka → projector en verde
-- [ ] Tests del §4 en verde; `npm run check` y `npm run test:integration` en verde
-- [ ] PR con CI verde y fusionado
+- [x] SDD en `docs/sdd/D4/SDD.md`, Estado = Aprobado
+- [x] Los 7 eventos aplicados; el estado coincide con el del dominio para el mismo historial
+- [x] `resetProjection` y reconstrucción determinista verificados
+- [x] Migración `0002` aplicada; `B1` actualizado con su revisión
+- [x] Primer flujo completo API → outbox → relay → Kafka → projector en verde
+- [x] Tests del §4 en verde; `npm run check` y `npm run test:integration` en verde
+- [x] PR con CI verde y fusionado
 
 ---
 
@@ -158,3 +158,15 @@ Integración con PostgreSQL de `@bidstream/testing`; el flujo completo, también
 2. **Estricto en `LotClosed`:** si el ganador del evento no coincide con la puja de mayor ranking, el `projector` lanza (DLQ). ¿O prefieres que registre la inconsistencia y siga? Propuesta: lanzar, para no ocultar un estado corrupto.
 3. **`BidRejected` sin efecto en la proyección** (lo guarda el `auditor`). ¿De acuerdo? Alternativa: contarlas en el lote para mostrarlas en GraphQL.
 4. **`resetProjection` como función de librería**, no como ruta HTTP. ¿De acuerdo?
+
+---
+
+## Changelog de implementación
+
+- **Implementado (2026-11-12)** con las propuestas aprobadas de §7: eliminar `lot_auction_id_fkey` (migración `0002_drop_lot_auction_fk`), `LotClosed` estricto, `BidRejected` sin efecto en la proyección y `resetProjection` solo como función de librería.
+- `@bidstream/db`: `applyEventToProjection(tx, event)`, `ProjectionError` y `resetProjection(prisma, consumer = 'projector')`. `apps/projector`: `createProjector` (composición sobre `createEventConsumer`, grupo `projector`) y `main.ts` con logs JSON y apagado ordenado. Se retiró la relación `Lot.auction` / `Auction.lots` del esquema de Prisma; `lot.auction_id` sigue indexado y sin clave foránea (la de `bid → lot` se conserva).
+- Se añadió una comprobación no prevista: un `LotClosed` sin ganador sobre un lote que sí tiene pujas lanza `ProjectionError` (estado incoherente), además de la comprobación del ganador de §2.2. Todas las actualizaciones filtran por `tenantId` del evento: un evento de otro tenant no puede tocar el lote.
+- `apps/api` y `apps/relay` exportan ahora su composición como librería (`index.ts`, `exports`) para poder combinarlas en la prueba de punta a punta; sus `main.ts` siguen siendo el arranque del proceso.
+- 21 pruebas de integración nuevas: 19 de la proyección (efecto de cada evento, historial completo igual a `foldLot` y `evolveAuction`, adjudicación a la puja de mayor ranking, lote desierto, `LotPublished` antes que `AuctionOpened`, estados incoherentes y filas faltantes que lanzan, aislamiento por tenant, la migración 0002, `resetProjection` solo del `projector`, y volver a aplicar el mismo log tras el reinicio da **exactamente** el mismo estado) y 2 del flujo completo.
+- **Primer flujo completo de punta a punta**, con todo real: `POST /v1/auctions` → outbox → relay → Kafka → `projector` → `POST …/lots` (ahora la subasta ya está proyectada) → … → la proyección coincide con `foldLot` del historial leído del outbox. Estable en tres ejecuciones seguidas (~3,4 s). Comprobado también con los tres procesos reales arrancados a la vez y `curl`.
+- Fuera de alcance, sin cambios: la demostración del reproceso con el grupo de Kafka reposicionado (G2/H5).
