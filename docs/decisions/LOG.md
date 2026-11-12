@@ -61,3 +61,8 @@ Remoto `git@github.com:franz-yapu/bidstream.git` (público) conectado y `main` s
 **Fecha:** 2026-11-12 · **Fuente:** Claude · **Estado:** activa
 
 Ola 1 terminada: 0.1, 0.2, 0.3, 0.4, A1, A2, A3 (19 h). CI verde, `main` protegida (PR + check `check`), 106 tests. ClickUp: los 7 tickets en `completadas`. Nota: 0.1, 0.2, 0.4 y A2 se subieron directo a `main` antes de activar la protección; A1, A3 y 0.3 fueron por PR. Siguiente: Ola 2 (SDD + tickets).
+
+## DEC-011 — Tickets de la Ola 2 creados
+**Fecha:** 2026-11-12 · **Fuente:** usuario ("ola 2") · **Estado:** activa
+
+22 tickets de la Ola 2 creados en la lista bidstream de ClickUp (B1, B2, C1, C2, D1–D7, E1–E3, F4, F6, G1, G2, H2, H5, I1, I2; 83 h), asignados al usuario. Cuerpos en `docs/planning/2026-11-12-tickets-ola2/`. Quedan sin ticket las tareas de la Ola 3 (bloqueadas por Q1–Q5). Siguiente: SDD por ticket antes de codear, empezando por B1, C1 y D2.

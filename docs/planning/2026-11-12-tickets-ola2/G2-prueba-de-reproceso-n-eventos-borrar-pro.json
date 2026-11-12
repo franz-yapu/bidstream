@@ -1,0 +1,8 @@
+{
+  "name": "[TEST] Calidad: Prueba de reproceso: N eventos, borrar proyección, reconstruir, estado idéntico (3 h)",
+  "markdown_content": "## Explicación\n\nEs la mejor demostración del proyecto: reconstruir todo desde el log.\n\n## Qué construir\n\nPrueba automática: publicar N eventos, borrar la proyección, reposicionar el grupo `projector` a `earliest`, dejar que se reconstruya y verificar que el estado final es idéntico al original.\n\nDepende de: D4, G1. Ya existen en `packages/domain`: contrato de eventos (`buildEvent`, `parseEvent`, `partitionKey`), reglas (`decideBid`, `evolveLot`…) y puertos con dobles en memoria; y `make up` para el entorno local.\n\n## Orden de entregables (cada uno bloquea al siguiente)\n\n1. **SDD aprobado** — generado con el skill `write-sdd` en `docs/sdd/G2/SDD.md`. Nadie escribe código de este ticket hasta que el SDD tenga Estado = `Aprobado (fecha)`.\n2. **Implementación según ese SDD** — si algo no calza en el camino, se vuelve al SDD (revisión nueva versionada), no se improvisa por fuera de lo aprobado.\n3. **Tests del plan del §4 del SDD** — corriendo y en verde. Sin estos tests, el ticket no está terminado aunque el código funcione.\n4. **Quality gate del proyecto** (typecheck/lint/tests/build, lo que use el repo) en verde.\n\n## Definition of Done\n\n- [ ] SDD en `docs/sdd/G2/SDD.md`, Estado = Aprobado\n- [ ] Implementación completa según el SDD aprobado (sin desviaciones sin documentar)\n- [ ] Tests del §4 del SDD, todos en verde\n- [ ] Quality gate del proyecto en verde\n\n## Referencias\n\n- Backlog: tarea G2\n- Roadmap: 2026-11-12 - Sprint-Roadmap.md\n- Spec: docs/product/bidstream_spec.md §5, §10\n- SDD: docs/sdd/G2/SDD.md\n",
+  "assignees": [
+    114193632
+  ],
+  "custom_fields": []
+}
