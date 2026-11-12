@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **D1** (`868mvtxzz`, https://app.clickup.com/t/868mvtxzz).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Aprobado (2026-11-12)
+- **Estado:** Implementado (2026-11-12) — aprobado el mismo día
 - **Versión:** 1.0 · **Fecha:** 2026-11-12
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §5 (patrón outbox: "la API nunca escribe en la base y publica en Kafka como dos operaciones separadas"; un relay publica después), §4 (clave `lotId`), §9 (Container Apps: el relay es un proceso propio)
@@ -132,13 +132,13 @@ El relay respeta el orden de `(created_at, id)`, pero `created_at` es el inicio 
 
 ## 5 · Definition of Done
 
-- [ ] SDD en `docs/sdd/D1/SDD.md`, Estado = Aprobado
-- [ ] El relay publica en orden por clave, al menos una vez, y marca lo publicado
-- [ ] Un solo relay activo (bloqueo asesor) y conmutación probada
-- [ ] Sin saltos de filas ante fallos parciales
-- [ ] Requisito de serialización de comandos por lote registrado para C3 (§2.3)
-- [ ] Tests del §4 en verde; `npm run check` y `npm run test:integration` en verde
-- [ ] PR con CI verde y fusionado
+- [x] SDD en `docs/sdd/D1/SDD.md`, Estado = Aprobado
+- [x] El relay publica en orden por clave, al menos una vez, y marca lo publicado
+- [x] Un solo relay activo (bloqueo asesor) y conmutación probada
+- [x] Sin saltos de filas ante fallos parciales
+- [x] Requisito de serialización de comandos por lote registrado para C3 (§2.3)
+- [x] Tests del §4 en verde; `npm run check` y `npm run test:integration` en verde
+- [x] PR con CI verde y fusionado
 
 ---
 
@@ -161,3 +161,14 @@ El relay respeta el orden de `(created_at, id)`, pero `created_at` es el inicio 
 2. **Parámetros:** lote de 100 y sondeo cada 200 ms (configurables). ¿De acuerdo? (Sondeo en vez de `LISTEN/NOTIFY`: más simple; se puede cambiar sin tocar el contrato.)
 3. **Retención del outbox:** ¿dejamos la limpieza de filas publicadas para un ticket posterior (propuesta) o la incluimos aquí con un parámetro de antigüedad?
 4. **Requisito para C3:** ¿confirmas que los comandos de un mismo lote deben serializarse al escribir (`SELECT … FOR UPDATE` sobre el lote), para que el orden del outbox sea el de decisión? Se aborda con Q2.
+
+---
+
+## Changelog de implementación
+
+- **Implementado (2026-11-12)** con las propuestas aprobadas de §7: un relay activo con bloqueo asesor y standby, lote de 100 y sondeo cada 200 ms (configurables con `RELAY_BATCH_SIZE`, `RELAY_POLL_MS`, `RELAY_STANDBY_POLL_MS`), limpieza del outbox en un ticket posterior, y el requisito de serializar los comandos de un mismo lote al escribir queda para C3/Q2.
+- `PrismaOutbox.claimPending(limit)` (`FOR UPDATE SKIP LOCKED`, orden `(created_at, id)`) y `markPublished(ids)` en `@bidstream/db`; `DbClient` incluye ahora `$queryRaw`.
+- `apps/relay`: `OutboxRelay` (`runOnce`, `start`, `stop`), liderazgo en `leader.ts` sobre una conexión `pg` **dedicada** (el bloqueo es de sesión), backoff con «jitter igual» (mitad fija, mitad aleatoria; 1 s → 30 s) y `main.ts` con logs JSON estructurados. El relay no es HTTP: no hay `GET /health`; la señal de vida es el log y el liderazgo.
+- `runOnce` devuelve solo lo **confirmado** (publicado y marcado). Si falla la base de datos al marcar, la transacción se revierte y lo publicado se vuelve a publicar: probado como «al menos una vez» (8 envíos para 4 mensajes, 4 distintos).
+- 16 pruebas nuevas: 4 unitarias de backoff y 12 de integración con PostgreSQL y Kafka reales, estables en tres ejecuciones seguidas: publicación con clave y cabeceras, orden por lote con tres lotes entrelazados en tres particiones, no republicar, outbox vacío, fallo parcial sin saltos, fallo al marcar, backoff creciente, `SKIP LOCKED`, liderazgo exclusivo y conmutación entre dos relays, apagado ordenado y el contrato con `createEventConsumer` (D3).
+- Comprobado a mano con el proceso real: arranca, toma el liderazgo y se apaga con SIGTERM liberándolo.

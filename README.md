@@ -50,3 +50,11 @@ make up && npm run test:integration   # pruebas contra PostgreSQL y Kafka reales
 ```
 
 La CI corre ambos conjuntos: el job `check` y el job `integration` (levanta el entorno con `make up`).
+
+## Relay del outbox
+
+```bash
+npm run dev:relay   # publica en Kafka lo que la API dejó en el outbox
+```
+
+Solo un relay está activo a la vez (bloqueo asesor de PostgreSQL) para conservar el orden por lote; los demás quedan en espera y toman el relevo si el líder cae. Es al menos una vez: los consumidores son idempotentes.

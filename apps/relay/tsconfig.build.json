@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "noEmit": false, "composite": true, "rootDir": "src", "outDir": "dist" },
+  "exclude": ["src/**/*.test.ts", "src/**/*.int.test.ts"],
+  "references": [
+    { "path": "../../packages/domain/tsconfig.build.json" },
+    { "path": "../../packages/db/tsconfig.build.json" },
+    { "path": "../../packages/kafka/tsconfig.build.json" }
+  ]
+}
