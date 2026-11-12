@@ -4,13 +4,13 @@
 
 ## 1 · Dónde estamos
 
-Actualizado 2026-11-12: Ola 1 completa (7 tareas, 19 h) y de la Ola 2 listas B1, B2, C1, D2, D3 y G1 (26 h).
+Actualizado 2026-11-12: Ola 1 completa (7 tareas, 19 h) y de la Ola 2 listas B1, B2, C1, C2, D1, D2, D3, D4 y G1 (41 h).
 
 | Estado | h | Tareas | % |
 |---|---:|---:|---:|
-| ✅ Listo | 45 | 13 | 30% |
+| ✅ Listo | 60 | 16 | 39% |
 | 🟡 En curso | 0 | 0 | 0% |
-| ⬜ Pendiente (desbloqueado) | 57 | 16 | 38% |
+| ⬜ Pendiente (desbloqueado) | 42 | 13 | 28% |
 | ⛔ Bloqueado por decisión/acceso | 50 | 10 | 33% |
 
 Total: 152 h en 39 tareas.
@@ -56,13 +56,13 @@ B1 (5 h), B2 (3 h), C1 (5 h), C2 (5 h), D1 (5 h), D2 (3 h), D3 (5 h), D4 (5 h), 
 | B1 | B Datos | Esquema Prisma (§6), migración inicial, índice único parcial de adjudicación (SQL) | 5 | ✅ Listo | 2 | 868mvtxz8 | spec §6 | 0.2 | — |
 | B2 | B Datos | Repositorios Prisma de proyección y outbox | 3 | ✅ Listo | 2 | 868mvtxzb | spec §6 | B1, A3 | — |
 | C1 | C API comandos | Servidor REST /v1: Zod en el borde, manejo de errores, OpenAPI en /v1/docs, health básico | 5 | ✅ Listo | 2 | 868mvtxzn | spec §7 | 0.1 | — |
-| C2 | C API comandos | POST /v1/auctions y /v1/auctions/:id/lots (201 + Location) escribiendo outbox | 5 | ⬜ Pendiente | 2 | 868mvtxzv | spec §7 | B2, C1, A2 | — |
+| C2 | C API comandos | POST /v1/auctions y /v1/auctions/:id/lots (201 + Location) escribiendo outbox | 5 | ✅ Listo | 2 | 868mvtxzv | spec §7 | B2, C1, A2 | — |
 | C3 | C API comandos | POST /v1/lots/:id/bids: 202 Accepted, validación y outbox (BidPlaced/BidRejected) | 8 | ⛔ Bloqueado | 3 | | spec §5, §7 | C2, A1 | Q2: dónde se decide la puja (autoridad) |
 | C4 | C API comandos | Cabecera `Idempotency-Key` obligatoria en la puja | 3 | ⛔ Bloqueado | 3 | | spec §5, §7 | C3 | Cascada de Q2 |
-| D1 | D Kafka | Relay de outbox → Kafka (polling con FOR UPDATE SKIP LOCKED, `publishedAt`) | 5 | ⬜ Pendiente | 2 | 868mvtxzz | spec §5 | B2, D2 | — |
+| D1 | D Kafka | Relay de outbox → Kafka (polling con FOR UPDATE SKIP LOCKED, `publishedAt`) | 5 | ✅ Listo | 2 | 868mvtxzz | spec §5 | B2, D2 | — |
 | D2 | D Kafka | Cliente Kafka compartido: config local y Event Hubs (SASL) sin cambiar código | 3 | ✅ Listo | 2 | 868mvty03 | spec §9 | 0.2 | — |
 | D3 | D Kafka | Consumidor base: idempotencia por `eventId`, 3 reintentos con backoff, DLQ con error | 5 | ✅ Listo | 2 | 868mvty09 | spec §5 | D2, B1 | — |
-| D4 | D Kafka | Consumidor `projector`: proyección de lote y ranking en PostgreSQL | 5 | ⬜ Pendiente | 2 | 868mvty0d | spec §4, §5 | D3, A2 | — |
+| D4 | D Kafka | Consumidor `projector`: proyección de lote y ranking en PostgreSQL | 5 | ✅ Listo | 2 | 868mvty0d | spec §4, §5 | D3, A2 | — |
 | D5 | D Kafka | Consumidor `notifier`: publica a las subscriptions de GraphQL | 3 | ⬜ Pendiente | 2 | 868mvty0f | spec §4 | D3 | — |
 | D6 | D Kafka | Consumidor `auditor`: bitácora append-only | 3 | ⬜ Pendiente | 2 | 868mvty0k | spec §4 | D3 | — |
 | D7 | D Kafka | Endpoint administrativo para reprocesar el DLQ | 3 | ⬜ Pendiente | 2 | 868mvty0q | spec §5 | D3, C1 | — |
