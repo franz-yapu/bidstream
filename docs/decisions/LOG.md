@@ -161,3 +161,8 @@ G2 implementado: reproceso de la proyección desde el log. `npm run reprocess -w
 **Fecha:** 2026-11-12 · **Fuente:** Claude · **Estado:** activa
 
 D5 implementado: `@bidstream/notifier` (contrato, `NOTIFY`, bus, oyente) y `apps/notifier`. Un único grupo `notifier` difunde con `LISTEN/NOTIFY` dentro de la transacción de D3; las réplicas del servidor GraphQL escuchan el canal `lot_updates`. Notificaciones públicas sin identidad de postor. Entrega best-effort con aviso de resincronización. Arranque local: `npm run dev:notifier`. **Pendiente para H1:** verificar `LISTEN` contra la base de datos de Azure y los límites de grupos de Event Hubs. **Siguiente natural:** E1/E3 (GraphQL) consumen este bus.
+
+## DEC-031 — D6, G2 y D5 completados
+**Fecha:** 2026-11-12 · **Fuente:** Claude · **Estado:** activa
+
+D6, G2 y D5 fusionados (PR #24, #25, #26) y en `completadas` en ClickUp. Estado: 19 de 39 tareas, 69 h de 152. 186 pruebas unitarias y 143 de integración. Los **seis consumidores/procesos del núcleo** están hechos: API, relay, projector, auditor, notifier y la herramienta de reproceso. Quedan en la Ola 2: D7 (reproceso del DLQ), E1/E2/E3 (GraphQL), F4 (logs con correlación), F6 (auditoría de dependencias), H2 (Dockerfiles), H5 (vídeo del reproceso), I1/I2 (README y ADRs). **Pendientes de la sesión:** terminar procesos de demostración que se dejaron vivos (ver nota abajo) y ejecutar el reproceso de extremo a extremo con procesos reales (H5).
