@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **D1** (`868mvtxzz`, https://app.clickup.com/t/868mvtxzz).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Borrador
+- **Estado:** Aprobado (2026-11-12)
 - **Versión:** 1.0 · **Fecha:** 2026-11-12
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §5 (patrón outbox: "la API nunca escribe en la base y publica en Kafka como dos operaciones separadas"; un relay publica después), §4 (clave `lotId`), §9 (Container Apps: el relay es un proceso propio)

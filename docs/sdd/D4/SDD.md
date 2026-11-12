@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **D4** (`868mvty0d`, https://app.clickup.com/t/868mvty0d).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Borrador
+- **Estado:** Aprobado (2026-11-12)
 - **Versión:** 1.0 · **Fecha:** 2026-11-12
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §4 (grupo `projector`: estado actual del lote y ranking de pujas), §5 (reproceso: borrar la proyección, reposicionar el grupo a `earliest` y reconstruir desde el log), §6 (modelo de datos y desempate)

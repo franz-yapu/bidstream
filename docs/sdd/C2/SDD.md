@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **C2** (`868mvtxzv`, https://app.clickup.com/t/868mvtxzv).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Borrador
+- **Estado:** Implementado (2026-11-12) — aprobado el mismo día
 - **Versión:** 1.0 · **Fecha:** 2026-11-12
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §7 (`POST /v1/auctions` 201 con `Location`; `POST /v1/auctions/:id/lots` 201), §5 (validar contra la proyección y escribir en el outbox en una sola transacción), §3 (`AuctionOpened`, `LotPublished`), §8 A01/A03
@@ -145,13 +145,13 @@ Integración con la base de datos de `@bidstream/testing` y `app.inject()`.
 
 ## 5 · Definition of Done
 
-- [ ] SDD en `docs/sdd/C2/SDD.md`, Estado = Aprobado
-- [ ] Las dos rutas devuelven 201/`Location` y dejan **exactamente un evento válido** en el outbox por petición aceptada, y ninguno por petición rechazada
-- [ ] Sin dependencias de Fastify en los casos de uso; sin imports de Prisma en el dominio
-- [ ] Resolvedor de tenant por cabecera imposible en `production`
-- [ ] OpenAPI documenta las rutas y sus errores
-- [ ] Tests del §4 en verde; `npm run check` y `npm run test:integration` en verde
-- [ ] PR con CI verde y fusionado
+- [x] SDD en `docs/sdd/C2/SDD.md`, Estado = Aprobado
+- [x] Las dos rutas devuelven 201/`Location` y dejan **exactamente un evento válido** en el outbox por petición aceptada, y ninguno por petición rechazada
+- [x] Sin dependencias de Fastify en los casos de uso; sin imports de Prisma en el dominio
+- [x] Resolvedor de tenant por cabecera imposible en `production`
+- [x] OpenAPI documenta las rutas y sus errores
+- [x] Tests del §4 en verde; `npm run check` y `npm run test:integration` en verde
+- [x] PR con CI verde y fusionado
 
 ---
 
@@ -174,3 +174,16 @@ Integración con la base de datos de `@bidstream/testing` y `app.inject()`.
 3. **`Location`:** ¿`/v1/auctions/{id}` aunque no exista el `GET` (propuesta), o añadir un `GET` mínimo de estado que lea la proyección? Un `GET` REST contradice "GraphQL solo para lecturas" (ADR pendiente en I2).
 4. **Reglas numéricas:** `startingPrice > 0` y `minIncrement > 0`; el cierre del lote debe estar en el futuro. ¿De acuerdo?
 5. **Sin idempotencia en C2:** ¿aceptas que un reintento cree un duplicado, o quieres `Idempotency-Key` también aquí?
+
+---
+
+## Changelog de implementación
+
+- **Implementado (2026-11-12)** con todas las propuestas aprobadas de §7: tenant por cabecera solo fuera de producción, 404 con `Retry-After` si la subasta aún no está proyectada, `Location` sin `GET`, `startingPrice > 0` y `minIncrement > 0`, ids generados por el servidor y sin idempotencia en C2.
+- Capa de aplicación en `apps/api/src/commands/` (`openAuction`, `publishLot`, errores tipados) sin dependencias de Fastify; las rutas solo traducen HTTP. Errores de aplicación → `problem+json` en el manejador central (`InvalidCommand` → 422, `AuctionNotFound` → 404 + `Retry-After: 1`, `AuctionClosed` → 409); `ProblemError` para los errores que ya conocen su respuesta (tenant).
+- `TOPICS` se importa de `@bidstream/kafka/topics` (nueva subruta de exportación) para que la API no cargue el binario nativo de Kafka solo por el nombre de un topic.
+- `NODE_ENV=production` con `TENANT_MODE=header` **falla al arrancar**: mientras F1 siga bloqueado por Q4, la API no puede ejecutarse en producción. Esto condiciona el despliegue en Azure (H1).
+- **Falla real encontrada por las pruebas:** el esquema de cabeceras exigía `x-tenant-id`, así que la falta del tenant devolvía 400 antes de que el resolvedor pudiera responder 401. Ahora la cabecera es opcional en el esquema y la exige el resolvedor.
+- Pruebas: 24 de integración (PostgreSQL real, `app.inject()`, reloj fijo) y 6 unitarias nuevas de configuración; 155 unitarias y 71 de integración en total. Cubren el camino feliz con el evento exacto en el outbox (`id = eventId`, `key = partitionKey`), cada rechazo sin dejar nada, aislamiento por tenant, anti-sniping, atomicidad ante fallo del outbox (500 genérico, sin detalles de Prisma) y OpenAPI.
+- Un fallo de las pruebas fue propio: un generador secuencial reiniciado en cada prueba producía `eventId` repetidos y chocaba con la clave primaria; las pruebas usan UUID v7 reales y fijan solo el id del caso de fallo.
+- Comprobado a mano con el proceso real y `curl` contra la base de desarrollo (201, `Location`, fila en el outbox con `key = auctionId`, 404 con `Retry-After`).
