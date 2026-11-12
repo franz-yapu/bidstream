@@ -66,3 +66,8 @@ Ola 1 terminada: 0.1, 0.2, 0.3, 0.4, A1, A2, A3 (19 h). CI verde, `main` protegi
 **Fecha:** 2026-11-12 · **Fuente:** usuario ("ola 2") · **Estado:** activa
 
 22 tickets de la Ola 2 creados en la lista bidstream de ClickUp (B1, B2, C1, C2, D1–D7, E1–E3, F4, F6, G1, G2, H2, H5, I1, I2; 83 h), asignados al usuario. Cuerpos en `docs/planning/2026-11-12-tickets-ola2/`. Quedan sin ticket las tareas de la Ola 3 (bloqueadas por Q1–Q5). Siguiente: SDD por ticket antes de codear, empezando por B1, C1 y D2.
+
+## DEC-012 — SDD borrador de B1, C1 y D2
+**Fecha:** 2026-11-12 · **Fuente:** usuario (pidió los SDD), Claude · **Estado:** activa (pendiente de respuesta)
+
+SDD en borrador: `docs/sdd/B1`, `C1` y `D2`. Hallazgos sobre la spec §6: (1) `ProcessedEvent` con `eventId @id` más `@@unique([eventId, consumer])` impide que dos consumidores registren el mismo evento; se corrige con clave primaria compuesta; (2) el índice único parcial "dos lotes adjudicados" es redundante con la clave primaria de `Lot`; se propone `Bid.awarded` + índice único parcial por lote. Decisiones propuestas: Prisma 7.10.1 en `packages/db`; Fastify 5 + Zod + `problem+json` en `apps/api`; `@confluentinc/kafka-javascript` en `packages/kafka` (`kafkajs` sin mantenimiento desde 2023). Preguntas: ver §7 de cada SDD.
