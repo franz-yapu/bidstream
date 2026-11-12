@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **D6** (`868mvty0k`, https://app.clickup.com/t/868mvty0k).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Borrador
+- **Estado:** Implementado (2026-11-12) — aprobado el mismo día
 - **Versión:** 1.0 · **Fecha:** 2026-11-12
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §4 (grupo `auditor`: "escribe la bitácora append-only"), §8 A09 ("logs estructurados con id de correlación, bitácora append-only, alertas"), A08 (integridad de datos)
@@ -133,12 +133,12 @@ No se implementa una cadena de *hashes* (cada fila con el hash de la anterior): 
 
 ## 5 · Definition of Done
 
-- [ ] SDD en `docs/sdd/D6/SDD.md`, Estado = Aprobado
-- [ ] `audit_log` con migración, índices y disparadores; `UPDATE`/`DELETE`/`TRUNCATE` rechazados
-- [ ] El `auditor` registra los 7 tipos, sin duplicados ni transformación
-- [ ] Rol de base de datos de solo escritura documentado para H1
-- [ ] Tests del §4 en verde; `npm run check` y `npm run test:integration` en verde
-- [ ] PR con CI verde y fusionado
+- [x] SDD en `docs/sdd/D6/SDD.md`, Estado = Aprobado
+- [x] `audit_log` con migración, índices y disparadores; `UPDATE`/`DELETE`/`TRUNCATE` rechazados
+- [x] El `auditor` registra los 7 tipos, sin duplicados ni transformación
+- [x] Rol de base de datos de solo escritura documentado para H1
+- [x] Tests del §4 en verde; `npm run check` y `npm run test:integration` en verde
+- [x] PR con CI verde y fusionado
 
 ---
 
@@ -160,3 +160,13 @@ No se implementa una cadena de *hashes* (cada fila con el hash de la anterior): 
 2. **Qué se guarda:** todos los eventos sin filtrar y con su origen en el log (propuesta). ¿De acuerdo en que `BidRejected` se registre aquí aunque el `projector` lo ignore?
 3. **Evidencia de manipulación:** ¿basta la inmutabilidad (propuesta) o quieres además anclar un *hash* por tramo periódicamente? Es una evolución posterior, no un requisito de V1.
 4. **Acceso de lectura:** por SQL en V1; ¿un endpoint administrativo se deja para después de F1 (propuesta)?
+
+---
+
+## Changelog de implementación
+
+- **Implementado (2026-11-12)** con las propuestas aprobadas de §7: disparadores más rol de solo escritura en producción (el rol queda para H1), todos los eventos registrados sin filtrar y con su origen en el log, sin cadena de hashes, y consulta solo por SQL hasta después de F1.
+- Migración `0003_audit_log`: tabla, los dos índices y los disparadores (`BEFORE UPDATE OR DELETE` por fila y `BEFORE TRUNCATE` por sentencia) con `ERRCODE 42501`. `recordAuditEntry` en `@bidstream/db`; `apps/auditor` con `createAuditor` y `main.ts` (logs JSON, apagado ordenado).
+- 18 pruebas de integración contra PostgreSQL y Kafka reales, estables en tres ejecuciones seguidas: los 7 tipos con el evento intacto y su origen (`topic`, `partition`, `offset`), `event_id` repetido rechazado, `UPDATE`/`DELETE`/`TRUNCATE` rechazados (también la actualización «vacía» y el borrado filtrado), `INSERT` permitido, uso de los dos índices, el auditor registra incluido `BidRejected` junto al `projector` en grupos independientes (7 registros de `processed_event` por consumidor), historial de un lote por clave en orden, reentrega sin duplicado y atomicidad con el consumidor base (falla tras registrar → sin fila → el reintento escribe una vez).
+- **Pendiente para H1 (no verificable en local):** crear el rol de base de datos de la aplicación con solo `INSERT, SELECT` sobre `audit_log` y comprobar que `UPDATE`/`DELETE` fallan también por permisos. Hoy la única protección es el disparador, que el propietario de la tabla puede quitar.
+- Comprobado con el proceso real: arranca, se conecta y se apaga con SIGTERM.

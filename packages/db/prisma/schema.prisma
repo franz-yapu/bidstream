@@ -95,3 +95,25 @@ model OutboxMessage {
   @@index([publishedAt, createdAt])
   @@map("outbox_message")
 }
+
+/// Bitácora append-only de los eventos de dominio (D6). Los disparadores que rechazan
+/// UPDATE/DELETE/TRUNCATE viven en la migración 0003 (Prisma no los expresa).
+model AuditLog {
+  eventId         String   @id @map("event_id") @db.Uuid
+  type            String
+  tenantId        String   @map("tenant_id") @db.Uuid
+  /// Clave de partición del evento (`lotId` o `auctionId`).
+  key             String
+  occurredAt      DateTime @map("occurred_at") @db.Timestamptz(3)
+  /// El evento completo, sin tocar.
+  payload         Json
+  /// De dónde se leyó: permite trazar la fila hasta su posición exacta en el log.
+  sourceTopic     String   @map("source_topic")
+  sourcePartition Int      @map("source_partition")
+  sourceOffset    BigInt   @map("source_offset")
+  recordedAt      DateTime @default(now()) @map("recorded_at") @db.Timestamptz(3)
+
+  @@index([tenantId, occurredAt])
+  @@index([key, occurredAt])
+  @@map("audit_log")
+}

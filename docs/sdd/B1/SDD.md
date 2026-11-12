@@ -3,7 +3,7 @@
 - **Ticket:** ClickUp **B1** (`868mvtxz8`, https://app.clickup.com/t/868mvtxz8).
 - **Autor:** generado con Claude (Entregable 1).
 - **Estado:** Implementado (2026-11-12) — aprobado el mismo día
-- **Versión:** 1.1 · **Fecha:** 2026-11-12
+- **Versión:** 1.2 · **Fecha:** 2026-11-12
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §6 (esquema Prisma y detalles obligatorios), §5 (idempotencia por `eventId`, outbox)
   2. `docs/product/business-rules.md` #2 (desempate), #5 (adjudicación única), #6 (dinero)
@@ -178,3 +178,4 @@ Pruebas de **integración** contra PostgreSQL real de `make up` (archivos `*.int
 - `@bidstream/domain` es dependencia de desarrollo del paquete solo para comparar con `compareBids` en las pruebas.
 
 - **Revisión 1.1 (D4):** `lot.auction_id` deja de ser clave foránea (migración `0002_drop_lot_auction_fk`) y se quita la relación `Lot.auction`/`Auction.lots` del esquema. Motivo: los eventos de subasta (clave `auctionId`) y de lote (clave `lotId`) viajan por particiones distintas sin orden entre sí; en un reproceso desde `earliest` el lote puede procesarse antes que su subasta y la clave foránea lo haría fallar. La integridad la da C2 al validar la subasta antes de aceptar el comando. Ver `docs/sdd/D4/SDD.md` §2.4.
+- **Revisión 1.2 (D6):** nueva tabla `audit_log` (modelo `AuditLog`) con migración `0003_audit_log` y disparadores append-only; ver `docs/sdd/D6/SDD.md`. La tabla es de solo inserción y no la toca `resetProjection`.

@@ -24,6 +24,9 @@
     },
     {
       "path": "apps/projector/tsconfig.build.json"
+    },
+    {
+      "path": "apps/auditor/tsconfig.build.json"
     }
   ]
 }

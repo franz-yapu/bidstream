@@ -1,0 +1,31 @@
+{
+  "name": "@bidstream/auditor",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "@bidstream/consumer": "^0.0.0",
+    "@bidstream/db": "^0.0.0",
+    "@bidstream/domain": "^0.0.0",
+    "@bidstream/kafka": "^0.0.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@bidstream/projector": "^0.0.0",
+    "@bidstream/testing": "^0.0.0",
+    "tsx": "^4.23.15"
+  },
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "start": "node dist/main.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  }
+}

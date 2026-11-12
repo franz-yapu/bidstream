@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **G2** (`868mvty1q`, https://app.clickup.com/t/868mvty1q).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Borrador
+- **Estado:** Aprobado (2026-11-12)
 - **Versión:** 1.0 · **Fecha:** 2026-11-12
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §5 ("Reproceso (lo que hay que grabar en video): borrar la proyección, reposicionar el offset del grupo `projector` a `earliest` y dejar que se reconstruya sola desde el log"), §10 (prueba de reproceso: publicar N eventos, borrar la proyección, reconstruir y verificar que el estado final es idéntico)
