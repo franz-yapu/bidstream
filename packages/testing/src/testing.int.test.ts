@@ -22,7 +22,7 @@ async function databaseExists(name: string): Promise<boolean> {
 }
 
 describe('createTestDatabase', () => {
-  it('deja las cinco tablas migradas y drop() elimina la base', async () => {
+  it('deja las tablas migradas y drop() elimina la base', async () => {
     const db = await createTestDatabase();
     const name = new URL(db.url).pathname.slice(1);
     const { rows } = await db.pool.query<{ table_name: string }>(
@@ -31,6 +31,7 @@ describe('createTestDatabase', () => {
     );
     expect(rows.map((r) => r.table_name)).toEqual([
       'auction',
+      'audit_log',
       'bid',
       'lot',
       'outbox_message',

@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **D5** (`868mvty0f`, https://app.clickup.com/t/868mvty0f).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Borrador
+- **Estado:** Aprobado (2026-11-12)
 - **Versión:** 1.0 · **Fecha:** 2026-11-12
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §4 (grupo `notifier`: "publica a las subscriptions de GraphQL"), §7 (`Subscription.lotUpdated(lotId)` "alimentada por el consumidor `notifier`"), §9 (Container Apps: cada proceso con su escalado)
