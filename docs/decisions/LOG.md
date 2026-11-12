@@ -136,3 +136,8 @@ D1 implementado: `apps/relay` (`@bidstream/relay`) publica el outbox en Kafka en
 **Fecha:** 2026-11-12 · **Fuente:** Claude · **Estado:** activa
 
 D4 implementado: `apps/projector` y `applyEventToProjection`/`resetProjection` en `@bidstream/db`; migración 0002 (sin FK lote → subasta). Con C2, D1 y D4 funciona el primer flujo completo API → outbox → relay → Kafka → projector → PostgreSQL, comprobado con pruebas de integración y con los tres procesos reales. Arranque local: `make up && make migrate`, y en tres terminales `npm run dev:api`, `npm run dev:relay` y `npm run dev:projector`. **Para reprocesar (G2):** `resetProjection` borra también `processed_event` del `projector`; sin eso todos los eventos se ignoran como duplicados.
+
+## DEC-026 — C2, D1 y D4 completados
+**Fecha:** 2026-11-12 · **Fuente:** Claude · **Estado:** activa
+
+C2, D1 y D4 fusionados (PR #19, #20, #21) y en `completadas` en ClickUp. Estado: 16 de 39 tareas, 60 h de 152. 159 pruebas unitarias y 104 de integración; la CI corre ambos conjuntos. **Primer flujo completo de punta a punta funcionando.** Quedan en la Ola 2: D5 (notifier), D6 (auditor), D7 (reproceso del DLQ), E1/E2/E3 (GraphQL), F4 (logs con correlación), F6 (auditoría de dependencias), H2 (Dockerfiles), G2 (prueba de reproceso), H5 (vídeo), I1/I2 (README y ADRs). **Antes de la Ola 3:** decidir Q2 (autoridad de la puja) y Q4 (autenticación), porque la API no arranca en producción sin F1.
