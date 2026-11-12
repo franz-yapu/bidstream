@@ -4,13 +4,13 @@
 
 ## 1 · Dónde estamos
 
-Actualizado 2026-11-12: Ola 1 completa (7 tareas, 19 h) y de la Ola 2 listas B1, B2, C1, C2, D1, D2, D3, D4 y G1 (41 h).
+Actualizado 2026-11-12: Ola 1 completa (7 tareas, 19 h) y de la Ola 2 listas B1, B2, C1, C2, D1–D6, G1 y G2 (50 h).
 
 | Estado | h | Tareas | % |
 |---|---:|---:|---:|
-| ✅ Listo | 60 | 16 | 39% |
+| ✅ Listo | 69 | 19 | 45% |
 | 🟡 En curso | 0 | 0 | 0% |
-| ⬜ Pendiente (desbloqueado) | 42 | 13 | 28% |
+| ⬜ Pendiente (desbloqueado) | 33 | 10 | 22% |
 | ⛔ Bloqueado por decisión/acceso | 50 | 10 | 33% |
 
 Total: 152 h en 39 tareas.
@@ -63,8 +63,8 @@ B1 (5 h), B2 (3 h), C1 (5 h), C2 (5 h), D1 (5 h), D2 (3 h), D3 (5 h), D4 (5 h), 
 | D2 | D Kafka | Cliente Kafka compartido: config local y Event Hubs (SASL) sin cambiar código | 3 | ✅ Listo | 2 | 868mvty03 | spec §9 | 0.2 | — |
 | D3 | D Kafka | Consumidor base: idempotencia por `eventId`, 3 reintentos con backoff, DLQ con error | 5 | ✅ Listo | 2 | 868mvty09 | spec §5 | D2, B1 | — |
 | D4 | D Kafka | Consumidor `projector`: proyección de lote y ranking en PostgreSQL | 5 | ✅ Listo | 2 | 868mvty0d | spec §4, §5 | D3, A2 | — |
-| D5 | D Kafka | Consumidor `notifier`: publica a las subscriptions de GraphQL | 3 | ⬜ Pendiente | 2 | 868mvty0f | spec §4 | D3 | — |
-| D6 | D Kafka | Consumidor `auditor`: bitácora append-only | 3 | ⬜ Pendiente | 2 | 868mvty0k | spec §4 | D3 | — |
+| D5 | D Kafka | Consumidor `notifier`: publica a las subscriptions de GraphQL | 3 | ✅ Listo | 2 | 868mvty0f | spec §4 | D3 | — |
+| D6 | D Kafka | Consumidor `auditor`: bitácora append-only | 3 | ✅ Listo | 2 | 868mvty0k | spec §4 | D3 | — |
 | D7 | D Kafka | Endpoint administrativo para reprocesar el DLQ | 3 | ⬜ Pendiente | 2 | 868mvty0q | spec §5 | D3, C1 | — |
 | D8 | D Kafka | Cierre de lotes: quién emite `LotClosed`/`AuctionClosed` y `LotExtended` al llegar `closesAt` | 5 | ⛔ Bloqueado | 3 | | spec §2, §3 | D1, A1 | Q3: mecanismo de cierre (scheduler) no definido |
 | E1 | E GraphQL | Servidor GraphQL de lectura: auction, lot, lotBids (cursor), activeLots | 5 | ⬜ Pendiente | 2 | 868mvty0w | spec §7 | B1, C1 | — |
@@ -77,7 +77,7 @@ B1 (5 h), B2 (3 h), C1 (5 h), C2 (5 h), D1 (5 h), D2 (3 h), D3 (5 h), D4 (5 h), 
 | F5 | F Seguridad | SECURITY.md con el mapeo OWASP Top 10 | 2 | ⛔ Bloqueado | 3 | | spec §8 | F1, F2, F3, F4, F6 | Cascada de Q2/Q4/Q5 |
 | F6 | F Seguridad | `npm audit` en CI y actualizaciones automáticas de dependencias | 1 | ⬜ Pendiente | 2 | 868mvty1c | spec §8 | 0.3 | — |
 | G1 | G Calidad | Pruebas de integración con PostgreSQL y Kafka reales (testcontainers) | 5 | ✅ Listo | 2 | 868mvty1g | spec §10 | 0.2, B1 | — |
-| G2 | G Calidad | Prueba de reproceso: N eventos, borrar proyección, reconstruir, estado idéntico | 3 | ⬜ Pendiente | 2 | 868mvty1q | spec §5, §10 | D4, G1 | — |
+| G2 | G Calidad | Prueba de reproceso: N eventos, borrar proyección, reconstruir, estado idéntico | 3 | ✅ Listo | 2 | 868mvty1q | spec §5, §10 | D4, G1 | — |
 | H1 | H Azure | Bicep: Event Hubs, ACR, PostgreSQL Flexible, Key Vault, Container Apps | 8 | ⛔ Bloqueado | 3 | | spec §9 | 0.2 | Q1: suscripción Azure y presupuesto |
 | H2 | H Azure | Dockerfiles de API, relay y consumidores | 3 | ⬜ Pendiente | 2 | 868mvty1v | spec §9 | C1, D1, D4 | — |
 | H3 | H Azure | Despliegue de imágenes a Container Apps (pipeline) | 3 | ⛔ Bloqueado | 3 | | spec §9 | H1, H2 | Cascada de Q1 |
