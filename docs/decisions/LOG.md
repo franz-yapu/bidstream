@@ -86,3 +86,8 @@ B1 implementado: `@bidstream/db` (Prisma 7.10.1), migración `0001_init`, 12 pru
 **Fecha:** 2026-11-12 · **Fuente:** Claude · **Estado:** activa
 
 C1 implementado: `apps/api` (Fastify 5 + Zod), `/v1/health`, `/v1/docs`, errores `problem+json` con URN, `x-request-id` validado. Arranque: `npm run dev:api` (puerto 3000 por defecto). Las rutas de C2/C3 se añaden como plugins bajo `/v1` en `buildApp`.
+
+## DEC-016 — B1, C1 y D2 completados
+**Fecha:** 2026-11-12 · **Fuente:** Claude · **Estado:** activa
+
+B1, C1 y D2 fusionados (PR #8, #9, #10) y en `completadas` en ClickUp. Estado: 10 de 39 tareas, 32 h de 152. 134 tests unitarios y 16 de integración. Siguiente en la Ola 2 (dependencias ya cumplidas): B2 (repositorios Prisma y outbox), D3 (consumidor base), G1 (utilidades de integración), F4, F6, H2 después. Camino crítico: B2 → C2 → D1 → D4.
