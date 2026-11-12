@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **D2** (`868mvty03`, https://app.clickup.com/t/868mvty03).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Borrador
+- **Estado:** Implementado (2026-11-12) — aprobado el mismo día
 - **Versión:** 1.0 · **Fecha:** 2026-11-12
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §9 (Event Hubs expone un endpoint compatible con el protocolo Kafka; el mismo código corre contra Kafka local y Azure), §4 (topics, grupos), §5 (al menos una vez)
@@ -135,12 +135,12 @@ Antes de escribir el resto: instalar la librería en `node:22` (glibc y slim) y 
 
 ## 5 · Definition of Done
 
-- [ ] SDD en `docs/sdd/D2/SDD.md`, Estado = Aprobado
-- [ ] *Spike* de §2.4 hecho y resultado registrado
-- [ ] Productor y consumidor funcionan contra `make up` con el mismo código que usará Event Hubs (solo cambian variables de entorno)
-- [ ] Tests del §4 en verde; `npm run check` en verde
-- [ ] Librería elegida y su justificación en `LOG.md`
-- [ ] PR con CI verde y fusionado
+- [x] SDD en `docs/sdd/D2/SDD.md`, Estado = Aprobado
+- [x] *Spike* de §2.4 hecho y resultado registrado
+- [x] Productor y consumidor funcionan contra `make up` con el mismo código que usará Event Hubs (solo cambian variables de entorno)
+- [x] Tests del §4 en verde; `npm run check` en verde
+- [x] Librería elegida y su justificación en `LOG.md`
+- [x] PR con CI verde y fusionado
 
 ---
 
@@ -160,3 +160,15 @@ Antes de escribir el resto: instalar la librería en `node:22` (glibc y slim) y 
 1. **Librería:** ¿`@confluentinc/kafka-javascript` (propuesta) o `@platformatic/kafka` (JS puro, sin binarios)? Si prefieres evitar el binario nativo, la segunda es la opción; el resto del SDD no cambia gracias a la capa propia.
 2. ¿El valor del mensaje va como JSON simple (propuesta) o con una cabecera de versión de esquema además de `version` en el sobre? Propuesta: JSON simple, `version` ya viaja en el evento.
 3. ¿Se publica `bidstream.commands.bid` con este mismo paquete? Depende de Q2 (autoridad de la puja); por ahora `TOPICS.commandsBid` solo se define.
+
+---
+
+## Changelog de implementación
+
+- **Implementado (2026-11-12)** con `@confluentinc/kafka-javascript` 1.11.0 (respuesta §7 #1 aprobada).
+- **Resultado del *spike* (§2.4):** en `node:22-slim` el binario precompilado se descarga y la librería carga (instalación en 11 s). En **Node 26** no existe binario precompilado y la compilación desde fuente **falló** tras ~9 minutos. Consecuencia: el proyecto exige Node 22 (`.nvmrc`, `engines` y CI ya lo fijan); en la máquina de desarrollo se instaló Node 22 con nvm. Con Node 22 la instalación tarda 3,6 s.
+- **Descubierto al integrar:** `consumer.stop()` está declarado pero **no implementado** en esta librería (lanza "Not implemented"); `disconnect()` detiene el consumo de forma ordenada, y es lo que usa `KafkaConsumer.disconnect()`.
+- Añadido `ProducerOptions.eventsTopic` (por defecto `bidstream.events.lot`) para que las pruebas usen un topic propio sin ensuciar el log de retención ilimitada.
+- Añadido el script `test:integration` y `vitest.integration.config.ts` (compartido con B1); `test` ya no ejecuta `*.int.test.ts`. El script `typecheck` raíz recorre ahora todos los workspaces.
+- Tests: 6 unit (config/topics) y 4 de integración contra el Kafka de `make up` (clave y cabeceras; orden por partición y grupos independientes; redelivery sin commit; topic inexistente). Conexión real a Event Hubs: pendiente de H1.
+- **Corregido tras la primera ejecución de la CI:** `npm run check` hacía typecheck antes de compilar y `@bidstream/kafka` no encontraba `@bidstream/domain` (su `dist/` no existía en un clon limpio; en local sí por builds anteriores). Ahora `check` es `build → typecheck → lint → format:check → test`.

@@ -71,3 +71,8 @@ Ola 1 terminada: 0.1, 0.2, 0.3, 0.4, A1, A2, A3 (19 h). CI verde, `main` protegi
 **Fecha:** 2026-11-12 · **Fuente:** usuario (pidió los SDD), Claude · **Estado:** activa (pendiente de respuesta)
 
 SDD en borrador: `docs/sdd/B1`, `C1` y `D2`. Hallazgos sobre la spec §6: (1) `ProcessedEvent` con `eventId @id` más `@@unique([eventId, consumer])` impide que dos consumidores registren el mismo evento; se corrige con clave primaria compuesta; (2) el índice único parcial "dos lotes adjudicados" es redundante con la clave primaria de `Lot`; se propone `Bid.awarded` + índice único parcial por lote. Decisiones propuestas: Prisma 7.10.1 en `packages/db`; Fastify 5 + Zod + `problem+json` en `apps/api`; `@confluentinc/kafka-javascript` en `packages/kafka` (`kafkajs` sin mantenimiento desde 2023). Preguntas: ver §7 de cada SDD.
+
+## DEC-013 — SDD de B1, C1 y D2 aprobados con las propuestas; D2 implementado
+**Fecha:** 2026-11-12 · **Fuente:** usuario · **Estado:** activa
+
+Aprobados con las propuestas de Claude: (B1) `Bid.awarded` + índice único parcial, `ProcessedEvent` con clave compuesta, cliente Prisma generado en `postinstall` sin versionar, `snake_case`; (C1) Fastify, `problem+json`, `/v1/docs` también en producción, GraphQL en `apps/graphql`; (D2) `@confluentinc/kafka-javascript`. D2 implementado. **Hallazgo:** esa librería no compila en Node 26 (sin binario precompilado, la compilación falla) y funciona con el binario precompilado en Node 22; el proyecto usa Node 22 y no debe subirse a 26 sin repetir el spike. `consumer.stop()` no está implementado.

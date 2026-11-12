@@ -8,7 +8,7 @@ Especificación: [`docs/product/bidstream_spec.md`](docs/product/bidstream_spec.
 ## Desarrollo
 
 ```bash
-nvm use        # Node 22
+nvm use        # Node 22 (obligatorio: el cliente de Kafka no compila en Node 26)
 npm ci
 npm run check  # typecheck + lint + formato + tests + build
 ```

@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **C1** (`868mvtxzn`, https://app.clickup.com/t/868mvtxzn).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Borrador
+- **Estado:** Aprobado (2026-11-12)
 - **Versión:** 1.0 · **Fecha:** 2026-11-12
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §7 (REST de comandos, `/v1/health`, `/v1/docs`), §8 A03/A05, §5 (arquitectura)

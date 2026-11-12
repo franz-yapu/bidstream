@@ -18,9 +18,10 @@ Spec normativa: `docs/product/bidstream_spec.md`. PRD/alcance/reglas en `docs/pr
 
 ## Comandos
 
-- `npm ci` instala; `npm run check` = typecheck + lint + format:check + test + build (quality gate).
+- `npm ci` instala; `npm run check` = build + typecheck + lint + format:check + test (quality gate). El build va primero: los paquetes se resuelven entre sí desde `dist/`.
 - ESM con NodeNext: los imports relativos llevan extensión `.js` (`import { x } from './x.js'`).
 - `packages/domain` no puede importar infraestructura (regla de ESLint, ver `docs/do-not-touch.md`).
 - `make up` levanta Kafka (apache/kafka 4.3.2, KRaft) y PostgreSQL 16 y crea los topics; `make verify` los comprueba; `make reset` borra datos.
 - Desde el host: `KAFKA_BROKERS=localhost:9092`; desde contenedores: `kafka:19092`.
 - La CI (`.github/workflows/ci.yml`) ejecuta `npm run check` en Node 22; las acciones se fijan por SHA de commit. `main` se cambia solo por PR.
+- Usar **Node 22** (`nvm use`): `@confluentinc/kafka-javascript` no compila en Node 26. `npm run test:integration` (requiere `make up`) corre los `*.int.test.ts`.
