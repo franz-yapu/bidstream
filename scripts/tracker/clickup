@@ -1,0 +1,497 @@
+#!/usr/bin/env python3
+"""Mini CLI para listar, crear y actualizar tareas de ClickUp.
+
+Lee config desde un archivo .clickup.json (buscado desde el cwd hacia arriba,
+o desde $CLICKUP_CONFIG). Permite alias para proyectos (space/folder/list) y
+personas, para filtrar con nombres en vez de IDs.
+
+Comandos:
+  clickup spaces                         Lista los spaces (proyectos) del workspace
+  clickup lists  [--space ID]            Lista folders y listas (de un space o de todos)
+  clickup members                        Lista miembros del workspace (id + nombre)
+  clickup projects                       Lista los alias de proyecto (space/folder/list) de la config
+  clickup boards                         Lista los alias de board/space definidos en la config
+  clickup people                         Lista los alias de persona definidos en la config
+  clickup defaults                       Muestra las reglas por defecto activas (de 'defaults')
+  clickup tasks  [filtros]               Lista tareas con filtros
+  clickup create --list ID --file F.json Crea una tarea desde un JSON de body
+  clickup update ID --file F.json        Pisa name/markdown_content de una tarea existente
+  clickup set ID [--status .. --percent N --comment ".."]   Cambia estado/progreso/comenta
+
+Reglas por defecto (bloque "defaults" del .clickup.json):
+  Si no pasás flags, 'tasks' aplica estas reglas. Cada dimensión se sobreescribe
+  con su flag, o se ignoran todas con --no-defaults. Claves soportadas:
+    assignee        me | all | <alias> | <user_id>
+    board           alias(es) de board/space  (string o lista)  -> filtra por space
+    project         valor(es) del custom field "Project" (ej: nodo) -> --cf project=
+    status          estado(s) a listar  (string o lista)
+    priority        urgent|high|normal|low  (string o lista)
+    include_closed  true|false
+
+Filtros de 'tasks':
+  --board NAME     alias de board/space de la config, o space_id (repetible)
+  --project NAME   alias de proyecto (space/folder/list) de la config (repetible)
+  --assignee VAL   me | all | <alias> | <user_id>   (def: config o 'me')
+  --author VAL     alias/id de quien CREO la tarea (repetible)
+  --space ID       filtra por space     (repetible)
+  --folder ID      filtra por folder    (repetible)
+  --list ID        filtra por lista     (repetible)
+  --status STR     filtra por estado    (repetible)
+  --priority STR   urgent|high|normal|low (repetible)
+  --cf name=value  custom field client-side (ej: project=nodo) (repetible)
+  --all-states     incluye tareas cerradas
+  --no-defaults    ignora las reglas 'defaults' de la config
+  --json           salida cruda en JSON
+
+'create':
+  --list ID_o_ALIAS   list_id directo, o alias de config.projects con 'list' definido
+  --file PATH         JSON del body (name, markdown_content, assignees, custom_fields...)
+                       ver _templates/ticket-card.template.json
+
+Ej:
+  clickup tasks                          # aplica las reglas 'defaults' de la config
+  clickup tasks --board main --status backlog
+  clickup create --list backlog --file card-01.json
+  clickup set 86e1xtptg --status "in progress" --percent 50
+"""
+import sys, os, json, argparse, urllib.request, urllib.parse, urllib.error
+
+TOKEN_FILE = os.path.expanduser(os.environ.get("CLICKUP_TOKEN_FILE", "~/.config/clickup-token"))
+API = "https://api.clickup.com/api/v2"
+
+
+def find_config():
+    env = os.environ.get("CLICKUP_CONFIG")
+    if env and os.path.isfile(env):
+        return env
+    d = os.getcwd()
+    while True:
+        p = os.path.join(d, ".clickup.json")
+        if os.path.isfile(p):
+            return p
+        nd = os.path.dirname(d)
+        if nd == d:
+            return None
+        d = nd
+
+
+def load_config():
+    p = find_config()
+    if not p:
+        return {}
+    with open(p) as f:
+        return json.load(f)
+
+
+CFG = load_config()
+TEAM_ID = os.environ.get("CLICKUP_TEAM_ID") or CFG.get("team_id")
+
+
+def require_team_id():
+    if not TEAM_ID:
+        print("ERROR: falta team_id. Definilo en .clickup.json o $CLICKUP_TEAM_ID.", file=sys.stderr)
+        sys.exit(1)
+    return TEAM_ID
+
+
+def token():
+    if not os.path.isfile(TOKEN_FILE):
+        print(f"ERROR: no existe {TOKEN_FILE}. Generá un token personal en ClickUp "
+              f"(avatar → Settings → Apps → API Token) y guardalo ahí (chmod 600).", file=sys.stderr)
+        sys.exit(1)
+    with open(TOKEN_FILE) as f:
+        return f.read().strip()
+
+
+def api(path, method="GET", body=None, params=None):
+    url = f"{API}/{path}"
+    if params:
+        url += "?" + "&".join(f"{urllib.parse.quote(k)}={urllib.parse.quote(str(v))}" for k, v in params)
+    data = json.dumps(body).encode() if body is not None else None
+    headers = {"Authorization": token()}
+    if data is not None:
+        headers["Content-Type"] = "application/json"
+    req = urllib.request.Request(url, data=data, method=method, headers=headers)
+    with urllib.request.urlopen(req) as r:
+        txt = r.read().decode()
+        return json.loads(txt) if txt.strip() else {}
+
+
+def get(path, params=None):
+    return api(path, params=params)
+
+
+def whoami():
+    return str(get("user")["user"]["id"])
+
+
+def as_list(v):
+    """Normaliza un valor de config a lista: None->[], str->[str], list->list."""
+    if v is None:
+        return []
+    return v if isinstance(v, list) else [v]
+
+
+def resolve_person(val):
+    """me -> mi id, all -> None, alias -> id de config.people, si no, asume id numerico."""
+    if val == "all":
+        return None
+    people = CFG.get("people", {})
+    if val in people:
+        v = people[val]
+        return whoami() if v == "me" or val == "me" else str(v)
+    if val == "me":
+        return whoami()
+    return str(val)
+
+
+def _cf_value_labels(cf):
+    """Devuelve el/los label(s) actuales de un custom field de una tarea (lista, en minúsculas)."""
+    val = cf.get("value")
+    if val is None:
+        return []
+    opts = cf.get("type_config", {}).get("options", [])
+    by_idx = {o.get("orderindex"): o.get("name") or o.get("label") for o in opts}
+    by_id = {o.get("id"): o.get("name") or o.get("label") for o in opts}
+    out = []
+    if cf.get("type") == "drop_down":
+        lbl = by_idx.get(val) or by_id.get(val)
+        if lbl: out.append(lbl)
+    elif cf.get("type") == "labels":
+        for v in (val if isinstance(val, list) else [val]):
+            lbl = by_id.get(v) or by_idx.get(v)
+            if lbl: out.append(lbl)
+    else:
+        out.append(str(val))
+    return [str(x).lower() for x in out]
+
+
+def _cf_matches(task, field_id, want_lower):
+    for cf in task.get("custom_fields", []):
+        if cf.get("id") == field_id:
+            return want_lower in _cf_value_labels(cf)
+    return False
+
+
+def cmd_spaces(args):
+    for s in get(f"team/{require_team_id()}/space", [("archived", "false")]).get("spaces", []):
+        print(f"{s['id']:14}  {s['name']}")
+
+
+def cmd_members(args):
+    for m in get(f"team/{require_team_id()}")["team"]["members"]:
+        u = m["user"]
+        print(f"{str(u['id']):12}  {u.get('username') or '-':30}  {u.get('email','')}")
+
+
+def cmd_projects(args):
+    pr = CFG.get("projects", {})
+    if not pr:
+        print("(sin proyectos definidos en .clickup.json)")
+        return
+    for name, v in pr.items():
+        kind = "space" if "space" in v else "folder" if "folder" in v else "list"
+        print(f"{name:14}  {kind}:{v.get(kind):14}  {v.get('desc','')}")
+
+
+def cmd_people(args):
+    pe = CFG.get("people", {})
+    if not pe:
+        print("(sin personas definidas en .clickup.json)")
+        return
+    for name, v in pe.items():
+        print(f"{name:16}  {v}")
+
+
+def cmd_boards(args):
+    bo = CFG.get("boards", {})
+    if not bo:
+        print("(sin boards/spaces definidos en .clickup.json)")
+        return
+    for name, v in bo.items():
+        print(f"{name:18}  space:{v}")
+
+
+def cmd_defaults(args):
+    print(f"config: {find_config() or '(ninguno encontrado)'}")
+    d = CFG.get("defaults", {})
+    if not d:
+        print("(sin 'defaults' en .clickup.json)")
+        return
+    print("Reglas por defecto para 'clickup tasks' (los flags las sobreescriben; --no-defaults las ignora):")
+    for k in ("assignee", "board", "folder", "list", "project", "status", "priority", "include_closed"):
+        if k in d:
+            print(f"  {k:14} {d[k]}")
+
+
+def cmd_lists(args):
+    spaces = args.space or [s["id"] for s in get(f"team/{require_team_id()}/space", [("archived", "false")])["spaces"]]
+    for sid in spaces:
+        sp = get(f"space/{sid}")
+        print(f"\n# SPACE {sid}  {sp.get('name','')}")
+        for l in get(f"space/{sid}/list", [("archived", "false")]).get("lists", []):
+            print(f"  list {l['id']:14}  {l['name']}   (sin folder)")
+        for fo in get(f"space/{sid}/folder", [("archived", "false")]).get("folders", []):
+            print(f"  FOLDER {fo['id']:14}  {fo['name']}")
+            for l in fo.get("lists", []):
+                print(f"     list {l['id']:14}  {l['name']}")
+
+
+def cmd_tasks(args):
+    defaults = CFG.get("defaults", {})
+    boards = CFG.get("boards", {})
+    use_defaults = not args.no_defaults
+    params = [("subtasks", "true"), ("order_by", "updated")]
+
+    include_closed = args.all_states or (use_defaults and defaults.get("include_closed", False))
+    if not include_closed:
+        params.append(("include_closed", "false"))
+
+    def resolve_board(b):
+        """alias de config.boards -> space_id; si no, asume id directo."""
+        return str(boards.get(b, b))
+
+    # --- UBICACION: --board (space) / --space / --folder / --list / --project ---
+    spaces = list(args.space or [])
+    folders = list(args.folder or [])
+    lists = list(args.list or [])
+    for b in args.board or []:
+        spaces.append(resolve_board(b))
+    projects = CFG.get("projects", {})
+    for name in args.project or []:
+        if name not in projects:
+            print(f"ERROR: proyecto '{name}' no definido en .clickup.json (ver: clickup projects)", file=sys.stderr)
+            sys.exit(1)
+        v = projects[name]
+        if "space" in v: spaces.append(v["space"])
+        if "folder" in v: folders.append(v["folder"])
+        if "list" in v: lists.append(v["list"])
+
+    # default board (space) / folder / list si el usuario no pasó NINGÚN filtro de ubicación
+    location_given = bool(args.board or args.space or args.folder or args.list or args.project)
+    if use_defaults and not location_given:
+        for b in as_list(defaults.get("board")):
+            spaces.append(resolve_board(b))
+        for f in as_list(defaults.get("folder")):
+            folders.append(str(f))
+        for l in as_list(defaults.get("list")):
+            lists.append(str(l))
+
+    # asignacion
+    if args.assignee is not None:
+        assignee = args.assignee
+    elif use_defaults:
+        assignee = defaults.get("assignee", "me")
+    else:
+        assignee = "me"
+    aid = resolve_person(assignee)
+    if aid is not None:
+        params.append(("assignees[]", aid))
+
+    for s in spaces:  params.append(("space_ids[]", s))
+    for f in folders: params.append(("project_ids[]", f))
+    for l in lists:   params.append(("list_ids[]", l))
+
+    # --- ESTADOS: --status o default ---
+    statuses = list(args.status or [])
+    if use_defaults and not statuses:
+        statuses = as_list(defaults.get("status"))
+    for st in statuses: params.append(("statuses[]", st))
+
+    # paginacion
+    tasks, page = [], 0
+    while True:
+        d = get(f"team/{require_team_id()}/task", params + [("page", str(page))])
+        batch = d.get("tasks", [])
+        tasks += batch
+        if len(batch) < 100:
+            break
+        page += 1
+
+    # filtros client-side
+    priorities = list(args.priority or [])
+    if use_defaults and not priorities:
+        priorities = as_list(defaults.get("priority"))
+    if priorities:
+        want = set(x.lower() for x in priorities)
+        tasks = [t for t in tasks if ((t.get("priority") or {}).get("priority") or "").lower() in want]
+    if args.author:
+        ids = {resolve_person(a) for a in args.author}
+        tasks = [t for t in tasks if str((t.get("creator") or {}).get("id")) in ids]
+
+    # filtro por custom field (client-side): --cf name=value (+ default project)
+    cf_specs = list(args.cf or [])
+    if use_defaults and not cf_specs:
+        for v in as_list(defaults.get("project")):
+            cf_specs.append(f"project={v}")
+    for spec in cf_specs:
+        if "=" not in spec:
+            print(f"ERROR: --cf espera 'name=value', recibí '{spec}'", file=sys.stderr); sys.exit(1)
+        name, want = spec.split("=", 1)
+        fid = CFG.get("custom_fields", {}).get(name, name)  # alias o field_id directo
+        want_l = want.strip().lower()
+        tasks = [t for t in tasks if _cf_matches(t, fid, want_l)]
+
+    if args.json:
+        print(json.dumps(tasks, indent=2, ensure_ascii=False))
+        return
+
+    print(f"TOTAL: {len(tasks)}\n")
+    for t in tasks:
+        st = t.get("status", {}).get("status", "?")
+        pr = (t.get("priority") or {}).get("priority", "-")
+        lst = (t.get("list") or {}).get("name", "")
+        fol = (t.get("folder") or {}).get("name", "")
+        who = ", ".join(a.get("username", "?") for a in t.get("assignees", []))
+        print(f"[{t['id']}] {t['name']}")
+        print(f"    estado: {st} | prio: {pr} | lista: {lst}{(' / '+fol) if fol else ''}")
+        print(f"    asignados: {who or '-'}")
+        print(f"    {t.get('url')}")
+        print()
+
+
+def cmd_create(args):
+    with open(args.file) as f:
+        body = json.load(f)
+
+    list_id = args.list
+    projects = CFG.get("projects", {})
+    if list_id in projects:
+        proj = projects[list_id]
+        if "list" not in proj:
+            print(f"ERROR: el proyecto '{args.list}' no tiene 'list' en la config", file=sys.stderr)
+            sys.exit(1)
+        list_id = proj["list"]
+
+    result = api(f"list/{list_id}/task", method="POST", body=body)
+    print(f"OK creado [{result.get('id')}] {result.get('name')}")
+    if result.get("url"):
+        print("  ", result["url"])
+
+
+def cmd_update(args):
+    with open(args.file) as f:
+        body = json.load(f)
+
+    fields = {k: v for k, v in body.items() if k in ("name", "markdown_content") and not k.startswith("_")}
+    if not fields:
+        print("ERROR: el JSON no tiene 'name' ni 'markdown_content' para actualizar", file=sys.stderr)
+        sys.exit(1)
+
+    result = api(f"task/{args.task}", method="PUT", body=fields)
+    print(f"OK actualizado [{args.task}] {result.get('name')}")
+    if result.get("url"):
+        print("  ", result["url"])
+
+
+def cmd_set(args):
+    tid = args.task
+    task = get(f"task/{tid}")
+    name = task.get("name", "")
+    changed = []
+
+    # --- estado ---
+    if args.status:
+        list_id = (task.get("list") or {}).get("id")
+        statuses = []
+        if list_id:
+            ld = get(f"list/{list_id}")
+            statuses = [s.get("status") for s in ld.get("statuses", []) if s.get("status")]
+        match = next((s for s in statuses if s.lower() == args.status.lower()), None)
+        if statuses and not match:
+            print(f"ERROR: estado '{args.status}' no existe en esta lista.\n"
+                  f"       Opciones: {', '.join(statuses)}", file=sys.stderr)
+            sys.exit(1)
+        target = match or args.status
+        api(f"task/{tid}", method="PUT", body={"status": target})
+        changed.append(f"estado → {target}")
+
+    # --- porcentaje (campo manual_progress) ---
+    if args.percent is not None:
+        if not (0 <= args.percent <= 100):
+            print("ERROR: --percent debe estar entre 0 y 100", file=sys.stderr)
+            sys.exit(1)
+        field = next((cf for cf in task.get("custom_fields", [])
+                      if cf.get("type") == "manual_progress"), None)
+        if not field:
+            print("ERROR: la tarjeta no tiene un campo de progreso (manual_progress)",
+                  file=sys.stderr)
+            sys.exit(1)
+        api(f"task/{tid}/field/{field['id']}", method="POST",
+            body={"value": {"current": args.percent}})
+        changed.append(f"progreso → {args.percent}%")
+
+    # --- comentario ---
+    if args.comment:
+        api(f"task/{tid}/comment", method="POST",
+            body={"comment_text": args.comment, "notify_all": False})
+        changed.append(f"comentario: {args.comment}")
+
+    if not changed:
+        print("Nada que hacer. Usa --status, --percent y/o --comment.", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"OK [{tid}] {name}")
+    for c in changed:
+        print("  ✓", c)
+    if task.get("url"):
+        print("  ", task["url"])
+
+
+def main():
+    p = argparse.ArgumentParser(prog="clickup", add_help=True)
+    sub = p.add_subparsers(dest="cmd", required=True)
+    sub.add_parser("spaces").set_defaults(func=cmd_spaces)
+    sub.add_parser("members").set_defaults(func=cmd_members)
+    sub.add_parser("projects").set_defaults(func=cmd_projects)
+    sub.add_parser("people").set_defaults(func=cmd_people)
+    sub.add_parser("boards", help="lista los alias de board/space de la config").set_defaults(func=cmd_boards)
+    sub.add_parser("defaults", help="muestra las reglas por defecto activas").set_defaults(func=cmd_defaults)
+
+    pl = sub.add_parser("lists")
+    pl.add_argument("--space", action="append")
+    pl.set_defaults(func=cmd_lists)
+
+    pt = sub.add_parser("tasks")
+    pt.add_argument("--project", action="append")
+    pt.add_argument("--board", action="append", help="space por alias de config.boards o id")
+    pt.add_argument("--assignee", default=None)
+    pt.add_argument("--author", action="append")
+    pt.add_argument("--space", action="append")
+    pt.add_argument("--folder", action="append")
+    pt.add_argument("--list", action="append")
+    pt.add_argument("--status", action="append")
+    pt.add_argument("--priority", action="append")
+    pt.add_argument("--cf", action="append", help="custom field: name=value (ej: project=nodo)")
+    pt.add_argument("--all-states", action="store_true")
+    pt.add_argument("--no-defaults", action="store_true", help="ignora las reglas 'defaults' del .clickup.json")
+    pt.add_argument("--json", action="store_true")
+    pt.set_defaults(func=cmd_tasks)
+
+    pc = sub.add_parser("create", help="crea una tarea desde un JSON de body (ver _templates/ticket-card.template.json)")
+    pc.add_argument("--list", required=True, help="list_id directo, o alias de config.projects con 'list' definido")
+    pc.add_argument("--file", required=True, help="path al JSON del body (name, markdown_content, assignees, custom_fields...)")
+    pc.set_defaults(func=cmd_create)
+
+    pu = sub.add_parser("update", help="pisa name/markdown_content de una tarea existente desde un JSON")
+    pu.add_argument("task", help="ID de la tarea (ej: 868m1ke4b)")
+    pu.add_argument("--file", required=True, help="JSON con 'name' y/o 'markdown_content' nuevos")
+    pu.set_defaults(func=cmd_update)
+
+    ps = sub.add_parser("set", help="cambia estado/porcentaje y/o agrega comentario a una tarea")
+    ps.add_argument("task", help="ID de la tarea (ej: 86e1xtptg)")
+    ps.add_argument("--status", help="nuevo estado (case-insensitive, validado contra la lista)")
+    ps.add_argument("--percent", type=int, help="porcentaje de progreso 0-100")
+    ps.add_argument("--comment", help="comentario de 1 línea de lo que se hizo")
+    ps.set_defaults(func=cmd_set)
+
+    args = p.parse_args()
+    try:
+        args.func(args)
+    except urllib.error.HTTPError as e:
+        print(f"ERROR HTTP {e.code}: {e.read().decode()[:300]}", file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

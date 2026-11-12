@@ -1,0 +1,24 @@
+{
+  "_comment": "Plantilla de config del adaptador clickup. Copiala a .clickup.json en la raíz del repo (o apuntá $CLICKUP_CONFIG a otro lado). El token NUNCA va acá: va en ~/.config/clickup-token (chmod 600), es personal, no se commitea.",
+
+  "team_id": "TU_TEAM_ID",
+
+  "boards": {
+    "main": "TU_SPACE_ID"
+  },
+
+  "projects": {
+    "backlog": { "list": "TU_LIST_ID_BACKLOG", "desc": "Backlog sin fecha" },
+    "sprint":  { "list": "TU_LIST_ID_SPRINT",  "desc": "Sprint vigente - actualizar cada iteración" }
+  },
+
+  "people": {
+    "me": "me"
+  },
+
+  "defaults": {
+    "assignee": "me",
+    "board": "main",
+    "include_closed": false
+  }
+}

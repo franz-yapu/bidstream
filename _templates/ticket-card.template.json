@@ -1,0 +1,7 @@
+{
+  "_comment": "Plantilla del cuerpo de un ticket, formato adaptador ClickUp. Si cambiás de tracker, ajustá la forma según ese adaptador (ver scripts/tracker/README.md).",
+  "name": "[TIPO] Módulo: descripción corta",
+  "markdown_content": "## Explicación\n\nPor qué importa esto, en un párrafo.\n\n## Qué construir\n\nEl comportamiento concreto. Citar rutas/funciones exactas del repo si ya existe un mecanismo reusable.\n\n## Orden de entregables (cada uno bloquea al siguiente)\n\n1. **SDD aprobado** — generado con el skill `write-sdd` en `docs/sdd/<ID>/SDD.md`. Nadie escribe código de este ticket hasta que el SDD tenga Estado = `Aprobado (fecha)`.\n2. **Implementación según ese SDD** — si algo no calza en el camino, se vuelve al SDD (revisión nueva versionada), no se improvisa por fuera de lo aprobado.\n3. **Tests del plan del §4 del SDD** — corriendo y en verde. Sin estos tests, el ticket no está terminado aunque el código funcione.\n4. **Quality gate del proyecto** (typecheck/lint/tests/build, lo que use el repo) en verde.\n\n## Definition of Done\n\n- [ ] SDD en `docs/sdd/<ID>/SDD.md`, Estado = Aprobado\n- [ ] Implementación completa según el SDD aprobado (sin desviaciones sin documentar)\n- [ ] Tests del §4 del SDD, todos en verde\n- [ ] Quality gate del proyecto en verde\n\n## Referencias\n\n- Backlog: tarea <ID>\n- Roadmap: <archivo>\n- SDD: docs/sdd/<ID>/SDD.md\n",
+  "assignees": [],
+  "custom_fields": []
+}
