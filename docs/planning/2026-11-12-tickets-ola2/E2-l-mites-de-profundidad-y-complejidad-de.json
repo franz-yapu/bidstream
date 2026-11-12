@@ -1,0 +1,8 @@
+{
+  "name": "[FEAT] GraphQL: Límites de profundidad y complejidad de consulta (3 h)",
+  "markdown_content": "## Explicación\n\nUna API GraphQL sin límites es una denegación de servicio esperando a ocurrir.\n\n## Qué construir\n\nLímite de profundidad máxima, cálculo de costo/complejidad por consulta y tope de `first`. Consultas que los exceden se rechazan con error claro. Valores configurables.\n\nDepende de: E1. Ya existen en `packages/domain`: contrato de eventos (`buildEvent`, `parseEvent`, `partitionKey`), reglas (`decideBid`, `evolveLot`…) y puertos con dobles en memoria; y `make up` para el entorno local.\n\n## Orden de entregables (cada uno bloquea al siguiente)\n\n1. **SDD aprobado** — generado con el skill `write-sdd` en `docs/sdd/E2/SDD.md`. Nadie escribe código de este ticket hasta que el SDD tenga Estado = `Aprobado (fecha)`.\n2. **Implementación según ese SDD** — si algo no calza en el camino, se vuelve al SDD (revisión nueva versionada), no se improvisa por fuera de lo aprobado.\n3. **Tests del plan del §4 del SDD** — corriendo y en verde. Sin estos tests, el ticket no está terminado aunque el código funcione.\n4. **Quality gate del proyecto** (typecheck/lint/tests/build, lo que use el repo) en verde.\n\n## Definition of Done\n\n- [ ] SDD en `docs/sdd/E2/SDD.md`, Estado = Aprobado\n- [ ] Implementación completa según el SDD aprobado (sin desviaciones sin documentar)\n- [ ] Tests del §4 del SDD, todos en verde\n- [ ] Quality gate del proyecto en verde\n\n## Referencias\n\n- Backlog: tarea E2\n- Roadmap: 2026-11-12 - Sprint-Roadmap.md\n- Spec: docs/product/bidstream_spec.md §7\n- SDD: docs/sdd/E2/SDD.md\n",
+  "assignees": [
+    114193632
+  ],
+  "custom_fields": []
+}
