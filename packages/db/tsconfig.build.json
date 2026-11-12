@@ -2,5 +2,6 @@
   "extends": "./tsconfig.json",
   "compilerOptions": { "noEmit": false, "composite": true, "rootDir": "src", "outDir": "dist" },
   "include": ["src"],
-  "exclude": ["src/**/*.test.ts", "src/**/*.int.test.ts"]
+  "exclude": ["src/**/*.test.ts", "src/**/*.int.test.ts"],
+  "references": [{ "path": "../domain/tsconfig.build.json" }]
 }

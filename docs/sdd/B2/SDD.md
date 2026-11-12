@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **B2** (`868mvtxzb`, https://app.clickup.com/t/868mvtxzb).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Aprobado (2026-11-12)
+- **Estado:** Implementado (2026-11-12) — aprobado el mismo día
 - **Versión:** 1.0 · **Fecha:** 2026-11-12
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §5 (outbox en la misma transacción que la validación), §6 (esquema)
@@ -122,11 +122,11 @@ Integración contra PostgreSQL de `make up` (base desechable; usa las utilidades
 
 ## 5 · Definition of Done
 
-- [ ] SDD en `docs/sdd/B2/SDD.md`, Estado = Aprobado
-- [ ] Repositorios y outbox implementan los puertos de A3 y se usan a través de `withTransaction`
-- [ ] El dominio sigue sin importar Prisma (ESLint)
-- [ ] Tests del §4 en verde (integración y unitarios); `npm run check` en verde
-- [ ] PR con CI verde y fusionado
+- [x] SDD en `docs/sdd/B2/SDD.md`, Estado = Aprobado
+- [x] Repositorios y outbox implementan los puertos de A3 y se usan a través de `withTransaction`
+- [x] El dominio sigue sin importar Prisma (ESLint)
+- [x] Tests del §4 en verde (integración y unitarios); `npm run check` en verde
+- [x] PR con CI verde y fusionado
 
 ---
 
@@ -146,3 +146,14 @@ Integración contra PostgreSQL de `make up` (base desechable; usa las utilidades
 1. ¿`OutboxMessage.id` = `eventId` (propuesta) o un UUID v7 nuevo? Con `eventId`, reintentar un comando no duplica el mensaje.
 2. ¿`withTransaction` en `@bidstream/db` (propuesta) o un puerto `UnitOfWork` en el dominio? Propuesta: en `db`; el dominio no necesita conocer transacciones.
 3. ¿Los métodos de consulta de pendientes del outbox (D1) van en este mismo repositorio o en el paquete del relay? Propuesta: en `@bidstream/db`, junto a `enqueue`, para que el SQL de la tabla viva en un solo sitio.
+
+---
+
+## Changelog de implementación
+
+- **Implementado (2026-11-12)** con las respuestas aprobadas de §7: `OutboxMessage.id = eventId`, `withTransaction` en `@bidstream/db`, y las consultas de pendientes del relay (D1) irán en este mismo paquete junto a `enqueue`.
+- Archivos en `packages/db/src/repositories/`: `mappers.ts`, `lot-repository.ts`, `auction-repository.ts`, `outbox.ts`, `transaction.ts`. `@bidstream/domain` pasó de dependencia de desarrollo a dependencia normal; el build del paquete referencia explícitamente al dominio.
+- `DbClient` es `Pick<PrismaClient, 'lot' | 'auction' | 'outboxMessage'>`: sirve igual el cliente normal que el de una transacción. `withTransaction` fija un tiempo máximo (5 s por defecto, configurable).
+- Pruebas (17 nuevas): 4 unitarias de conversión de `Decimal` y 14 de integración. Los estados leídos se comparan con `foldLot`/`evolveAuction` del mismo historial (abierto sin pujas, con pujas y extensión, cerrado con ganador, desierto); aislamiento por tenant; `openLotIds` solo con lotes abiertos de esa subasta; filas del outbox con `id = eventId`, `key = partitionKey` y payload igual al evento; duplicado rechazado; lote de eventos todo o nada; rollback del outbox si el trabajo lanza; y confirmación conjunta (desde otra conexión no se ve nada hasta el commit).
+- Mismo choque `dist`/`src` de `PrismaClient` que en G1: la prueba crea su cliente con `createPrismaClient` del propio paquete en lugar de usar el de `@bidstream/testing`.
+- Sigue sin resolverse a propósito la carrera entre pujas simultáneas (depende de Q2/C3).

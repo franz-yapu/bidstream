@@ -19,12 +19,12 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@bidstream/domain": "^0.0.0",
     "@prisma/adapter-pg": "^7.10.1",
     "@prisma/client": "^7.10.1",
     "pg": "^8.23.1"
   },
   "devDependencies": {
-    "@bidstream/domain": "^0.0.0",
     "@bidstream/testing": "^0.0.0",
     "@types/pg": "^8.23.1",
     "prisma": "^7.10.1"
