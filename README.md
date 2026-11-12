@@ -70,3 +70,14 @@ npm run dev:auditor    # opcional: Kafka → bitácora append-only (audit_log)
 ```
 
 Los comandos devuelven `201` al aceptarse; el estado aparece en la proyección cuando el relay y el `projector` procesan el evento (un `POST …/lots` inmediato tras crear la subasta puede dar `404` con `Retry-After`).
+
+## Reproceso: reconstruir la proyección desde el log
+
+El log de Kafka es la fuente de verdad; la proyección se puede borrar y reconstruir. Es lo que una cola no permite.
+
+```bash
+# detén el projector y ejecuta:
+npm run reprocess -w @bidstream/projector -- --yes
+```
+
+Borra `bid`, `lot` y `auction`, reposiciona el grupo `projector` a `earliest` y reconstruye mostrando el progreso. La prueba `reprocess.int.test.ts` demuestra que el estado final es idéntico, con uno o con varios consumidores en paralelo. Mientras reconstruye, las lecturas devuelven un estado parcial.

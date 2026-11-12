@@ -13,3 +13,10 @@ export {
   type IncomingMessage,
   type MessageHandler,
 } from './consumer.js';
+export {
+  createKafkaAdmin,
+  GroupNotEmptyError,
+  type ConsumerLag,
+  type GroupInfo,
+  type KafkaAdmin,
+} from './admin.js';
