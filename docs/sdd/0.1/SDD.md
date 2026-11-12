@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **0.1** (`868mvtfny`, https://app.clickup.com/t/868mvtfny).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Borrador
+- **Estado:** Aprobado (2026-11-12)
 - **Versión:** 1.0 · **Fecha:** 2026-11-12
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §1 (Node con TypeScript estricto, Clean Code, Agile), §10 (calidad, CI)
@@ -153,6 +153,6 @@ En `eslint.config.js`, para `packages/domain/**`: `no-restricted-imports` con la
 
 ## 7 · Preguntas abiertas
 
-1. ¿Se prefiere **pnpm** en lugar de npm? Se propone npm por simplicidad; no cambia nada más del diseño.
+1. ~~¿pnpm?~~ Resuelta 2026-11-12: se usa npm.
 2. ¿Se añade un paquete `packages/contracts` separado para los eventos (A2) o viven en `packages/domain`? Se decide en el SDD de A2; este ticket solo crea `domain`.
 3. ¿Repositorio en GitHub y nombre? No hay `remote` todavía; hace falta para el PR y la CI (0.3). Pendiente en `docs/decisions/LOG.md`.
