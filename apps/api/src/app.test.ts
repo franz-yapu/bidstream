@@ -4,9 +4,25 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { afterEach, describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import { API_PREFIX, buildApp } from './app.js';
+import { FixedClock, SequentialIdGenerator } from '@bidstream/domain';
+import type { PrismaClient } from '@bidstream/db';
 import { loadConfig } from './config.js';
+import { HeaderTenantResolver } from './tenant.js';
 
-const config = loadConfig({ LOG_LEVEL: 'silent', NODE_ENV: 'test' });
+const config = loadConfig({
+  LOG_LEVEL: 'silent',
+  NODE_ENV: 'test',
+  DATABASE_URL: 'postgresql://u:p@localhost:5432/d',
+});
+// Estas pruebas no tocan la base de datos: cualquier uso del cliente es un error.
+const noDb = new Proxy(
+  {},
+  {
+    get: () => {
+      throw new Error('esta prueba no debe usar la base de datos');
+    },
+  },
+) as unknown as PrismaClient;
 let app: FastifyInstance;
 
 // Rutas solo de prueba: ejercitan validación (con las primitivas del dominio) y el error no controlado.
@@ -28,7 +44,14 @@ const testRoutes: FastifyPluginAsyncZod = (instance) => {
 };
 
 function make(): FastifyInstance {
-  app = buildApp({ config });
+  app = buildApp({
+    config,
+    prisma: noDb,
+    clock: new FixedClock(new Date('2026-11-12T20:00:00.000Z')),
+    ids: new SequentialIdGenerator(),
+    tenantResolver: new HeaderTenantResolver(),
+    eventsTopic: 'bidstream.events.lot',
+  });
   void app.register(testRoutes, { prefix: API_PREFIX });
   return app;
 }

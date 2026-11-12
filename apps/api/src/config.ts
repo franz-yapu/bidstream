@@ -1,11 +1,31 @@
 import { z } from 'zod';
 
-const envSchema = z.object({
-  PORT: z.coerce.number().int().min(0).max(65535).default(3000),
-  HOST: z.string().min(1).default('0.0.0.0'),
-  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-  LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
-});
+const envSchema = z
+  .object({
+    PORT: z.coerce.number().int().min(0).max(65535).default(3000),
+    HOST: z.string().min(1).default('0.0.0.0'),
+    NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+    LOG_LEVEL: z
+      .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
+      .default('info'),
+    DATABASE_URL: z.string().min(1),
+    /**
+     * Cómo se obtiene el tenant. Hasta que F1 aporte autenticación solo existe `header`
+     * (`X-Tenant-Id`), que cualquiera puede falsificar: por eso está prohibido en producción.
+     */
+    TENANT_MODE: z.enum(['header']).default('header'),
+  })
+  .superRefine((env, ctx) => {
+    // Hoy el único modo es `header`; cuando F1 añada otro, la condición pasará a comprobar el modo.
+    if (env.NODE_ENV === 'production') {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['TENANT_MODE'],
+        message:
+          'el tenant por cabecera (X-Tenant-Id) no puede usarse en producción: requiere autenticación (F1)',
+      });
+    }
+  });
 
 export type Config = z.infer<typeof envSchema>;
 

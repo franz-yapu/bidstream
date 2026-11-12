@@ -9,6 +9,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./topics": {
+      "types": "./dist/topics.d.ts",
+      "default": "./dist/topics.js"
     }
   },
   "dependencies": {

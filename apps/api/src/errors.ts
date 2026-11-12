@@ -4,6 +4,8 @@ import {
   isResponseSerializationError,
 } from 'fastify-type-provider-zod';
 import { STATUS_CODES } from 'node:http';
+import { AuctionClosed, AuctionNotFound, InvalidCommand } from './commands/index.js';
+import { ProblemError } from './problem.js';
 
 /** Cuerpo de error RFC 9457 (`application/problem+json`). Nunca incluye trazas ni detalles internos. */
 export interface ProblemDetails {
@@ -17,12 +19,15 @@ export interface ProblemDetails {
 
 const PROBLEM_TYPES: Readonly<Record<number, { type: string; title: string }>> = {
   400: { type: 'urn:bidstream:problem:bad-request', title: 'Solicitud inválida' },
+  401: { type: 'urn:bidstream:problem:unauthorized', title: 'No autenticado' },
   404: { type: 'urn:bidstream:problem:not-found', title: 'Recurso no encontrado' },
+  409: { type: 'urn:bidstream:problem:conflict', title: 'Conflicto con el estado actual' },
   413: { type: 'urn:bidstream:problem:payload-too-large', title: 'Cuerpo demasiado grande' },
   415: {
     type: 'urn:bidstream:problem:unsupported-media-type',
     title: 'Tipo de contenido no soportado',
   },
+  422: { type: 'urn:bidstream:problem:business-rule', title: 'Regla de negocio incumplida' },
   500: { type: 'urn:bidstream:problem:internal-error', title: 'Error interno' },
 };
 
@@ -30,7 +35,11 @@ function sendProblem(
   request: FastifyRequest,
   reply: FastifyReply,
   status: number,
-  extra: Pick<ProblemDetails, 'detail' | 'errors'> & { type?: string; title?: string } = {},
+  extra: Pick<ProblemDetails, 'detail' | 'errors'> & {
+    type?: string;
+    title?: string;
+    headers?: Readonly<Record<string, string>>;
+  } = {},
 ): FastifyReply {
   const known = PROBLEM_TYPES[status];
   const body: ProblemDetails = {
@@ -41,6 +50,7 @@ function sendProblem(
     ...(extra.detail === undefined ? {} : { detail: extra.detail }),
     ...(extra.errors === undefined ? {} : { errors: extra.errors }),
   };
+  for (const [name, value] of Object.entries(extra.headers ?? {})) void reply.header(name, value);
   return reply.code(status).type('application/problem+json').send(body);
 }
 
@@ -57,6 +67,27 @@ export function registerErrorHandlers(app: FastifyInstance): void {
   );
 
   app.setErrorHandler((error: FastifyError, request, reply) => {
+    if (error instanceof ProblemError) {
+      return sendProblem(request, reply, error.status, {
+        type: error.type,
+        title: error.title,
+        headers: error.headers,
+        ...(error.detail === undefined ? {} : { detail: error.detail }),
+      });
+    }
+    if (error instanceof InvalidCommand) {
+      return sendProblem(request, reply, 422, { detail: error.message });
+    }
+    if (error instanceof AuctionNotFound) {
+      // La proyección es eventualmente consistente: una subasta recién creada puede no estar aún.
+      return sendProblem(request, reply, 404, {
+        detail: 'La subasta no existe. Si acaba de crearse, reintente en un instante.',
+        headers: { 'retry-after': '1' },
+      });
+    }
+    if (error instanceof AuctionClosed) {
+      return sendProblem(request, reply, 409, { detail: 'La subasta está cerrada.' });
+    }
     if (hasZodFastifySchemaValidationErrors(error)) {
       return sendProblem(request, reply, 400, {
         type: 'urn:bidstream:problem:validation-error',

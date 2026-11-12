@@ -32,6 +32,16 @@ El README completo llega con el ticket I1.
 npm run dev:api   # http://localhost:3000/v1/health · documentación en /v1/docs
 ```
 
+Crear una subasta (el tenant por cabecera es provisional, solo fuera de producción):
+
+```bash
+curl -i -X POST localhost:3000/v1/auctions -H 'x-tenant-id: 11111111-1111-4111-8111-111111111111' \
+  -H 'content-type: application/json' \
+  -d '{"title":"Arte","opensAt":"2030-01-01T10:00:00.000Z","closesAt":"2030-01-02T10:00:00.000Z"}'
+```
+
+El `201` significa «comando aceptado»: el evento queda en el outbox y el estado visible llega cuando el relay y el `projector` lo procesan.
+
 ## Pruebas
 
 ```bash
