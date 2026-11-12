@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **B1** (`868mvtxz8`, https://app.clickup.com/t/868mvtxz8).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Borrador
+- **Estado:** Aprobado (2026-11-12)
 - **Versión:** 1.0 · **Fecha:** 2026-11-12
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §6 (esquema Prisma y detalles obligatorios), §5 (idempotencia por `eventId`, outbox)

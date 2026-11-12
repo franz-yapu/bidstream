@@ -11,13 +11,14 @@
   },
   "scripts": {
     "prepare": "husky",
-    "typecheck": "tsc -p packages/domain/tsconfig.json --noEmit",
+    "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
     "build": "tsc -b",
-    "check": "npm run typecheck && npm run lint && npm run format:check && npm run test && npm run build"
+    "check": "npm run typecheck && npm run lint && npm run format:check && npm run test && npm run build",
+    "test:integration": "vitest run --config vitest.integration.config.ts"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.4",

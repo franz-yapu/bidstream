@@ -1,0 +1,22 @@
+{
+  "name": "@bidstream/kafka",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "@bidstream/domain": "^0.0.0",
+    "@confluentinc/kafka-javascript": "^1.11.0",
+    "zod": "^4.6.7"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  }
+}
