@@ -25,3 +25,9 @@ make down    # detener (conserva datos); make reset borra los datos
 Puertos configurables en `.env` (ver `.env.example`): Kafka `9092`, PostgreSQL `5432`.
 
 El README completo llega con el ticket I1.
+
+## API
+
+```bash
+npm run dev:api   # http://localhost:3000/v1/health · documentación en /v1/docs
+```

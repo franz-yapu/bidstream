@@ -8,6 +8,8 @@ import { EVENT_VERSION } from './envelope.js';
 
 export { BID_REJECTION_REASONS } from './bid.js';
 export { EVENT_VERSION } from './envelope.js';
+/** Primitivas de validación (`uuid`, `money`, `isoDateTime`…) reutilizables por los DTO de la API. */
+export * as primitives from './primitives.js';
 
 /** Unión discriminada por `type`: el contrato de los 7 eventos de dominio (spec §3). */
 export const domainEventSchema = z.discriminatedUnion('type', [
