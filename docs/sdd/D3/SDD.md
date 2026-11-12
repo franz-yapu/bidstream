@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **D3** (`868mvty09`, https://app.clickup.com/t/868mvty09).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Borrador
+- **Estado:** Aprobado (2026-11-12)
 - **Versión:** 1.0 · **Fecha:** 2026-11-12
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §5 (idempotencia por `eventId` con clave única; "Kafka garantiza al menos una vez"; tres reintentos con backoff exponencial, al cuarto fallo al dead-letter topic con el error adjunto y reproceso administrativo), §4 (grupos `projector`/`notifier`/`auditor`)

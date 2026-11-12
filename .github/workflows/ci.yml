@@ -24,3 +24,24 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check
+
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Levantar Kafka y PostgreSQL
+        run: make up
+      - run: npm run test:integration
+      - name: Logs de los contenedores
+        if: failure()
+        run: docker compose logs --no-color
+      - name: Detener el entorno
+        if: always()
+        run: make down

@@ -25,6 +25,7 @@
   },
   "devDependencies": {
     "@bidstream/domain": "^0.0.0",
+    "@bidstream/testing": "^0.0.0",
     "@types/pg": "^8.23.1",
     "prisma": "^7.10.1"
   }

@@ -1,63 +1,39 @@
 import { randomUUID } from 'node:crypto';
-import { KafkaJS } from '@confluentinc/kafka-javascript';
 import { buildEvent, type EventOf } from '@bidstream/domain';
+import {
+  collectMessages,
+  createTestTopic,
+  testKafkaConfig,
+  type TestTopic,
+} from '@bidstream/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { loadKafkaConfig } from './config.js';
 import { createConsumer, type IncomingMessage } from './consumer.js';
 import { createProducer, type KafkaProducer } from './producer.js';
 
-const config = loadKafkaConfig({ KAFKA_BROKERS: process.env['KAFKA_BROKERS'] ?? 'localhost:9092' });
+const config = testKafkaConfig();
 const TENANT = '11111111-1111-4111-8111-111111111111';
-const topic = `bidstream.test.${randomUUID()}`;
-const admin = new KafkaJS.Kafka({ 'bootstrap.servers': config.brokers.join(',') }).admin();
+let topic: TestTopic;
 let producer: KafkaProducer;
 
 const closed = (lotId: string): EventOf<'LotClosed'> =>
   buildEvent('LotClosed', TENANT, { lotId, winnerId: null, finalAmount: null });
 const lotId = (n: number): string => `0000000${String(n)}-0000-4000-8000-000000000000`;
 
-async function collect(
-  groupId: string,
-  expected: number,
-  onMessage?: (m: IncomingMessage) => void,
-): Promise<IncomingMessage[]> {
-  const received: IncomingMessage[] = [];
-  const consumer = await createConsumer(config, { groupId, topics: [topic] });
-  await new Promise<void>((resolve, reject) => {
-    const timer = setTimeout(() => {
-      reject(new Error('timeout esperando mensajes'));
-    }, 40_000);
-    void consumer.run((m) => {
-      if (onMessage !== undefined) onMessage(m);
-      received.push(m);
-      if (received.length >= expected) {
-        clearTimeout(timer);
-        resolve();
-      }
-      return Promise.resolve();
-    });
-  });
-  await consumer.disconnect();
-  return received;
-}
-
 beforeAll(async () => {
-  await admin.connect();
-  await admin.createTopics({ topics: [{ topic, numPartitions: 6, replicationFactor: 1 }] });
-  producer = await createProducer(config, { eventsTopic: topic });
+  topic = await createTestTopic({ partitions: 6 });
+  producer = await createProducer(config, { eventsTopic: topic.name });
 });
 
 afterAll(async () => {
   await producer.disconnect();
-  await admin.deleteTopics({ topics: [topic] });
-  await admin.disconnect();
+  await topic.drop();
 });
 
 describe('Kafka real (make up)', () => {
   it('publishEvent usa clave = lotId y cabeceras eventId/type/version', async () => {
     const event = closed(lotId(1));
     await producer.publishEvent(event);
-    const [m] = await collect(`g-${randomUUID()}`, 1);
+    const [m] = await collectMessages({ topic: topic.name, count: 1 });
     expect(m?.key).toBe(lotId(1));
     expect(m?.headers).toEqual({ eventId: event.eventId, type: 'LotClosed', version: '1' });
     expect(JSON.parse(m?.value ?? 'null')).toEqual(event);
@@ -69,8 +45,8 @@ describe('Kafka real (make up)', () => {
 
     const total = 13; // 1 del test anterior + 12
     const [a, b] = await Promise.all([
-      collect(`g-${randomUUID()}`, total),
-      collect(`g-${randomUUID()}`, total),
+      collectMessages({ topic: topic.name, count: total }),
+      collectMessages({ topic: topic.name, count: total }),
     ]);
     // dos grupos distintos reciben todo el historial (earliest) de forma independiente
     expect(a).toHaveLength(total);
@@ -91,14 +67,13 @@ describe('Kafka real (make up)', () => {
   });
 
   it('no confirma el offset si el handler falla: el mensaje se vuelve a entregar', async () => {
-    const t = `bidstream.test.${randomUUID()}`;
-    await admin.createTopics({ topics: [{ topic: t, numPartitions: 1, replicationFactor: 1 }] });
-    const p = await createProducer(config, { eventsTopic: t });
+    const t = await createTestTopic();
+    const p = await createProducer(config, { eventsTopic: t.name });
     const event = closed(lotId(9));
     await p.publishEvent(event);
     const groupId = `g-${randomUUID()}`;
 
-    const first = await createConsumer(config, { groupId, topics: [t] });
+    const first = await createConsumer(config, { groupId, topics: [t.name] });
     let attempts = 0;
     await new Promise<void>((resolve) => {
       void first
@@ -112,17 +87,10 @@ describe('Kafka real (make up)', () => {
     await first.disconnect().catch(() => undefined);
     expect(attempts).toBeGreaterThanOrEqual(1);
 
-    const second = await createConsumer(config, { groupId, topics: [t] });
-    const redelivered = await new Promise<IncomingMessage>((resolve) => {
-      void second.run((m) => {
-        resolve(m);
-        return Promise.resolve();
-      });
-    });
-    expect(redelivered.headers['eventId']).toBe(event.eventId);
-    await second.disconnect();
+    const [redelivered] = await collectMessages({ topic: t.name, groupId, count: 1 });
+    expect(redelivered?.headers['eventId']).toBe(event.eventId);
     await p.disconnect();
-    await admin.deleteTopics({ topics: [t] });
+    await t.drop();
   });
 
   it('publicar en un topic inexistente falla (auto-creación desactivada)', async () => {

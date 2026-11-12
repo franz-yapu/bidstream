@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **G1** (`868mvty1g`, https://app.clickup.com/t/868mvty1g).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Borrador
+- **Estado:** Aprobado (2026-11-12)
 - **Versión:** 1.0 · **Fecha:** 2026-11-12
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §10 (pruebas de integración contra PostgreSQL y Kafka reales, no mocks; CI con pruebas)

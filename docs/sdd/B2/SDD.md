@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **B2** (`868mvtxzb`, https://app.clickup.com/t/868mvtxzb).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Borrador
+- **Estado:** Aprobado (2026-11-12)
 - **Versión:** 1.0 · **Fecha:** 2026-11-12
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §5 (outbox en la misma transacción que la validación), §6 (esquema)

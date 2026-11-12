@@ -2,24 +2,19 @@ import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
 import { compareBids, parseMoney } from '@bidstream/domain';
-import pg from 'pg';
+import { createTestDatabase, type TestDatabase } from '@bidstream/testing';
+import type pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { createPrismaClient, LotStatus, AuctionStatus, type PrismaClient } from './index.js';
+import { LotStatus, AuctionStatus } from './index.js';
 
-// Pruebas contra el PostgreSQL de `make up`, sobre una base de datos desechable por ejecución.
-const baseUrl =
-  process.env['DATABASE_URL'] ?? 'postgresql://bidstream:bidstream@localhost:5432/bidstream';
-const dbName = `bidstream_test_${randomUUID().replaceAll('-', '')}`;
-const testUrl = ((): string => {
-  const u = new URL(baseUrl);
-  u.pathname = `/${dbName}`;
-  return u.toString();
-})();
+// Pruebas contra el PostgreSQL de `make up`, sobre una base de datos desechable por ejecución
+// (utilidades de @bidstream/testing).
 const packageDir = resolve(import.meta.dirname, '..');
 
-let admin: pg.Client;
+let testDb: TestDatabase;
 let db: pg.Pool;
-let prisma: PrismaClient;
+let prisma: TestDatabase['prisma'];
+let testUrl: string;
 
 const TENANT = '11111111-1111-4111-8111-111111111111';
 const id = (): string => randomUUID();
@@ -56,23 +51,14 @@ async function insertBid(
 }
 
 beforeAll(async () => {
-  admin = new pg.Client({ connectionString: baseUrl });
-  await admin.connect();
-  await admin.query(`CREATE DATABASE "${dbName}"`);
-  execFileSync('npx', ['prisma', 'migrate', 'deploy'], {
-    cwd: packageDir,
-    env: { ...process.env, DATABASE_URL: testUrl },
-    stdio: 'pipe',
-  });
-  db = new pg.Pool({ connectionString: testUrl });
-  prisma = createPrismaClient(testUrl);
+  testDb = await createTestDatabase();
+  db = testDb.pool;
+  prisma = testDb.prisma;
+  testUrl = testDb.url;
 });
 
 afterAll(async () => {
-  await prisma.$disconnect();
-  await db.end();
-  await admin.query(`DROP DATABASE IF EXISTS "${dbName}" WITH (FORCE)`);
-  await admin.end();
+  await testDb.drop();
 });
 
 describe('migración inicial', () => {
