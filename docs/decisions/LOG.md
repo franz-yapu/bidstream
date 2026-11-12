@@ -56,3 +56,8 @@ Aprobados `docs/sdd/0.2` y `docs/sdd/A2` con las propuestas: (A2 #1) `AuctionOpe
 **Fecha:** 2026-11-12 · **Fuente:** usuario · **Estado:** activa (pendiente de respuesta)
 
 Remoto `git@github.com:franz-yapu/bidstream.git` (público) conectado y `main` subido (sin secretos: `.env` y `.clickup.json` ignorados). SDD en borrador: 0.3 (CI; pendiente decidir protección de `main`), A3 (puertos; pendiente si hace falta `UnitOfWork`) y A1 (dominio; pendiente: primera puja `>= startingPrice`, extensión anti-sniping desde `closesAt`, `AuctionClosed` solo sin lotes abiertos, un postor puede subir su propia puja).
+
+## DEC-009 — SDD 0.3, A1 y A3 aprobados con las propuestas; CI y protección de main
+**Fecha:** 2026-11-12 · **Fuente:** usuario · **Estado:** activa
+
+Aprobados con las propuestas de Claude: (0.3) proteger `main` con PR + CI requerida, sin revisor obligatorio; (A3) sin `UnitOfWork` por ahora, sin consultas de ranking en los repositorios; (A1) primera puja `>= startingPrice`, siguientes `>= precio actual + minIncrement`; extensión anti-sniping desde `closesAt` con ventana inclusiva (`<=`); `AuctionClosed` solo si no quedan lotes abiertos; un postor puede subir su propia puja. 0.3 implementado (PR #1).

@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **0.3** (`868mvtfpx`, https://app.clickup.com/t/868mvtfpx).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Aprobado (2026-11-12)
+- **Estado:** Implementado (2026-11-12) — aprobado el mismo día
 - **Versión:** 1.0 · **Fecha:** 2026-11-12
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §1 (Agile: "PR con CI obligatoria"), §10 (CI: typecheck, lint, pruebas, build, auditoría)
@@ -110,13 +110,13 @@ Tras la primera ejecución verde, activar protección de rama: PR obligatoria y 
 
 ## 5 · Definition of Done
 
-- [ ] SDD en `docs/sdd/0.3/SDD.md`, Estado = Aprobado
-- [ ] CI verde en un PR real hacia `main`
-- [ ] Falla comprobada con un error deliberado (rama descartada)
-- [ ] Acciones fijadas por SHA, permisos mínimos
-- [ ] Insignia en el README
-- [ ] Protección de `main` activa (o decisión registrada de dejarla para después)
-- [ ] Commit con conventional commits
+- [x] SDD en `docs/sdd/0.3/SDD.md`, Estado = Aprobado
+- [x] CI verde en un PR real hacia `main`
+- [x] Falla comprobada con un error deliberado (rama descartada)
+- [x] Acciones fijadas por SHA, permisos mínimos
+- [x] Insignia en el README
+- [x] Protección de `main` activa (o decisión registrada de dejarla para después)
+- [x] Commit con conventional commits
 
 ---
 
@@ -133,3 +133,11 @@ Tras la primera ejecución verde, activar protección de rama: PR obligatoria y 
 ## 7 · Preguntas abiertas
 
 1. ¿Activo la protección de `main` (PR obligatoria + CI requerida) al terminar? Propuesta: sí, y aprobar los PR propios con la CI como único requisito (sin revisor obligatorio, eres la única persona).
+
+---
+
+## Changelog de implementación
+
+- **Implementado (2026-11-12):** workflow según §2.1, acciones por SHA (`actions/checkout` v7.0.1, `actions/setup-node` v7.1.0). PR #1: CI verde en 47 s.
+- Comprobado el caso de fallo: PR descartable #2 con un `any` explícito → el job `check` falló en 31 s (lint). PR cerrado y rama borrada.
+- Protección de `main` activada tras fusionar (PR obligatoria + check `check` requerido, sin force push), con la confirmación de §7 #1.
