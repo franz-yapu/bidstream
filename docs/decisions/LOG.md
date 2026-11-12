@@ -106,3 +106,8 @@ Aprobados con las propuestas de Claude: (G1) `make up`, job `integration` no obl
 **Fecha:** 2026-11-12 · **Fuente:** Claude · **Estado:** activa
 
 B2 implementado: `PrismaLotRepository`, `PrismaAuctionRepository`, `PrismaOutbox` y `withTransaction` en `@bidstream/db`. Uso: `withTransaction(prisma, async ({ lots, outbox }) => { ... outbox.enqueue(events, TOPICS.eventsLot) })` (el topic lo pasa la app; `db` no depende de `kafka`). Atomicidad lectura + outbox verificada; la carrera entre pujas sigue ligada a Q2.
+
+## DEC-020 — D3 implementado
+**Fecha:** 2026-11-12 · **Fuente:** Claude · **Estado:** activa
+
+D3 implementado: `@bidstream/consumer` con `createEventConsumer({ kafka, prisma, consumerName, handler, ... })` para `projector`, `notifier` y `auditor`. Idempotencia por `(eventId, consumer)` en la misma transacción que el handler; 4 intentos con backoff y jitter; DLQ con `dlqMessageSchema` (lo leerá D7); `onOutcome` para métricas. Riesgo aceptado y vigente: un evento en DLQ no detiene a los siguientes del mismo lote.
