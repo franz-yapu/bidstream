@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **A1** (`868mvtfqh`, https://app.clickup.com/t/868mvtfqh).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Borrador
+- **Estado:** Aprobado (2026-11-12)
 - **Versión:** 1.0 · **Fecha:** 2026-11-12
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §2 (dominio y 5 reglas), §3 (eventos), §6 (desempate, `Decimal(12,2)`)
