@@ -4,13 +4,13 @@
 
 ## 1 · Dónde estamos
 
-Proyecto nuevo: no hay código. Todo está pendiente.
+Actualizado 2026-11-12: la Ola 1 está completa (7 tareas, 19 h).
 
 | Estado | h | Tareas | % |
 |---|---:|---:|---:|
-| ✅ Listo | 0 | 0 | 0% |
+| ✅ Listo | 19 | 7 | 12% |
 | 🟡 En curso | 0 | 0 | 0% |
-| ⬜ Pendiente (desbloqueado) | 102 | 29 | 67% |
+| ⬜ Pendiente (desbloqueado) | 83 | 22 | 55% |
 | ⛔ Bloqueado por decisión/acceso | 50 | 10 | 33% |
 
 Total: 152 h en 39 tareas.
@@ -46,13 +46,13 @@ B1 (5 h), B2 (3 h), C1 (5 h), C2 (5 h), D1 (5 h), D2 (3 h), D3 (5 h), D4 (5 h), 
 
 | ID | Módulo | Tarea | Tamaño (h) | Estado | Ola | Ticket | Fuente | Depende de | Bloqueo |
 |---|---|---|---:|---|---|---|---|---|---|
-| 0.1 | 0 Entorno | Monorepo Node/TypeScript estricto (workspaces: packages/domain, apps/*), lint, format, commitlint | 3 | ⬜ Pendiente | 1 | 868mvtfny | spec §1, §10 | — | — |
-| 0.2 | 0 Entorno | docker-compose con Kafka KRaft + PostgreSQL, creación de topics y `make up` | 3 | ⬜ Pendiente | 1 | 868mvtfpc | spec §4, §9 | — | — |
-| 0.3 | 0 Entorno | CI base en GitHub Actions: typecheck, lint, test, build | 2 | ⬜ Pendiente | 1 | 868mvtfpx | spec §10 | 0.1 | — |
-| 0.4 | 0 Entorno | ADR-0001: clave de partición `lotId` y su intercambio (orden/throughput vs rebalanceo) | 1 | ⬜ Pendiente | 1 | 868mvtfq3 | spec §4 | — | — |
-| A1 | A Dominio | Agregado Lot/Auction con las 5 reglas de negocio como funciones puras + tests | 5 | ⬜ Pendiente | 1 | 868mvtfqh | spec §2 | 0.1 | — |
-| A2 | A Dominio | Contrato de eventos (7 tipos) con Zod, UUID v7, `version`, `tenantId` | 3 | ⬜ Pendiente | 1 | 868mvtfqz | spec §3 | 0.1 | — |
-| A3 | A Dominio | Puertos hexagonales: repositorios, EventPublisher, Clock | 2 | ⬜ Pendiente | 1 | 868mvtfrh | spec §1 | A1, A2 | — |
+| 0.1 | 0 Entorno | Monorepo Node/TypeScript estricto (workspaces: packages/domain, apps/*), lint, format, commitlint | 3 | ✅ Listo | 1 | 868mvtfny | spec §1, §10 | — | — |
+| 0.2 | 0 Entorno | docker-compose con Kafka KRaft + PostgreSQL, creación de topics y `make up` | 3 | ✅ Listo | 1 | 868mvtfpc | spec §4, §9 | — | — |
+| 0.3 | 0 Entorno | CI base en GitHub Actions: typecheck, lint, test, build | 2 | ✅ Listo | 1 | 868mvtfpx | spec §10 | 0.1 | — |
+| 0.4 | 0 Entorno | ADR-0001: clave de partición `lotId` y su intercambio (orden/throughput vs rebalanceo) | 1 | ✅ Listo | 1 | 868mvtfq3 | spec §4 | — | — |
+| A1 | A Dominio | Agregado Lot/Auction con las 5 reglas de negocio como funciones puras + tests | 5 | ✅ Listo | 1 | 868mvtfqh | spec §2 | 0.1 | — |
+| A2 | A Dominio | Contrato de eventos (7 tipos) con Zod, UUID v7, `version`, `tenantId` | 3 | ✅ Listo | 1 | 868mvtfqz | spec §3 | 0.1 | — |
+| A3 | A Dominio | Puertos hexagonales: repositorios, EventPublisher, Clock | 2 | ✅ Listo | 1 | 868mvtfrh | spec §1 | A1, A2 | — |
 | B1 | B Datos | Esquema Prisma (§6), migración inicial, índice único parcial de adjudicación (SQL) | 5 | ⬜ Pendiente | 2 | | spec §6 | 0.2 | — |
 | B2 | B Datos | Repositorios Prisma de proyección y outbox | 3 | ⬜ Pendiente | 2 | | spec §6 | B1, A3 | — |
 | C1 | C API comandos | Servidor REST /v1: Zod en el borde, manejo de errores, OpenAPI en /v1/docs, health básico | 5 | ⬜ Pendiente | 2 | | spec §7 | 0.1 | — |
