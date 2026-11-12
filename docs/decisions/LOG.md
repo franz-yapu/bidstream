@@ -126,3 +126,8 @@ SDD en borrador: `docs/sdd/C2`, `D1` y `D4`. Hallazgos al cruzar la spec con el 
 **Fecha:** 2026-11-12 · **Fuente:** usuario ("si aceptas todo") · **Estado:** activa
 
 Aprobados con todas las propuestas de Claude: (C2) tenant por cabecera solo fuera de producción, 404 con `Retry-After`, `Location` sin `GET`, reglas numéricas, sin idempotencia en C2; (D1) un relay activo con bloqueo asesor y standby, lote de 100 y sondeo de 200 ms, limpieza del outbox en un ticket posterior, y los comandos de un mismo lote deben serializarse al escribir (requisito para C3/Q2); (D4) eliminar `lot_auction_id_fkey` (migración 0002), `LotClosed` estricto, `BidRejected` sin efecto y `resetProjection` solo como función. C2 implementado: `POST /v1/auctions` y `POST /v1/auctions/:id/lots`. **Consecuencia vigente:** la API no arranca con `NODE_ENV=production` hasta que F1 aporte autenticación (Q4); hay que decidirlo antes de desplegar en Azure (H1).
+
+## DEC-024 — D1 implementado
+**Fecha:** 2026-11-12 · **Fuente:** Claude · **Estado:** activa
+
+D1 implementado: `apps/relay` (`@bidstream/relay`) publica el outbox en Kafka en orden y al menos una vez, con un solo relay activo (bloqueo asesor de sesión) y standby. Arranque: `npm run dev:relay`. **Requisito vigente para C3/Q2:** el orden de publicación es el de `(created_at, id)`, y `created_at` es el inicio de la transacción; los comandos de un mismo lote deben serializarse al escribir (`SELECT … FOR UPDATE` sobre el lote) para que ese orden sea el de decisión.

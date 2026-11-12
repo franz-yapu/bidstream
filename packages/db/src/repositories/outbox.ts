@@ -24,4 +24,46 @@ export class PrismaOutbox {
       })),
     });
   }
+
+  /**
+   * Reclama hasta `limit` mensajes pendientes, **en orden** `(created_at, id)`, bloqueándolos con
+   * `FOR UPDATE SKIP LOCKED` hasta el final de la transacción en curso. Debe llamarse dentro de una
+   * transacción (el relay, D1). El orden por `id` (UUID v7) desempata los eventos de un mismo comando.
+   */
+  async claimPending(limit: number): Promise<PendingOutboxMessage[]> {
+    const rows = await this.db.$queryRaw<
+      { id: string; topic: string; key: string; payload: unknown; created_at: Date }[]
+    >`SELECT id, topic, key, payload, created_at
+      FROM outbox_message
+      WHERE published_at IS NULL
+      ORDER BY created_at, id
+      LIMIT ${limit}
+      FOR UPDATE SKIP LOCKED`;
+    return rows.map((r) => ({
+      id: r.id,
+      topic: r.topic,
+      key: r.key,
+      payload: r.payload,
+      createdAt: r.created_at,
+    }));
+  }
+
+  /** Marca como publicados los mensajes indicados. */
+  async markPublished(ids: readonly string[], at: Date = new Date()): Promise<void> {
+    if (ids.length === 0) return;
+    await this.db.outboxMessage.updateMany({
+      where: { id: { in: [...ids] } },
+      data: { publishedAt: at },
+    });
+  }
+}
+
+/** Mensaje del outbox pendiente de publicar. */
+export interface PendingOutboxMessage {
+  readonly id: string;
+  readonly topic: string;
+  readonly key: string;
+  /** El evento de dominio completo, como JSON. */
+  readonly payload: unknown;
+  readonly createdAt: Date;
 }

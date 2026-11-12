@@ -18,6 +18,9 @@
     },
     {
       "path": "packages/consumer/tsconfig.build.json"
+    },
+    {
+      "path": "apps/relay/tsconfig.build.json"
     }
   ]
 }

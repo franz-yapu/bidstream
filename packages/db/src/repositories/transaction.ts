@@ -4,7 +4,7 @@ import { PrismaLotRepository } from './lot-repository.js';
 import { PrismaOutbox } from './outbox.js';
 
 /** Lo que necesitan los repositorios: sirve igual un `PrismaClient` que el cliente de una transacción. */
-export type DbClient = Pick<PrismaClient, 'lot' | 'auction' | 'outboxMessage'>;
+export type DbClient = Pick<PrismaClient, 'lot' | 'auction' | 'outboxMessage' | '$queryRaw'>;
 
 export interface TransactionScope {
   readonly lots: PrismaLotRepository;

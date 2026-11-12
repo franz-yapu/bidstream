@@ -19,7 +19,8 @@
     "build": "tsc -b",
     "check": "npm run build && npm run typecheck && npm run lint && npm run format:check && npm run test",
     "test:integration": "vitest run --config vitest.integration.config.ts",
-    "dev:api": "npm run dev -w @bidstream/api"
+    "dev:api": "npm run dev -w @bidstream/api",
+    "dev:relay": "npm run dev -w @bidstream/relay"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.4",
