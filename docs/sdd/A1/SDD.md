@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **A1** (`868mvtfqh`, https://app.clickup.com/t/868mvtfqh).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Aprobado (2026-11-12)
+- **Estado:** Implementado (2026-11-12) — aprobado el mismo día
 - **Versión:** 1.0 · **Fecha:** 2026-11-12
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §2 (dominio y 5 reglas), §3 (eventos), §6 (desempate, `Decimal(12,2)`)
@@ -153,13 +153,13 @@ El estado inicial del lote sale de `LotPublished` (`evolveLot(undefined, LotPubl
 
 ## 5 · Definition of Done
 
-- [ ] SDD en `docs/sdd/A1/SDD.md`, Estado = Aprobado
-- [ ] Las 5 reglas implementadas como funciones puras, cada una con sus tests
-- [ ] Ningún `number` representa dinero en el dominio
-- [ ] `packages/domain` sin imports de infraestructura (ESLint)
-- [ ] `business-rules.md` aclarado según §7 #1 y #2
-- [ ] Tests del §4 en verde; `npm run check` en verde
-- [ ] Commit con conventional commits
+- [x] SDD en `docs/sdd/A1/SDD.md`, Estado = Aprobado
+- [x] Las 5 reglas implementadas como funciones puras, cada una con sus tests
+- [x] Ningún `number` representa dinero en el dominio
+- [x] `packages/domain` sin imports de infraestructura (ESLint)
+- [x] `business-rules.md` aclarado según §7 #1 y #2
+- [x] Tests del §4 en verde; `npm run check` en verde
+- [x] Commit con conventional commits
 
 ---
 
@@ -180,3 +180,13 @@ El estado inicial del lote sale de `LotPublished` (`evolveLot(undefined, LotPubl
 2. **Anti-sniping:** ¿la extensión se cuenta desde `closesAt` (propuesta) o desde el instante de la puja? ¿Y la ventana incluye el borde (`<=`)?
 3. **Cierre de subasta:** ¿`AuctionClosed` solo cuando no quedan lotes abiertos (propuesta)? Quien lo dispara se define en D8 (Q3).
 4. ¿Puede un postor subir su propia puja vigente? La spec no lo prohíbe; propuesta: sí se permite.
+
+---
+
+## Changelog de implementación
+
+- **Implementado (2026-11-12):** respuestas aprobadas de §7 (DEC-009): primera puja `>= startingPrice`; extensión desde `closesAt` con ventana inclusiva; `AuctionClosed` solo sin lotes abiertos; se permite la autopuja. `business-rules.md` aclarado (#1, #3, #9, #10).
+- Archivos: `money.ts`, `draft.ts`, `lot/{state,decide-bid,decide-close}.ts`, `auction/state.ts` (incluye `decideCloseAuction`). Se retiró el marcador `DOMAIN_PACKAGE` y su test.
+- Una extensión configurada en 0 ms no emite `LotExtended` (no estaba en el diseño; evita un evento sin efecto).
+- Test de propiedad hecho con un generador pseudoaleatorio con semilla fija (sin añadir dependencias): 300 pujas, el precio nunca baja y una puja se acepta si y solo si cumple el mínimo.
+- 43 tests nuevos (98 en total); `npm run check` en verde.

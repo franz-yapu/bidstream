@@ -1,4 +1,5 @@
-/** Marcador: se retira cuando A1 aporte el dominio real. */
-export const DOMAIN_PACKAGE = '@bidstream/domain';
-
 export * from './events/index.js';
+export * from './money.js';
+export * from './draft.js';
+export * from './lot/index.js';
+export * from './auction/index.js';
