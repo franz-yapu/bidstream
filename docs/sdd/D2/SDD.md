@@ -171,3 +171,4 @@ Antes de escribir el resto: instalar la librería en `node:22` (glibc y slim) y 
 - Añadido `ProducerOptions.eventsTopic` (por defecto `bidstream.events.lot`) para que las pruebas usen un topic propio sin ensuciar el log de retención ilimitada.
 - Añadido el script `test:integration` y `vitest.integration.config.ts` (compartido con B1); `test` ya no ejecuta `*.int.test.ts`. El script `typecheck` raíz recorre ahora todos los workspaces.
 - Tests: 6 unit (config/topics) y 4 de integración contra el Kafka de `make up` (clave y cabeceras; orden por partición y grupos independientes; redelivery sin commit; topic inexistente). Conexión real a Event Hubs: pendiente de H1.
+- **Corregido tras la primera ejecución de la CI:** `npm run check` hacía typecheck antes de compilar y `@bidstream/kafka` no encontraba `@bidstream/domain` (su `dist/` no existía en un clon limpio; en local sí por builds anteriores). Ahora `check` es `build → typecheck → lint → format:check → test`.

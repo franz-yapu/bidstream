@@ -18,7 +18,7 @@ Spec normativa: `docs/product/bidstream_spec.md`. PRD/alcance/reglas en `docs/pr
 
 ## Comandos
 
-- `npm ci` instala; `npm run check` = typecheck + lint + format:check + test + build (quality gate).
+- `npm ci` instala; `npm run check` = build + typecheck + lint + format:check + test (quality gate). El build va primero: los paquetes se resuelven entre sí desde `dist/`.
 - ESM con NodeNext: los imports relativos llevan extensión `.js` (`import { x } from './x.js'`).
 - `packages/domain` no puede importar infraestructura (regla de ESLint, ver `docs/do-not-touch.md`).
 - `make up` levanta Kafka (apache/kafka 4.3.2, KRaft) y PostgreSQL 16 y crea los topics; `make verify` los comprueba; `make reset` borra datos.
