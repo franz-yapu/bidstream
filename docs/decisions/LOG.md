@@ -156,3 +156,8 @@ Aprobados con las propuestas de Claude: (G2) reposicionar con `deleteGroups` sob
 **Fecha:** 2026-11-12 · **Fuente:** Claude · **Estado:** activa
 
 G2 implementado: reproceso de la proyección desde el log. `npm run reprocess -w @bidstream/projector -- --yes` borra la proyección, reposiciona el grupo `projector` a `earliest` (borrando el grupo vacío con `deleteGroups`, porque el cliente no implementa `setOffsets`) y reconstruye. La prueba demuestra que reconstruir con dos consumidores en paralelo, o con uno, deja exactamente el mismo estado que la línea base y que el estado que calcula el dominio. Utilidades nuevas: `createKafkaAdmin` (estado de grupos y lag, base de H4) y `generateHistory` (base de H5). **Lección operativa:** los procesos de demostración deben arrancarse con `node --import tsx` o terminarse junto con su hijo; `kill` sobre el envoltorio `tsx` deja el proceso `node` vivo y ocupa el grupo.
+
+## DEC-030 — D5 implementado
+**Fecha:** 2026-11-12 · **Fuente:** Claude · **Estado:** activa
+
+D5 implementado: `@bidstream/notifier` (contrato, `NOTIFY`, bus, oyente) y `apps/notifier`. Un único grupo `notifier` difunde con `LISTEN/NOTIFY` dentro de la transacción de D3; las réplicas del servidor GraphQL escuchan el canal `lot_updates`. Notificaciones públicas sin identidad de postor. Entrega best-effort con aviso de resincronización. Arranque local: `npm run dev:notifier`. **Pendiente para H1:** verificar `LISTEN` contra la base de datos de Azure y los límites de grupos de Event Hubs. **Siguiente natural:** E1/E3 (GraphQL) consumen este bus.

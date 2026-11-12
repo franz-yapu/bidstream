@@ -27,6 +27,12 @@
     },
     {
       "path": "apps/auditor/tsconfig.build.json"
+    },
+    {
+      "path": "packages/notifier/tsconfig.build.json"
+    },
+    {
+      "path": "apps/notifier/tsconfig.build.json"
     }
   ]
 }

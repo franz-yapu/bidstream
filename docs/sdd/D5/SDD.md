@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **D5** (`868mvty0f`, https://app.clickup.com/t/868mvty0f).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Aprobado (2026-11-12)
+- **Estado:** Implementado (2026-11-12) — aprobado el mismo día
 - **Versión:** 1.0 · **Fecha:** 2026-11-12
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §4 (grupo `notifier`: "publica a las subscriptions de GraphQL"), §7 (`Subscription.lotUpdated(lotId)` "alimentada por el consumidor `notifier`"), §9 (Container Apps: cada proceso con su escalado)
@@ -135,12 +135,12 @@ Entrega **best-effort** a los suscriptores: si una réplica pierde la conexión 
 
 ## 5 · Definition of Done
 
-- [ ] SDD en `docs/sdd/D5/SDD.md`, Estado = Aprobado
-- [ ] Contrato `LotNotification` con esquema, sin identidades de postor
-- [ ] `notifier` y oyente funcionan de extremo a extremo; difusión a varias réplicas probada
-- [ ] Reconexión del oyente probada
-- [ ] Tests del §4 en verde; `npm run check` y `npm run test:integration` en verde
-- [ ] PR con CI verde y fusionado
+- [x] SDD en `docs/sdd/D5/SDD.md`, Estado = Aprobado
+- [x] Contrato `LotNotification` con esquema, sin identidades de postor
+- [x] `notifier` y oyente funcionan de extremo a extremo; difusión a varias réplicas probada
+- [x] Reconexión del oyente probada
+- [x] Tests del §4 en verde; `npm run check` y `npm run test:integration` en verde
+- [x] PR con CI verde y fusionado
 
 ---
 
@@ -164,3 +164,14 @@ Entrega **best-effort** a los suscriptores: si una réplica pierde la conexión 
 3. ¿`BidRejected` sin notificación pública (propuesta)? Se reconsiderará como notificación privada del postor cuando exista autenticación.
 4. **Resincronización:** ¿emitir al bus un aviso al reconectar el oyente (propuesta) para que E3 lo traslade a los clientes?
 5. ¿El contrato y el bus viven en `@bidstream/notifier` (propuesta) y el proceso en `apps/notifier`?
+
+---
+
+## Changelog de implementación
+
+- **Implementado (2026-11-12)** con las propuestas aprobadas de §7: un único grupo `notifier` que difunde por `LISTEN/NOTIFY` dentro de la transacción de D3, notificaciones sin `bidderId` ni `winnerId`, `BidRejected` sin notificación pública, aviso de resincronización al reconectar y el contrato y el bus en `@bidstream/notifier` con el proceso en `apps/notifier` (`@bidstream/notifier-app`).
+- `@bidstream/notifier`: `lotNotificationSchema` y `toLotNotification` (4 notificaciones: `LotPublished`, `BidPlaced`, `LotExtended`, `LotClosed`; contrato cerrado y menos de 1 000 bytes cada una), `publishNotification(tx, n)` (`pg_notify` con comprobación de tamaño), `InMemoryNotificationBus` (por `(tenantId, lotId)`, con aislamiento de fallos de suscriptores y aviso de resincronización) y `startNotificationListener` (conexión `pg` dedicada con reconexión y backoff). `createNotifier` compone el consumidor base con el grupo `notifier`.
+- **Fallo real encontrado por las pruebas:** el oyente registraba el manejador de errores de la conexión con `once`; `pg` puede emitir más de un `error` y el segundo, sin manejador, tumbaba el proceso («Unhandled Error: Connection terminated unexpectedly»). Ahora es un manejador permanente.
+- 29 pruebas nuevas (19 unitarias del contrato y el bus, y 8 + 5 de integración con PostgreSQL y Kafka reales, estables en tres ejecuciones seguidas): las 4 notificaciones y los 3 eventos sin notificación, sin identidades de postor ni ganador, difusión a dos «réplicas», aislamiento por tenant, rollback sin emisión, orden por lote, contenido inválido descartado con el canal vivo, reconexión tras `pg_terminate_backend` con aviso de resincronización, extremo a extremo con Kafka (cada lote recibe exactamente sus notificaciones en orden y las no públicas se registran como procesadas), reentrega sin notificación duplicada y atomicidad (si el handler falla tras notificar no sale esa notificación y el reintento notifica una sola vez).
+- **Pendiente para H1:** verificar con la base de datos de Azure que el oyente funciona (`LISTEN` necesita una conexión directa, no a través de un *pooler* en modo transacción) y los límites de grupos de consumidores de Event Hubs, que motivaron descartar un grupo por réplica.
+- E3 solo tiene que crear un `InMemoryNotificationBus`, arrancar `startNotificationListener` con `DATABASE_URL` y suscribir cada subscription con `bus.subscribe(tenantId, lotId, handler)`; el aviso de `onResync` indica a los clientes que recarguen el estado.
