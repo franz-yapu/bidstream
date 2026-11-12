@@ -116,3 +116,8 @@ D3 implementado: `@bidstream/consumer` con `createEventConsumer({ kafka, prisma,
 **Fecha:** 2026-11-12 · **Fuente:** Claude · **Estado:** activa
 
 G1, B2 y D3 fusionados (PR #13, #15, #16) y en `completadas` en ClickUp. Estado: 13 de 39 tareas, 45 h de 152. 153 pruebas unitarias y 47 de integración; la CI corre ambos conjuntos (job `integration` no requerido por ahora). Siguiente en la Ola 2: C2 (comandos de subastas y lotes), D1 (relay de outbox), D4/D5/D6 (consumidores), E1 (GraphQL), F4, F6, H2. Camino crítico: C2 → D1 → D4.
+
+## DEC-022 — SDD borrador de C2, D1 y D4
+**Fecha:** 2026-11-12 · **Fuente:** usuario (pidió los SDD), Claude · **Estado:** activa (pendiente de respuesta)
+
+SDD en borrador: `docs/sdd/C2`, `D1` y `D4`. Hallazgos al cruzar la spec con el código: (1) D1: varios relays con `SKIP LOCKED` romperían el orden por lote; propuesta un relay activo con bloqueo asesor y standby. (2) D1/C3: `created_at` es el inicio de la transacción, no el *commit*; los comandos de un mismo lote deben serializarse al escribir (`SELECT … FOR UPDATE` sobre el lote) para que el orden del outbox sea el de decisión; es un requisito para C3 y Q2. (3) D4: `AuctionOpened` (clave `auctionId`) y `LotPublished` (clave `lotId`) van a particiones distintas sin orden entre sí; en un reproceso la clave foránea `lot.auction_id` fallaría; propuesta eliminarla (migración 0002) y validar la subasta en C2. (4) D4: reiniciar la proyección exige borrar también `processed_event` del `projector`. (5) C2: la proyección es eventualmente consistente (404 con `Retry-After` si la subasta aún no se proyectó) y el tenant provisional por cabecera queda prohibido en producción; mientras F1 siga bloqueado por Q4, la API no puede ejecutarse en producción. Preguntas: §7 de cada SDD.
