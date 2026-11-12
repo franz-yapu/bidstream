@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **A3** (`868mvtfrh`, https://app.clickup.com/t/868mvtfrh).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Aprobado (2026-11-12)
+- **Estado:** Implementado (2026-11-12) — aprobado el mismo día
 - **Versión:** 1.0 · **Fecha:** 2026-11-12
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §1 (arquitectura hexagonal), §5 (outbox: validar contra la proyección y escribir en outbox en una sola transacción)
@@ -101,11 +101,11 @@ La atomicidad "validar + escribir en outbox" no cabe en estos puertos sin más. 
 
 ## 5 · Definition of Done
 
-- [ ] SDD en `docs/sdd/A3/SDD.md`, Estado = Aprobado (y A1 aprobado/implementado antes)
-- [ ] 5 puertos y 5 dobles en memoria
-- [ ] Tests del §4 en verde; `npm run check` en verde
-- [ ] Sin dependencias de infraestructura en `packages/domain`
-- [ ] Commit con conventional commits
+- [x] SDD en `docs/sdd/A3/SDD.md`, Estado = Aprobado (y A1 aprobado/implementado antes)
+- [x] 5 puertos y 5 dobles en memoria
+- [x] Tests del §4 en verde; `npm run check` en verde
+- [x] Sin dependencias de infraestructura en `packages/domain`
+- [x] Commit con conventional commits
 
 ---
 
@@ -123,3 +123,12 @@ La atomicidad "validar + escribir en outbox" no cabe en estos puertos sin más. 
 
 1. ¿Añadimos ya un puerto `UnitOfWork` (`run(work)` transaccional)? Propuesta: no; se decide en C2 con el cliente Prisma a la vista.
 2. ¿Los repositorios deben exponer también consultas de lectura de la proyección (ranking de pujas)? Propuesta: no; eso es del lado GraphQL (E1), no del dominio de comandos.
+
+---
+
+## Changelog de implementación
+
+- **Implementado (2026-11-12):** 5 puertos y 5 dobles en memoria en `packages/domain/src/ports/`, según el diseño. Sin `UnitOfWork` ni consultas de ranking (DEC-009).
+- Añadido `buildDepsFrom(clock, ids)`: adaptador de `Clock` + `IdGenerator` a las dependencias de `buildEvent` (A2).
+- Los dobles se exportan desde el índice del paquete para los tests de otros paquetes; si en el futuro no deben ir en el bundle de producción, se moverán a un subpath `testing`.
+- 8 tests nuevos (106 en total); `npm run check` en verde.
