@@ -26,3 +26,8 @@ y MCPs, y con SDD (Spec-Driven Development): cada ticket tiene su SDD en
 **Fecha:** 2026-11-12 · **Fuente:** usuario · **Estado:** activa
 
 Tickets en ClickUp, lista bidstream `901115726262` en FRANZ's Space (igual que SISET). MCP de Google Drive conectado; carpeta de documentos en Drive: `bidstream` (id 1hZw2PqnTcYj8eV-8ju7VfH12MQZ61GgA).
+
+## DEC-003 — ADR-0001 aceptado y SDD 0.1 en borrador
+**Fecha:** 2026-11-12 · **Fuente:** usuario (pidió empezar 0.1 y 0.4) · **Estado:** activa
+
+ADR-0001 (clave de partición `lotId`) escrito y aceptado; cierra el ticket 0.4. SDD de 0.1 en `docs/sdd/0.1/SDD.md`, Estado = Borrador, a la espera de aprobación. Pendientes: (a) npm vs pnpm, (b) `contracts` separado o dentro de `domain` (decidir en A2), (c) crear el remoto de GitHub para PR y CI.
