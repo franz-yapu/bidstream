@@ -91,3 +91,8 @@ C1 implementado: `apps/api` (Fastify 5 + Zod), `/v1/health`, `/v1/docs`, errores
 **Fecha:** 2026-11-12 · **Fuente:** Claude · **Estado:** activa
 
 B1, C1 y D2 fusionados (PR #8, #9, #10) y en `completadas` en ClickUp. Estado: 10 de 39 tareas, 32 h de 152. 134 tests unitarios y 16 de integración. Siguiente en la Ola 2 (dependencias ya cumplidas): B2 (repositorios Prisma y outbox), D3 (consumidor base), G1 (utilidades de integración), F4, F6, H2 después. Camino crítico: B2 → C2 → D1 → D4.
+
+## DEC-017 — SDD borrador de G1, B2 y D3
+**Fecha:** 2026-11-12 · **Fuente:** usuario ("vamos las tareas"), Claude · **Estado:** activa (pendiente de respuesta)
+
+SDD en borrador: `docs/sdd/G1`, `B2`, `D3`. Propuestas: G1 contra `make up` (sin testcontainers) con bases y topics desechables, paquete `@bidstream/testing` y job `integration` en la CI (no requerido al principio); B2 con `OutboxMessage.id = eventId`, `withTransaction` en `@bidstream/db` y repositorios de solo lectura filtrados por tenant; D3 con 4 intentos (200 ms, factor 2, jitter), idempotencia en la misma transacción que el handler, DLQ con el error adjunto, paquete `@bidstream/consumer`. Riesgo a decidir (D3 §7 #2): ¿DLQ y seguir, o pausar la partición ante un fallo persistente del `projector`?
