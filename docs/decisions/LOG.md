@@ -51,3 +51,8 @@ Aprobados `docs/sdd/0.2` y `docs/sdd/A2` con las propuestas: (A2 #1) `AuctionOpe
 **Fecha:** 2026-11-12 · **Fuente:** Claude · **Estado:** activa
 
 0.2 implementado (commit `dce8afb`, `make verify` en verde) y A2 implementado (contrato de eventos con Zod, 55 tests). Pendiente: remoto de GitHub y PR; ClickUp sin cambio de estado.
+
+## DEC-008 — Repo en GitHub y SDD borrador de 0.3, A1 y A3
+**Fecha:** 2026-11-12 · **Fuente:** usuario · **Estado:** activa (pendiente de respuesta)
+
+Remoto `git@github.com:franz-yapu/bidstream.git` (público) conectado y `main` subido (sin secretos: `.env` y `.clickup.json` ignorados). SDD en borrador: 0.3 (CI; pendiente decidir protección de `main`), A3 (puertos; pendiente si hace falta `UnitOfWork`) y A1 (dominio; pendiente: primera puja `>= startingPrice`, extensión anti-sniping desde `closesAt`, `AuctionClosed` solo sin lotes abiertos, un postor puede subir su propia puja).
