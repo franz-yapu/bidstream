@@ -31,3 +31,12 @@ El README completo llega con el ticket I1.
 ```bash
 npm run dev:api   # http://localhost:3000/v1/health · documentación en /v1/docs
 ```
+
+## Pruebas
+
+```bash
+npm run check             # build + typecheck + lint + formato + pruebas unitarias
+make up && npm run test:integration   # pruebas contra PostgreSQL y Kafka reales
+```
+
+La CI corre ambos conjuntos: el job `check` y el job `integration` (levanta el entorno con `make up`).

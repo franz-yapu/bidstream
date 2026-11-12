@@ -12,6 +12,9 @@
     },
     {
       "path": "apps/api/tsconfig.build.json"
+    },
+    {
+      "path": "packages/testing/tsconfig.build.json"
     }
   ]
 }

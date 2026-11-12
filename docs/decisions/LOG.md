@@ -96,3 +96,8 @@ B1, C1 y D2 fusionados (PR #8, #9, #10) y en `completadas` en ClickUp. Estado: 1
 **Fecha:** 2026-11-12 · **Fuente:** usuario ("vamos las tareas"), Claude · **Estado:** activa (pendiente de respuesta)
 
 SDD en borrador: `docs/sdd/G1`, `B2`, `D3`. Propuestas: G1 contra `make up` (sin testcontainers) con bases y topics desechables, paquete `@bidstream/testing` y job `integration` en la CI (no requerido al principio); B2 con `OutboxMessage.id = eventId`, `withTransaction` en `@bidstream/db` y repositorios de solo lectura filtrados por tenant; D3 con 4 intentos (200 ms, factor 2, jitter), idempotencia en la misma transacción que el handler, DLQ con el error adjunto, paquete `@bidstream/consumer`. Riesgo a decidir (D3 §7 #2): ¿DLQ y seguir, o pausar la partición ante un fallo persistente del `projector`?
+
+## DEC-018 — SDD de G1, B2 y D3 aprobados con las propuestas; G1 implementado
+**Fecha:** 2026-11-12 · **Fuente:** usuario · **Estado:** activa
+
+Aprobados con las propuestas de Claude: (G1) `make up`, job `integration` no obligatorio al principio, logs solo en el job; (B2) `OutboxMessage.id = eventId`, `withTransaction` en `@bidstream/db`, consultas de pendientes del relay en el mismo repositorio; (D3) 4 intentos totales (200 ms, factor 2, jitter), paquete `@bidstream/consumer`, gancho de logger ahora y métricas en H4; ante fallo persistente del `projector`, DLQ y seguir (como pide la spec), mitigado con D7 y G2. G1 implementado: `@bidstream/testing` y job `integration`. **Pendiente de decidir más adelante:** hacer `integration` check requerido de `main` tras una semana estable.
