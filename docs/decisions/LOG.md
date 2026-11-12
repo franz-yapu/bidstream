@@ -111,3 +111,8 @@ B2 implementado: `PrismaLotRepository`, `PrismaAuctionRepository`, `PrismaOutbox
 **Fecha:** 2026-11-12 · **Fuente:** Claude · **Estado:** activa
 
 D3 implementado: `@bidstream/consumer` con `createEventConsumer({ kafka, prisma, consumerName, handler, ... })` para `projector`, `notifier` y `auditor`. Idempotencia por `(eventId, consumer)` en la misma transacción que el handler; 4 intentos con backoff y jitter; DLQ con `dlqMessageSchema` (lo leerá D7); `onOutcome` para métricas. Riesgo aceptado y vigente: un evento en DLQ no detiene a los siguientes del mismo lote.
+
+## DEC-021 — G1, B2 y D3 completados
+**Fecha:** 2026-11-12 · **Fuente:** Claude · **Estado:** activa
+
+G1, B2 y D3 fusionados (PR #13, #15, #16) y en `completadas` en ClickUp. Estado: 13 de 39 tareas, 45 h de 152. 153 pruebas unitarias y 47 de integración; la CI corre ambos conjuntos (job `integration` no requerido por ahora). Siguiente en la Ola 2: C2 (comandos de subastas y lotes), D1 (relay de outbox), D4/D5/D6 (consumidores), E1 (GraphQL), F4, F6, H2. Camino crítico: C2 → D1 → D4.
