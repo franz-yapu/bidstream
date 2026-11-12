@@ -67,6 +67,7 @@ npm run dev:api        # terminal 1: comandos HTTP
 npm run dev:relay      # terminal 2: outbox → Kafka
 npm run dev:projector  # terminal 3: Kafka → proyección en PostgreSQL
 npm run dev:auditor    # opcional: Kafka → bitácora append-only (audit_log)
+npm run dev:notifier   # opcional: Kafka → NOTIFY para las subscriptions de GraphQL
 ```
 
 Los comandos devuelven `201` al aceptarse; el estado aparece en la proyección cuando el relay y el `projector` procesan el evento (un `POST …/lots` inmediato tras crear la subasta puede dar `404` con `Retry-After`).
