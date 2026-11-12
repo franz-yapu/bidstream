@@ -71,13 +71,14 @@ describe('migración inicial', () => {
     expect(out).toContain('Database schema is up to date');
   });
 
-  it('crea los cinco modelos de la spec', async () => {
+  it('crea las tablas de la spec y la bitácora', async () => {
     const { rows } = await db.query<{ table_name: string }>(
       `SELECT table_name FROM information_schema.tables
        WHERE table_schema = 'public' AND table_name <> '_prisma_migrations' ORDER BY 1`,
     );
     expect(rows.map((r) => r.table_name)).toEqual([
       'auction',
+      'audit_log',
       'bid',
       'lot',
       'outbox_message',
