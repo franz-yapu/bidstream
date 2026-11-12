@@ -41,3 +41,8 @@ Gestor de paquetes: **npm** (resuelve la pregunta 1 del SDD 0.1). SDD 0.1 aproba
 **Fecha:** 2026-11-12 · **Fuente:** Claude, a petición del usuario · **Estado:** activa (pendiente de respuesta)
 
 SDD en borrador: `docs/sdd/0.2/SDD.md` y `docs/sdd/A2/SDD.md`. Pendientes de decisión: (A2 #1) clave/topic de `AuctionOpened` y `AuctionClosed`, (A2 #2) `meta` opcional en el sobre, (A2 #3) `LotClosed` anulable sin pujas, (A2 #4) valores de `BidRejected.reason`, (0.2 #1) UI de Kafka opcional. Remoto de GitHub aún sin crear.
+
+## DEC-006 — SDD 0.2 y A2 aprobados con las propuestas de Claude
+**Fecha:** 2026-11-12 · **Fuente:** usuario · **Estado:** activa
+
+Aprobados `docs/sdd/0.2` y `docs/sdd/A2` con las propuestas: (A2 #1) `AuctionOpened`/`AuctionClosed` van al mismo topic `events.lot` con clave `auctionId` (sin orden garantizado frente a los `LotClosed`); (A2 #2) `meta` opcional reservado en el sobre; (A2 #3) `LotClosed` con `winnerId` y `finalAmount` anulables; (A2 #4) `BidRejected.reason`: `BID_TOO_LOW`, `LOT_CLOSED`, `LOT_NOT_OPEN`, `LOT_NOT_FOUND`, `DUPLICATE_BID` (se revisa con Q2); (0.2 #1) sin UI de Kafka por ahora. Imagen Kafka fijada: `apache/kafka:4.3.2`.

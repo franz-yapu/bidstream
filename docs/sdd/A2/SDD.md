@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **A2** (`868mvtfqz`, https://app.clickup.com/t/868mvtfqz).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Borrador
+- **Estado:** Aprobado (2026-11-12)
 - **Versión:** 1.0 · **Fecha:** 2026-11-12
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §3 (modelo de eventos), §4 (clave de partición), §6 (Decimal(12,2))

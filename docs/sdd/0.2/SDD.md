@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **0.2** (`868mvtfpc`, https://app.clickup.com/t/868mvtfpc).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Borrador
+- **Estado:** Implementado (2026-11-12) — aprobado el mismo día
 - **Versión:** 1.0 · **Fecha:** 2026-11-12
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §4 (topics, particiones, retención), §9 (local: docker-compose, Kafka KRaft sin Zookeeper, PostgreSQL, un solo `make up`)
@@ -118,15 +118,15 @@ postgres     postgres:16-alpine      puerto:  ${POSTGRES_PORT:-5432}:5432  healt
 
 ## 5 · Definition of Done
 
-- [ ] SDD en `docs/sdd/0.2/SDD.md`, Estado = Aprobado
-- [ ] `make up` desde cero deja Kafka y PostgreSQL *healthy* y los 3 topics creados
-- [ ] Particiones y retención coinciden con la spec §4 (verificado con `make topics`)
-- [ ] Orden por clave verificado (mismo `lotId` → misma partición)
-- [ ] Segundo `make up` idempotente; `make reset` limpia
-- [ ] Imagen de Kafka con versión fijada, sin `latest`
-- [ ] README/CLAUDE.md documentan comandos; `.env.example` versionado, `.env` ignorado
-- [ ] `npm run check` sigue en verde
-- [ ] Commit con conventional commits
+- [x] SDD en `docs/sdd/0.2/SDD.md`, Estado = Aprobado
+- [x] `make up` desde cero deja Kafka y PostgreSQL *healthy* y los 3 topics creados
+- [x] Particiones y retención coinciden con la spec §4 (verificado con `make topics`)
+- [x] Orden por clave verificado (mismo `lotId` → misma partición)
+- [x] Segundo `make up` idempotente; `make reset` limpia
+- [x] Imagen de Kafka con versión fijada, sin `latest`
+- [x] README/CLAUDE.md documentan comandos; `.env.example` versionado, `.env` ignorado
+- [x] `npm run check` sigue en verde
+- [x] Commit con conventional commits
 
 ---
 
@@ -146,3 +146,12 @@ postgres     postgres:16-alpine      puerto:  ${POSTGRES_PORT:-5432}:5432  healt
 
 1. ¿Añadimos una UI de Kafka (Redpanda Console o Kafka UI) como servicio opcional por perfil de Compose? Ayuda en la demo del reproceso; no es necesario para el ticket.
 2. Versión exacta de `apache/kafka`: se fija al implementar, tras comprobar que descarga y arranca; queda registrada en `LOG.md`.
+
+---
+
+## Changelog de implementación
+
+- **Implementado (2026-11-12):** imagen fijada a `apache/kafka:4.3.2` (el tag 4.4.0 acababa de salir; se prefirió el parche estable anterior). Servicio `kafka-init` y Makefile según el diseño.
+- Se añadió `scripts/local/verify.sh` (`make verify`) con los casos del §4 automatizados contra los contenedores: servicios sanos, topics con particiones/retención de la spec, listener del host y del contenedor, orden por clave (lotA, lotB y lotC siempre en una partición), auto-creación desactivada y `psql`. Resultado: TODO OK. Segundo `make up`: mismos `TopicId`, sin recrear.
+- Corregido durante la verificación: el productor de consola devuelve código 0 aunque el envío falle; el caso "topic inexistente" comprueba `UNKNOWN_TOPIC_OR_PARTITION` y que el topic no se haya creado. `/dev/tcp` requiere `bash`, no `sh`.
+- Pregunta §7 #1 (UI de Kafka): se deja para después, a petición de la propuesta aprobada.
