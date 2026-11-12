@@ -1,0 +1,8 @@
+{
+  "name": "[FEAT] Dominio: Contrato de eventos (7 tipos) con Zod, UUID v7, `version`, `tenantId` (3 h)",
+  "markdown_content": "## Explicación\n\nTres consumidores independientes leen estos eventos; el contrato tiene que ser único y versionado.\n\n## Qué construir\n\nEn `packages/domain` (o `packages/contracts`): esquemas Zod de los 7 eventos de la spec §3 (`AuctionOpened`, `LotPublished`, `BidPlaced`, `BidRejected`, `LotExtended`, `LotClosed`, `AuctionClosed`) con el sobre común `eventId` (UUID v7), `type`, `occurredAt`, `tenantId`, `version`. Tipos TypeScript derivados de los esquemas y tests de validación.\n\nNo hay código previo que reutilizar (proyecto nuevo). Depende de: 0.1.\n\n## Orden de entregables (cada uno bloquea al siguiente)\n\n1. **SDD aprobado** — generado con el skill `write-sdd` en `docs/sdd/A2/SDD.md`. Nadie escribe código de este ticket hasta que el SDD tenga Estado = `Aprobado (fecha)`.\n2. **Implementación según ese SDD** — si algo no calza en el camino, se vuelve al SDD (revisión nueva versionada), no se improvisa por fuera de lo aprobado.\n3. **Tests del plan del §4 del SDD** — corriendo y en verde. Sin estos tests, el ticket no está terminado aunque el código funcione.\n4. **Quality gate del proyecto** (typecheck/lint/tests/build, lo que use el repo) en verde.\n\n## Definition of Done\n\n- [ ] SDD en `docs/sdd/A2/SDD.md`, Estado = Aprobado\n- [ ] Implementación completa según el SDD aprobado (sin desviaciones sin documentar)\n- [ ] Tests del §4 del SDD, todos en verde\n- [ ] Quality gate del proyecto en verde\n\n## Referencias\n\n- Backlog: tarea A2\n- Roadmap: 2026-11-12 - Sprint-Roadmap.md\n- Spec: docs/product/bidstream_spec.md §3\n- SDD: docs/sdd/A2/SDD.md\n",
+  "assignees": [
+    "me"
+  ],
+  "custom_fields": []
+}
