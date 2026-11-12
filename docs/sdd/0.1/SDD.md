@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **0.1** (`868mvtfny`, https://app.clickup.com/t/868mvtfny).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Aprobado (2026-11-12)
+- **Estado:** Implementado (2026-11-12) — aprobado el mismo día
 - **Versión:** 1.0 · **Fecha:** 2026-11-12
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §1 (Node con TypeScript estricto, Clean Code, Agile), §10 (calidad, CI)
@@ -130,13 +130,13 @@ En `eslint.config.js`, para `packages/domain/**`: `no-restricted-imports` con la
 
 ## 5 · Definition of Done
 
-- [ ] SDD en `docs/sdd/0.1/SDD.md`, Estado = Aprobado
-- [ ] `npm ci && npm run check` en verde desde un clon limpio
-- [ ] TypeScript con `strict` y las flags de §2.1; sin `any` implícito en el código del repo
-- [ ] La regla de pureza del dominio verificada (caso del §4)
-- [ ] commitlint rechaza commits que no son conventional; este repo ya usa ese formato
-- [ ] `CLAUDE.md` y `README.md` documentan los comandos
-- [ ] Commit(s) con conventional commits y PR hacia `main`
+- [x] SDD en `docs/sdd/0.1/SDD.md`, Estado = Aprobado
+- [x] `npm ci && npm run check` en verde desde un clon limpio
+- [x] TypeScript con `strict` y las flags de §2.1; sin `any` implícito en el código del repo
+- [x] La regla de pureza del dominio verificada (caso del §4)
+- [x] commitlint rechaza commits que no son conventional; este repo ya usa ese formato
+- [x] `CLAUDE.md` y `README.md` documentan los comandos
+- [ ] PR hacia `main` (pendiente: no hay remoto de GitHub todavía)
 
 ---
 
@@ -156,3 +156,14 @@ En `eslint.config.js`, para `packages/domain/**`: `no-restricted-imports` con la
 1. ~~¿pnpm?~~ Resuelta 2026-11-12: se usa npm.
 2. ¿Se añade un paquete `packages/contracts` separado para los eventos (A2) o viven en `packages/domain`? Se decide en el SDD de A2; este ticket solo crea `domain`.
 3. ¿Repositorio en GitHub y nombre? No hay `remote` todavía; hace falta para el PR y la CI (0.3). Pendiente en `docs/decisions/LOG.md`.
+
+---
+
+## Changelog de implementación
+
+- **v1.0 → implementado (2026-11-12):** desviaciones menores respecto al diseño aprobado, sin cambiar decisiones:
+  - TypeScript resolvió a **6.0.3**, ESLint **10**, Vitest **5.1**, Prettier 3.10 (lo último estable; el lockfile las fija). `@types/node` fijado a **22** para coincidir con el Node objetivo.
+  - `packages/domain` usa dos tsconfig: `tsconfig.json` (typecheck y lint, incluye los tests) y `tsconfig.build.json` (build con `composite`, excluye tests). El `typecheck` es `tsc -p packages/domain/tsconfig.json --noEmit`; el `tsconfig.json` raíz referencia al de build.
+  - Los archivos `*.js` de configuración se excluyen del lint tipado; `.prettierignore` excluye `docs`, `scripts`, `.claude` y `*.json`.
+  - Verificado a mano: la regla de pureza rechaza `import 'kafkajs'` en el dominio; un error de tipo rompe `typecheck`; commitlint rechaza `foo` y acepta `chore: x`; `npm ci && npm run check` en clon limpio termina en 0.
+  - `npm audit` reporta 1 vulnerabilidad moderada en `minimatch` (dependencia de desarrollo de ESLint 10). Se trata en F6.

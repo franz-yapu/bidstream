@@ -31,3 +31,8 @@ Tickets en ClickUp, lista bidstream `901115726262` en FRANZ's Space (igual que S
 **Fecha:** 2026-11-12 · **Fuente:** usuario (pidió empezar 0.1 y 0.4) · **Estado:** activa
 
 ADR-0001 (clave de partición `lotId`) escrito y aceptado; cierra el ticket 0.4. SDD de 0.1 en `docs/sdd/0.1/SDD.md`, Estado = Borrador, a la espera de aprobación. Pendientes: (a) npm vs pnpm, (b) `contracts` separado o dentro de `domain` (decidir en A2), (c) crear el remoto de GitHub para PR y CI.
+
+## DEC-004 — SDD 0.1 aprobado e implementado; npm
+**Fecha:** 2026-11-12 · **Fuente:** usuario · **Estado:** activa
+
+Gestor de paquetes: **npm** (resuelve la pregunta 1 del SDD 0.1). SDD 0.1 aprobado e implementado (commit `dfc409a`). Pendiente: crear el remoto de GitHub y abrir PR (hace falta para 0.3); `npm audit` moderado en dependencia de desarrollo (minimatch vía ESLint 10) → F6.
