@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **G2** (`868mvty1q`, https://app.clickup.com/t/868mvty1q).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Aprobado (2026-11-12)
+- **Estado:** Implementado (2026-11-12) — aprobado el mismo día
 - **Versión:** 1.0 · **Fecha:** 2026-11-12
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §5 ("Reproceso (lo que hay que grabar en video): borrar la proyección, reposicionar el offset del grupo `projector` a `earliest` y dejar que se reconstruya sola desde el log"), §10 (prueba de reproceso: publicar N eventos, borrar la proyección, reconstruir y verificar que el estado final es idéntico)
@@ -136,12 +136,12 @@ createKafkaAdmin(config): Promise<KafkaAdmin>
 
 ## 5 · Definition of Done
 
-- [ ] SDD en `docs/sdd/G2/SDD.md`, Estado = Aprobado
-- [ ] `npm run reprocess -w @bidstream/projector -- --yes` reconstruye la proyección y la deja idéntica
-- [ ] La prueba demuestra estado idéntico con concurrencia distinta y contra el oráculo del dominio
-- [ ] El generador de historiales es determinista y reutilizable por H5
-- [ ] Tests del §4 en verde; `npm run check` y `npm run test:integration` en verde
-- [ ] PR con CI verde y fusionado
+- [x] SDD en `docs/sdd/G2/SDD.md`, Estado = Aprobado
+- [x] `npm run reprocess -w @bidstream/projector -- --yes` reconstruye la proyección y la deja idéntica
+- [x] La prueba demuestra estado idéntico con concurrencia distinta y contra el oráculo del dominio
+- [x] El generador de historiales es determinista y reutilizable por H5
+- [x] Tests del §4 en verde; `npm run check` y `npm run test:integration` en verde
+- [x] PR con CI verde y fusionado
 
 ---
 
@@ -163,3 +163,16 @@ createKafkaAdmin(config): Promise<KafkaAdmin>
 2. **El comando vive en `apps/projector`** con `--yes` (propuesta). ¿O prefieres un `apps/tools` aparte para operaciones administrativas (reproceso, DLQ)?
 3. **Tamaño de la prueba:** ~150 eventos, dos consumidores en paralelo. ¿Quieres además una variante de mayor volumen (p. ej. 5 000 eventos) marcada como lenta y fuera de la CI normal?
 4. **El generador de historiales** vive en `@bidstream/testing` y servirá a H5 (demostración). ¿De acuerdo?
+
+---
+
+## Changelog de implementación
+
+- **Implementado (2026-11-12)** con las propuestas aprobadas de §7: reposicionar con `deleteGroups` sobre un grupo vacío, comando en `apps/projector` con `--yes`, generador de historiales en `@bidstream/testing`, y solo la prueba de ~150 eventos en la CI.
+- **`@bidstream/kafka`:** `createKafkaAdmin` con `describeGroup`, `deleteGroup` y `consumerLag`. Hallazgo: `deleteGroups` no devuelve el error por grupo, **lanza** `KafkaJSDeleteGroupsError` con el detalle en `.groups[]` (códigos 68 «grupo no vacío» y 69 «grupo no existe»); se adapta en `deleteGroup`.
+- **`@bidstream/testing`:** `generateHistory` con PRNG de semilla (mulberry32), construido con `decideBid`/`decideCloseLot`/`decideCloseAuction` y validado con `domainEventSchema`. Cada lote cierra a una hora distinta (entre el 50 % y el 100 % de las rondas) para que los que cierran antes produzcan extensiones anti-sniping; un 15 % de los lotes no recibe pujas. Con `seed = 42` (4 subastas × 3 lotes × 10 rondas) da 118 eventos que cubren los 7 tipos. Dos errores del propio generador detectados por sus pruebas: el reloj retrocedía al cerrar (cierre mal estimado) y no salían extensiones.
+- **`apps/projector`:** `reprocessProjection`, `GroupActiveError`, `waitForLagZero` y el comando `npm run reprocess -w @bidstream/projector -- --yes` (sin `--yes` explica y sale con 2; con el projector activo se niega). `createProjector` acepta `groupId` (por defecto `projector`) para que las pruebas usen un grupo propio.
+- **Resultado de la prueba:** 118 eventos en 6 particiones; dos consumidores en paralelo proyectan y coinciden con el estado del dominio (`foldLot` por lote); tras `reprocessProjection` la proyección y los `processed_event` del `projector` quedan vacíos, los de otro consumidor se conservan y el lag es el total; reconstruir con **dos** consumidores en paralelo da **exactamente el mismo estado** que la línea base y sin DLQ; repetir el reproceso dos veces seguidas es inofensivo y reconstruir con **un** consumidor vuelve a dar el mismo estado. Sin `yes` no hace nada y con el projector activo falla con `GroupActiveError` sin borrar. Estable en tres ejecuciones seguidas.
+- **Lecciones de las pruebas (propias, no del producto):** el grupo `projector` es **global en el clúster**: los consumidores que deja colgados una ejecución fallida siguen como miembros hasta que expira su sesión (~45 s) y las ejecuciones siguientes los ven; las pruebas usan un grupo único por ejecución y no dejan consumidores vivos al fallar. Y `apps/*` importa los paquetes desde `dist/`: tras tocar un paquete hay que recompilar (`npm run build`) antes de probar una app.
+- 43 pruebas nuevas en total (11 del generador, 2 de administración de grupos y 6 del reproceso, más las unitarias existentes); `npm run check` y `npm run test:integration` en verde.
+- **Pendiente:** ejecutar el comando de reproceso de extremo a extremo con los procesos reales (lo grabará H5). Una ejecución manual contra el entorno de desarrollo se negó correctamente por tener miembros activos en el grupo: procesos de demostración que se dejaron vivos.

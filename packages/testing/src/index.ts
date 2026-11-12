@@ -7,3 +7,4 @@ export {
   type TestTopic,
   type CollectOptions,
 } from './kafka.js';
+export { generateHistory, totalPlaced, type HistoryOptions } from './history.js';
