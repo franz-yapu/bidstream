@@ -56,3 +56,8 @@ Aprobados `docs/sdd/0.2` y `docs/sdd/A2` con las propuestas: (A2 #1) `AuctionOpe
 **Fecha:** 2026-11-12 · **Fuente:** usuario · **Estado:** activa (pendiente de respuesta)
 
 Remoto `git@github.com:franz-yapu/bidstream.git` (público) conectado y `main` subido (sin secretos: `.env` y `.clickup.json` ignorados). SDD en borrador: 0.3 (CI; pendiente decidir protección de `main`), A3 (puertos; pendiente si hace falta `UnitOfWork`) y A1 (dominio; pendiente: primera puja `>= startingPrice`, extensión anti-sniping desde `closesAt`, `AuctionClosed` solo sin lotes abiertos, un postor puede subir su propia puja).
+
+## DEC-010 — Ola 1 completa
+**Fecha:** 2026-11-12 · **Fuente:** Claude · **Estado:** activa
+
+Ola 1 terminada: 0.1, 0.2, 0.3, 0.4, A1, A2, A3 (19 h). CI verde, `main` protegida (PR + check `check`), 106 tests. ClickUp: los 7 tickets en `completadas`. Nota: 0.1, 0.2, 0.4 y A2 se subieron directo a `main` antes de activar la protección; A1, A3 y 0.3 fueron por PR. Siguiente: Ola 2 (SDD + tickets).
