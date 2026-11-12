@@ -1,5 +1,7 @@
 # bidstream
 
+[![CI](https://github.com/franz-yapu/bidstream/actions/workflows/ci.yml/badge.svg)](https://github.com/franz-yapu/bidstream/actions/workflows/ci.yml)
+
 Motor de subastas en tiempo real orientado a eventos (Kafka, event sourcing, proyecciones, GraphQL, Azure).
 Especificación: [`docs/product/bidstream_spec.md`](docs/product/bidstream_spec.md).
 

@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **0.3** (`868mvtfpx`, https://app.clickup.com/t/868mvtfpx).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Borrador
+- **Estado:** Aprobado (2026-11-12)
 - **Versión:** 1.0 · **Fecha:** 2026-11-12
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §1 (Agile: "PR con CI obligatoria"), §10 (CI: typecheck, lint, pruebas, build, auditoría)
