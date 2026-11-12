@@ -1,4 +1,4 @@
-.PHONY: up down reset ps logs topics psql verify
+.PHONY: up down reset ps logs topics psql verify migrate
 
 COMPOSE := docker compose
 KAFKA_BIN := /opt/kafka/bin
@@ -32,3 +32,8 @@ psql: ## Consola de PostgreSQL
 
 verify: ## Comprobaciones del entorno local (ver docs/sdd/0.2)
 	@sh scripts/local/verify.sh
+
+DATABASE_URL ?= postgresql://bidstream:bidstream@localhost:5432/bidstream
+
+migrate: ## Aplica las migraciones de PostgreSQL (requiere `make up`)
+	DATABASE_URL=$(DATABASE_URL) npm run db:migrate -w @bidstream/db

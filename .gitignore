@@ -6,3 +6,6 @@ dist
 dist
 *.tsbuildinfo
 coverage
+
+# cliente Prisma generado (npm run db:generate, tambien en postinstall)
+packages/db/src/generated

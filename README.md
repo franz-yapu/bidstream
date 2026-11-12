@@ -17,6 +17,7 @@ npm run check  # typecheck + lint + formato + tests + build
 
 ```bash
 make up      # Kafka (KRaft) + PostgreSQL + topics
+make migrate # aplica las migraciones de PostgreSQL
 make verify  # comprobaciones del entorno
 make down    # detener (conserva datos); make reset borra los datos
 ```

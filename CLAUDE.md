@@ -25,3 +25,4 @@ Spec normativa: `docs/product/bidstream_spec.md`. PRD/alcance/reglas en `docs/pr
 - Desde el host: `KAFKA_BROKERS=localhost:9092`; desde contenedores: `kafka:19092`.
 - La CI (`.github/workflows/ci.yml`) ejecuta `npm run check` en Node 22; las acciones se fijan por SHA de commit. `main` se cambia solo por PR.
 - Usar **Node 22** (`nvm use`): `@confluentinc/kafka-javascript` no compila en Node 26. `npm run test:integration` (requiere `make up`) corre los `*.int.test.ts`.
+- `make migrate` aplica las migraciones de `packages/db`; el cliente Prisma se genera en `postinstall` (`npm run db:generate -w @bidstream/db`). Cambios de esquema: `npm run db:migrate:dev -w @bidstream/db` con `DATABASE_URL` y revisar el SQL; los índices parciales van a mano.

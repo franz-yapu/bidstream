@@ -20,7 +20,16 @@ const infraImports = [
 ];
 
 export default defineConfig(
-  { ignores: ['**/dist/**', '**/coverage/**', 'node_modules/**', 'docs/**', 'scripts/**'] },
+  {
+    ignores: [
+      '**/dist/**',
+      '**/generated/**',
+      '**/coverage/**',
+      'node_modules/**',
+      'docs/**',
+      'scripts/**',
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.strictTypeChecked,
   {

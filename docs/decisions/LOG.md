@@ -76,3 +76,8 @@ SDD en borrador: `docs/sdd/B1`, `C1` y `D2`. Hallazgos sobre la spec §6: (1) `P
 **Fecha:** 2026-11-12 · **Fuente:** usuario · **Estado:** activa
 
 Aprobados con las propuestas de Claude: (B1) `Bid.awarded` + índice único parcial, `ProcessedEvent` con clave compuesta, cliente Prisma generado en `postinstall` sin versionar, `snake_case`; (C1) Fastify, `problem+json`, `/v1/docs` también en producción, GraphQL en `apps/graphql`; (D2) `@confluentinc/kafka-javascript`. D2 implementado. **Hallazgo:** esa librería no compila en Node 26 (sin binario precompilado, la compilación falla) y funciona con el binario precompilado en Node 22; el proyecto usa Node 22 y no debe subirse a 26 sin repetir el spike. `consumer.stop()` no está implementado.
+
+## DEC-014 — B1 implementado
+**Fecha:** 2026-11-12 · **Fuente:** Claude · **Estado:** activa
+
+B1 implementado: `@bidstream/db` (Prisma 7.10.1), migración `0001_init`, 12 pruebas de integración. Correcciones a la spec §6 vigentes: `ProcessedEvent` con clave primaria `(event_id, consumer)`; `Bid.awarded` con índice único parcial por lote en lugar de un índice redundante sobre `Lot`; `Bid.id` = `eventId` del `BidPlaced`. Aviso para D4/E1: en consultas con `amount::text`, calificar la columna en el `ORDER BY`.
