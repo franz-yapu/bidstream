@@ -186,3 +186,8 @@ E2 implementado: límites de profundidad (7), complejidad (1 000, con coste por 
 **Fecha:** 2026-11-12 · **Fuente:** Claude · **Estado:** activa
 
 E3 implementado: `Subscription.lotUpdated` por SSE con cola acotada, cupo por tenant, comprobación de existencia y aviso `ResyncRequired`. **Con E3 los seis procesos del núcleo funcionan juntos**, demostrado con una prueba de flujo completo con todo real (API → relay → Kafka → projector y notifier → PostgreSQL → GraphQL consulta y subscription). `npm run dev:graphql` arranca consultas y subscriptions (puerto 4000). Para recibir errores previos al flujo con su código HTTP, los clientes deben aceptar `application/graphql-response+json`. **Pendiente para H1:** `LISTEN` y SSE de larga duración en Azure.
+
+## DEC-036 — E1, E2 y E3 completados: el núcleo funciona de punta a punta
+**Fecha:** 2026-11-12 · **Fuente:** Claude · **Estado:** activa
+
+E1, E2 y E3 fusionados (PR #29, #30, #31) y en `completadas` en ClickUp. Estado: 22 de 39 tareas, 82 h de 152. 238 pruebas unitarias y 190 de integración. **El núcleo completo funciona de punta a punta**: API REST → outbox → relay → Kafka → projector, notifier y auditor → PostgreSQL → GraphQL (consultas y subscriptions), con el reproceso desde el log. Quedan en la Ola 2: D7 (reproceso del DLQ), F4 (logs con correlación), F6 (auditoría de dependencias), H2 (Dockerfiles), H5 (vídeo del reproceso), I1 (README) e I2 (ADRs). La **Ola 3** (50 h) sigue bloqueada por decisiones: Q2 (autoridad de la puja), Q4 (autenticación/usuarios), Q5 (firma de eventos), Q3 (cierre de lotes) y Q1 (suscripción Azure).

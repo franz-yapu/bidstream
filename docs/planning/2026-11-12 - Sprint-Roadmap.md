@@ -4,13 +4,13 @@
 
 ## 1 · Dónde estamos
 
-Actualizado 2026-11-12: Ola 1 completa (7 tareas, 19 h) y de la Ola 2 listas B1, B2, C1, C2, D1–D6, G1 y G2 (50 h).
+Actualizado 2026-11-12: Ola 1 completa (7 tareas, 19 h) y de la Ola 2 listas B1, B2, C1, C2, D1–D6, E1–E3, G1 y G2 (63 h).
 
 | Estado | h | Tareas | % |
 |---|---:|---:|---:|
-| ✅ Listo | 69 | 19 | 45% |
+| ✅ Listo | 82 | 22 | 54% |
 | 🟡 En curso | 0 | 0 | 0% |
-| ⬜ Pendiente (desbloqueado) | 33 | 10 | 22% |
+| ⬜ Pendiente (desbloqueado) | 20 | 7 | 13% |
 | ⛔ Bloqueado por decisión/acceso | 50 | 10 | 33% |
 
 Total: 152 h en 39 tareas.
@@ -67,9 +67,9 @@ B1 (5 h), B2 (3 h), C1 (5 h), C2 (5 h), D1 (5 h), D2 (3 h), D3 (5 h), D4 (5 h), 
 | D6 | D Kafka | Consumidor `auditor`: bitácora append-only | 3 | ✅ Listo | 2 | 868mvty0k | spec §4 | D3 | — |
 | D7 | D Kafka | Endpoint administrativo para reprocesar el DLQ | 3 | ⬜ Pendiente | 2 | 868mvty0q | spec §5 | D3, C1 | — |
 | D8 | D Kafka | Cierre de lotes: quién emite `LotClosed`/`AuctionClosed` y `LotExtended` al llegar `closesAt` | 5 | ⛔ Bloqueado | 3 | | spec §2, §3 | D1, A1 | Q3: mecanismo de cierre (scheduler) no definido |
-| E1 | E GraphQL | Servidor GraphQL de lectura: auction, lot, lotBids (cursor), activeLots | 5 | ⬜ Pendiente | 2 | 868mvty0w | spec §7 | B1, C1 | — |
-| E2 | E GraphQL | Límites de profundidad y complejidad de consulta | 3 | ⬜ Pendiente | 2 | 868mvty12 | spec §7 | E1 | — |
-| E3 | E GraphQL | Subscription `lotUpdated` alimentada por `notifier` | 5 | ⬜ Pendiente | 2 | 868mvty15 | spec §7 | E1, D5 | — |
+| E1 | E GraphQL | Servidor GraphQL de lectura: auction, lot, lotBids (cursor), activeLots | 5 | ✅ Listo | 2 | 868mvty0w | spec §7 | B1, C1 | — |
+| E2 | E GraphQL | Límites de profundidad y complejidad de consulta | 3 | ✅ Listo | 2 | 868mvty12 | spec §7 | E1 | — |
+| E3 | E GraphQL | Subscription `lotUpdated` alimentada por `notifier` | 5 | ✅ Listo | 2 | 868mvty15 | spec §7 | E1, D5 | — |
 | F1 | F Seguridad | Auth: JWT corto + refresh revocable, Argon2, bloqueo por intentos, RBAC | 8 | ⛔ Bloqueado | 3 | | spec §8 | C1, B1 | Q4: modelo de usuarios/postores no está en el esquema |
 | F2 | F Seguridad | Límite de pujas por postor y minuto, cabeceras de seguridad, CORS con lista blanca | 3 | ⛔ Bloqueado | 3 | | spec §8 | C3 | Cascada de Q2 |
 | F3 | F Seguridad | Firma de eventos y verificación en el consumidor | 5 | ⛔ Bloqueado | 3 | | spec §8 | A2, D3 | Q5: algoritmo y gestión de clave de firma |
