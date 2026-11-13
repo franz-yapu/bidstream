@@ -65,7 +65,7 @@ B1 (5 h), B2 (3 h), C1 (5 h), C2 (5 h), D1 (5 h), D2 (3 h), D3 (5 h), D4 (5 h), 
 | D4 | D Kafka | Consumidor `projector`: proyección de lote y ranking en PostgreSQL | 5 | ✅ Listo | 2 | 868mvty0d | spec §4, §5 | D3, A2 | — |
 | D5 | D Kafka | Consumidor `notifier`: publica a las subscriptions de GraphQL | 3 | ✅ Listo | 2 | 868mvty0f | spec §4 | D3 | — |
 | D6 | D Kafka | Consumidor `auditor`: bitácora append-only | 3 | ✅ Listo | 2 | 868mvty0k | spec §4 | D3 | — |
-| D7 | D Kafka | Endpoint administrativo para reprocesar el DLQ | 3 | ⬜ Pendiente | 2 | 868mvty0q | spec §5 | D3, C1 | — |
+| D7 | D Kafka | Endpoint administrativo para reprocesar el DLQ | 3 | ✅ Listo | 2 | 868mvty0q | spec §5 | D3, C1 | — |
 | D8 | D Kafka | Cierre de lotes: quién emite `LotClosed`/`AuctionClosed` y `LotExtended` al llegar `closesAt` | 5 | ⛔ Bloqueado | 3 | | spec §2, §3 | D1, A1 | Q3: mecanismo de cierre (scheduler) no definido |
 | E1 | E GraphQL | Servidor GraphQL de lectura: auction, lot, lotBids (cursor), activeLots | 5 | ✅ Listo | 2 | 868mvty0w | spec §7 | B1, C1 | — |
 | E2 | E GraphQL | Límites de profundidad y complejidad de consulta | 3 | ✅ Listo | 2 | 868mvty12 | spec §7 | E1 | — |
@@ -75,7 +75,7 @@ B1 (5 h), B2 (3 h), C1 (5 h), C2 (5 h), D1 (5 h), D2 (3 h), D3 (5 h), D4 (5 h), 
 | F3 | F Seguridad | Firma de eventos y verificación en el consumidor | 5 | ⛔ Bloqueado | 3 | | spec §8 | A2, D3 | Q5: algoritmo y gestión de clave de firma |
 | F4 | F Seguridad | Logs estructurados con id de correlación | 3 | ⬜ Pendiente | 2 | 868mvty18 | spec §8 | C1 | — |
 | F5 | F Seguridad | SECURITY.md con el mapeo OWASP Top 10 | 2 | ⛔ Bloqueado | 3 | | spec §8 | F1, F2, F3, F4, F6 | Cascada de Q2/Q4/Q5 |
-| F6 | F Seguridad | `npm audit` en CI y actualizaciones automáticas de dependencias | 1 | ⬜ Pendiente | 2 | 868mvty1c | spec §8 | 0.3 | — |
+| F6 | F Seguridad | `npm audit` en CI y actualizaciones automáticas de dependencias | 1 | ✅ Listo | 2 | 868mvty1c | spec §8 | 0.3 | — |
 | G1 | G Calidad | Pruebas de integración con PostgreSQL y Kafka reales (testcontainers) | 5 | ✅ Listo | 2 | 868mvty1g | spec §10 | 0.2, B1 | — |
 | G2 | G Calidad | Prueba de reproceso: N eventos, borrar proyección, reconstruir, estado idéntico | 3 | ✅ Listo | 2 | 868mvty1q | spec §5, §10 | D4, G1 | — |
 | H1 | H Azure | Bicep: Event Hubs, ACR, PostgreSQL Flexible, Key Vault, Container Apps | 8 | ⛔ Bloqueado | 3 | | spec §9 | 0.2 | Q1: suscripción Azure y presupuesto |
