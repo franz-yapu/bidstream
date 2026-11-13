@@ -278,7 +278,9 @@ describe('POST /v1/admin/dlq/reprocess', () => {
   it('con otro reproceso en marcha responde 409', async () => {
     const server = await start();
     const holder = await createConsumer(kafka, { groupId: group, topics: [dlq.name] });
-    void holder.run(() => new Promise(() => undefined));
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => (release = resolve));
+    void holder.run(() => held);
     try {
       await waitFor(async () => ((await admin.describeGroup(group))?.members ?? 0) > 0, {
         description: 'el grupo tiene un miembro',
@@ -292,7 +294,8 @@ describe('POST /v1/admin/dlq/reprocess', () => {
       expect(reply.statusCode).toBe(409);
       expect(reply.json()).toMatchObject({ type: 'urn:bidstream:problem:conflict' });
     } finally {
-      void holder.disconnect().catch(() => undefined);
+      release();
+      await holder.disconnect().catch(() => undefined);
     }
   });
 

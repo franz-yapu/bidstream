@@ -245,7 +245,9 @@ describe('reprocessDlq: pendientes', () => {
         groupId: fx.options.reprocessorGroup ?? '',
         topics: [fx.dlq.name],
       });
-      void holder.run(() => new Promise(() => undefined)); // retiene el grupo sin confirmar nada
+      let release: () => void = () => undefined;
+      const held = new Promise<void>((resolve) => (release = resolve));
+      void holder.run(() => held); // retiene el grupo sin confirmar nada
       try {
         await waitFor(
           async () =>
@@ -256,7 +258,8 @@ describe('reprocessDlq: pendientes', () => {
         );
         await expect(reprocessDlq(fx.options)).rejects.toThrow(DlqBusyError);
       } finally {
-        void holder.disconnect().catch(() => undefined);
+        release();
+        await holder.disconnect().catch(() => undefined);
       }
     } finally {
       await fx.teardown();
