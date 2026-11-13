@@ -18,6 +18,21 @@ enum AuctionStatus {
   @@map("auction_status")
 }
 
+enum UserRole {
+  ADMIN
+  SELLER
+  BIDDER
+
+  @@map("user_role")
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+
+  @@map("user_status")
+}
+
 enum LotStatus {
   OPEN
   CLOSED
@@ -110,6 +125,44 @@ model IdempotencyKey {
   @@index([tenantId, bidderId, createdAt])
   @@index([createdAt])
   @@map("idempotency_key")
+}
+
+/// Usuarios del sistema (F1, ADR-0013). El postor **es** el usuario: `bidderId = id`. El correo va
+/// normalizado en minúsculas y es único por tenant.
+model AppUser {
+  id             String         @id @db.Uuid
+  tenantId       String         @map("tenant_id") @db.Uuid
+  email          String
+  passwordHash   String         @map("password_hash")
+  role           UserRole
+  status         UserStatus     @default(ACTIVE)
+  failedAttempts Int            @default(0) @map("failed_attempts")
+  lockedUntil    DateTime?      @map("locked_until") @db.Timestamptz(3)
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  refreshTokens  RefreshToken[]
+
+  @@unique([tenantId, email])
+  @@map("app_user")
+}
+
+/// Refresh tokens opacos (solo se guarda su SHA-256), de un solo uso y agrupados en una familia: si se
+/// presenta uno ya usado se revoca toda la familia (robo).
+model RefreshToken {
+  id         String    @id @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  familyId   String    @map("family_id") @db.Uuid
+  tokenHash  String    @unique @map("token_hash")
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz(3)
+  revokedAt  DateTime? @map("revoked_at") @db.Timestamptz(3)
+  replacedBy String?   @map("replaced_by") @db.Uuid
+  userAgent  String?   @map("user_agent")
+  ip         String?
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  user       AppUser   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([familyId])
+  @@map("refresh_token")
 }
 
 /// Un mismo evento lo registra cada consumidor una vez: clave primaria compuesta (corrige la spec §6).

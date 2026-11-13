@@ -260,3 +260,8 @@ La clave se reclama en la misma transacción que el comando (`(tenant, postor, c
 **Fecha:** 2026-11-13 · **Fuente:** Claude · **Estado:** activa
 
 El relay firma los bytes exactos del valor y los cinco consumidores verifican (`enforce` en producción); un mensaje manipulado o sin firma va al DLQ como veneno sin aplicarse. Rotación por `kid`, historial anterior aceptado con un corte, y D7 conserva la firma. Claves de desarrollo generadas por `make demo` y nunca versionadas; la privada solo para el relay. Pendiente: Key Vault (H1) y sellar el historial para quitar el corte.
+
+## DEC-050 — F1 parte 1: autenticación propia (núcleo)
+**Fecha:** 2026-11-13 · **Fuente:** Claude · **Estado:** activa
+
+Usuarios con Argon2id, JWT de acceso EdDSA de 10 minutos y refresh opaco de un solo uso con rotación y revocación de familia; bloqueo 5/15 min y un único error de credenciales. En modo `jwt` el tenant y el postor salen del token y las cabeceras de identidad se ignoran. Se conserva el modo `header` solo fuera de producción. Falta la parte 2 (roles, deny-by-default, GraphQL, `X-Admin-Key` → `ADMIN`), con el ADR-0013.

@@ -31,6 +31,7 @@ describe('createTestDatabase', () => {
        WHERE table_schema = 'public' AND table_name <> '_prisma_migrations' ORDER BY 1`,
     );
     expect(rows.map((r) => r.table_name)).toEqual([
+      'app_user',
       'auction',
       'audit_log',
       'bid',
@@ -39,6 +40,7 @@ describe('createTestDatabase', () => {
       'lot_decision',
       'outbox_message',
       'processed_event',
+      'refresh_token',
     ]);
     expect(await databaseExists(name)).toBe(true);
     await db.drop();
