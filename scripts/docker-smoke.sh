@@ -4,7 +4,7 @@
 set -euo pipefail
 
 APPS=("$@")
-[ ${#APPS[@]} -gt 0 ] || APPS=(api relay projector auditor notifier graphql decider)
+[ ${#APPS[@]} -gt 0 ] || APPS=(api relay projector auditor notifier graphql decider closer)
 DB="${SMOKE_DATABASE_URL:-postgresql://bidstream:bidstream@localhost:5432/bidstream}"
 BROKERS="${SMOKE_KAFKA_BROKERS:-localhost:9092}"
 fail() { echo "✗ $*" >&2; exit 1; }

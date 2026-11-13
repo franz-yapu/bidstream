@@ -35,8 +35,8 @@ verify: ## Comprobaciones del entorno local (ver docs/sdd/0.2)
 
 DATABASE_URL ?= postgresql://bidstream:bidstream@localhost:5432/bidstream
 
-images: ## Construye las imágenes de los siete procesos (H2)
-	@for app in api relay projector auditor notifier graphql decider; do \
+images: ## Construye las imágenes de los ocho procesos (H2)
+	@for app in api relay projector auditor notifier graphql decider closer; do \
 	  docker build -q --build-arg APP=$$app -t bidstream-$$app:test . || exit 1; \
 	done
 

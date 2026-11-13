@@ -22,7 +22,8 @@ flowchart LR
   OUT --> RELAY[relay · líder único]
   RELAY -->|PlaceBid · clave = lotId| KC[(Kafka · bidstream.commands.bid)]
   KC --> DEC[decider · estado propio]
-  DEC -->|BidPlaced · BidRejected · LotExtended| OUT
+  DEC -->|BidPlaced · BidRejected · LotExtended · LotClosed| OUT
+  CLOSER[closer · líder único] -->|CloseLot · AuctionClosed| OUT
   RELAY -->|clave = lotId| K[(Kafka · bidstream.events.lot)]
   K --> PROJ[projector]
   K --> NOT[notifier]
@@ -43,12 +44,16 @@ flowchart LR
    **decisor** lo resuelve en el orden de la partición del lote, con su propio estado, y emite
    `BidPlaced`, `BidRejected` o `LotExtended` por el mismo outbox
    ([ADR-0003](docs/adr/0003-la-puja-devuelve-202.md), [ADR-0011](docs/adr/0011-decisor-unico-por-lote.md)).
-4. **Tres consumidores independientes** leen el mismo topic: `projector` (la vista consultable),
+4. **El tiempo también entra en orden**: un `closer` (líder único) da la señal de que venció un lote
+   (`CloseLot`) por la **misma partición que las pujas**; el decisor la resuelve, así que una puja no
+   puede aceptarse después de anunciar al ganador. Una puja en los últimos minutos extiende el cierre
+   (anti-sniping). El `closer` cierra además las subastas sin lotes abiertos.
+5. **Tres consumidores independientes** leen el mismo topic: `projector` (la vista consultable),
    `notifier` (tiempo real) y `auditor` (bitácora inmutable). Una cola no permite que tres lectores
    vean el mismo mensaje; un log, sí.
-5. **GraphQL solo lee** de la proyección y empuja cambios por SSE ([ADR-0004](docs/adr/0004-graphql-solo-lecturas.md),
+6. **GraphQL solo lee** de la proyección y empuja cambios por SSE ([ADR-0004](docs/adr/0004-graphql-solo-lecturas.md),
    [ADR-0008](docs/adr/0008-tiempo-real-listen-notify-sse.md)).
-6. **Cada consumidor es idempotente** y los fallos van a un DLQ reprocesable
+7. **Cada consumidor es idempotente** y los fallos van a un DLQ reprocesable
    ([ADR-0007](docs/adr/0007-consumidores-idempotentes-y-dlq.md)).
 
 ## Qué cambió respecto a la versión con WebSockets y bloqueos en base de datos
@@ -150,7 +155,7 @@ Requisitos: Docker y Node 22 (`nvm use`).
 npm ci && make demo
 ```
 
-Levanta Kafka y PostgreSQL, aplica las migraciones y arranca los siete procesos en contenedores. Después:
+Levanta Kafka y PostgreSQL, aplica las migraciones y arranca los ocho procesos en contenedores. Después:
 
 ```bash
 scripts/demo-smoke.sh   # una subasta entra por REST y aparece por GraphQL
@@ -167,7 +172,7 @@ Para desarrollar, probar o depurar proceso a proceso: [`docs/DESARROLLO.md`](doc
 Lo que está hecho y probado (más de 360 pruebas unitarias y 230 de integración contra Kafka y
 PostgreSQL reales):
 
-- Comandos REST de subastas, lotes y pujas (con `Idempotency-Key`; la puja la decide un consumidor en orden por lote), outbox, relay, los tres consumidores, proyección, GraphQL con
+- Comandos REST de subastas, lotes y pujas (con `Idempotency-Key`; la puja la decide un consumidor en orden por lote), cierre automático por tiempo, outbox, relay, los tres consumidores, proyección, GraphQL con
   límites y subscriptions, DLQ con reproceso administrativo, reproceso completo desde el log, logs con
   correlación, imágenes de contenedor y CI con auditoría de dependencias.
 
@@ -176,7 +181,7 @@ Lo que **no** está todavía:
 - **Límite de pujas por postor** y cabeceras de seguridad (F2).
 - **Autenticación y usuarios.** Mientras tanto el tenant llega por cabecera y la API **no arranca con
   `NODE_ENV=production`** ([ADR-0010](docs/adr/0010-tenant-provisional-por-cabecera.md)).
-- **Cierre automático de lotes por tiempo** (D8), **firma de eventos** (F3) y `SECURITY.md` con el mapeo OWASP.
+- **Firma de eventos** (F3) y `SECURITY.md` con el mapeo OWASP.
 - **Despliegue en Azure** (Bicep, Event Hubs, Container Apps) y métricas de _consumer lag_.
 
 Documentación: [especificación](docs/product/bidstream_spec.md) · [ADR](docs/adr/README.md) ·

@@ -11,6 +11,8 @@ export {
   type ClaimResult,
   type IdempotencyClaim,
 } from './idempotency/idempotency-store.js';
+export { tryAcquireLeadership, type Leadership } from './leadership/leader.js';
+export { PrismaClosingQueries, type DueAuction, type DueLot } from './closing/closing-queries.js';
 export { PrismaLotDecisionRepository } from './decision/lot-decision-repository.js';
 export { applyEventToDecision, DecisionStateError } from './decision/apply-event.js';
 

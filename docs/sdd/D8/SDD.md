@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **D8** (`868mw2q32`, https://app.clickup.com/t/868mw2q32).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Aprobado (2026-11-13)
+- **Estado:** Implementado (2026-11-13)
 - **Versión:** 0.1 · **Fecha:** 2026-11-13
 - **Decisión que lo desbloquea:** **Q3** = worker `closer` con líder único (respuesta del usuario, 2026-11-13).
 - **Fuentes de verdad citadas:** spec §2 y §3 (reglas 4 y 5: al llegar `closesAt` se adjudica); `packages/domain/src/lot/decide-close.ts` (`decideCloseLot`), `auction/state.ts` (`decideCloseAuction`); `apps/relay/src/leader.ts` (bloqueo asesor); `docs/sdd/C3/SDD.md`; `docs/adr/0006`
@@ -119,3 +119,13 @@ Pujas y cierre comparten partición: o la puja entra antes del cierre y cuenta, 
 1. **Intervalo del `closer`:** 5 s (propuesta). ¿Bien?
 2. **`AuctionClosed` desde el `closer`** y `LotClosed` desde el decisor (propuesta). ¿De acuerdo?
 3. **Limpieza de claves de idempotencia dentro del `closer`** (propuesta).
+
+---
+
+## Changelog de implementación
+
+- Dominio: comando `CloseLot` (14 pruebas de comandos). Decisor: `decideCloseLotCommand` y despacho por `command.type`; `commit` común a puja y cierre.
+- `@bidstream/db`: `PrismaClosingQueries` (`findDueLots`, `findDueAuctions`), `tryAcquireLeadership` movido desde el relay (que lo reexporta con su clave), `skipDuplicates` en `enqueue` y `enqueueCommand`.
+- `apps/closer`: `Closer` (`runOnce`, `start`/`stop` con líder único), `deterministicUuidV7`, configuración, imagen, servicio del compose y job de la CI.
+- 11 pruebas de integración (`closer.int.test.ts`), repetidas 3 veces en verde: adjudicación con ganador y monto, lote desierto, sin señal antes de `closesAt`, señal repetida sin duplicados, puja y cierre a la vez (12 lotes), anti-sniping, `AuctionClosed` una sola vez, subasta sin lotes, liderazgo y relevo entre dos `closer`, limpieza de claves y reconstrucción de `lot_decision` con lotes cerrados.
+- Hallazgo: una puja a `closesAt - 1 s` cae dentro de la ventana de anti-sniping, así que **extiende** el cierre y la señal que llegó después se adelanta (no cierra); solo si el cierre entra primero se rechaza la puja. Es el comportamiento correcto de la regla 3 y la prueba lo documenta.

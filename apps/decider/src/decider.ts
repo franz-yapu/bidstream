@@ -7,7 +7,7 @@ import {
 import { applyEventToDecision, type PrismaClient } from '@bidstream/db';
 import { type AntiSnipingConfig, type DomainCommand } from '@bidstream/domain';
 import { TOPICS, type KafkaConfig } from '@bidstream/kafka';
-import { DECIDER_STATE_CONSUMER, decidePlaceBid } from './decide.js';
+import { DECIDER_STATE_CONSUMER, decideCloseLotCommand, decidePlaceBid } from './decide.js';
 
 /** Grupo del decisor de comandos (también su nombre de consumidor en `processed_event`). */
 export const DECIDER_GROUP = 'decider';
@@ -57,12 +57,15 @@ export async function createDecider(options: DeciderOptions): Promise<Decider> {
     topics: [options.commandsTopic ?? TOPICS.commandsBid],
     codec: commandCodec,
     handler: async (command, { tx }) => {
-      // D8 añade `CloseLot`: cuando haya más de un tipo, aquí se despacha por `command.type`.
-      await decidePlaceBid(tx, command, {
-        antiSniping: options.antiSniping,
-        eventsTopic,
-        stateConsumer,
-      });
+      const deps = { antiSniping: options.antiSniping, eventsTopic, stateConsumer };
+      switch (command.type) {
+        case 'PlaceBid':
+          await decidePlaceBid(tx, command, deps);
+          break;
+        case 'CloseLot':
+          await decideCloseLotCommand(tx, command, deps);
+          break;
+      }
     },
     ...(options.onCommandOutcome === undefined ? {} : { onOutcome: options.onCommandOutcome }),
   });
