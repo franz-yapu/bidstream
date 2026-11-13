@@ -206,3 +206,8 @@ Aprobados con las propuestas de Claude: (D7) clave de servicio `X-Admin-Key` con
 **Fecha:** 2026-11-13 · **Fuente:** Claude · **Estado:** activa
 
 `GET /v1/admin/dlq` y `POST /v1/admin/dlq/reprocess` con `X-Admin-Key` (rutas inexistentes sin `ADMIN_API_KEY`), modos pendientes y selectivo, tope de 3 reprocesos, 409 si hay otro reproceso en marcha. Limitación documentada: el evento reprocesado llega al final de su partición. Sigue siendo provisional hasta F1 (Q4).
+
+## DEC-040 — I2 implementado: nueve ADR con evidencia verificable
+**Fecha:** 2026-11-13 · **Fuente:** Claude · **Estado:** activa
+
+ADR 0002–0010 (outbox, `202` en la puja, GraphQL solo lecturas, proyección sin FK, un relay, idempotencia y DLQ, `LISTEN/NOTIFY`, reproceso desde el log, tenant provisional), con alternativas y «Verificación» comprobada por pruebas. ADR-0003 está aceptado pero sin implementar (C3, Q2).

@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **I2** (`868mvty26`, https://app.clickup.com/t/868mvty26).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Aprobado (2026-11-13)
+- **Estado:** Implementado (2026-11-13)
 - **Versión:** 1.0 · **Fecha:** 2026-11-13
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §10 ("ADRs numerados para cada decisión: clave de partición, outbox, 202 en la puja, GraphQL solo para lecturas"), §12 punto 4 ("las decisiones de diseño que vale la pena mirar, con el enlace a cada ADR"), §5, §7
@@ -160,3 +160,11 @@ Pruebas sobre los archivos de `docs/adr/` (no necesitan infraestructura).
 2. **ADR-0003 (`202`)** sin implementación todavía, con estado Aceptada y nota. ¿O prefieres esperar a C3 y dejarlo `Propuesta`?
 3. **El ADR del tenant provisional** (0010): ¿lo mantenemos como decisión formal o basta con `LOG.md`? Propuesta: ADR, porque condiciona el despliegue en Azure.
 4. **Pruebas de documentación** sobre la estructura y los enlaces de los ADRs (propuesta).
+
+---
+
+## Changelog de implementación
+
+- ADRs 0002–0010, índice `docs/adr/README.md`, plantilla con «Alternativas descartadas» y «Verificación»; ADR-0001 con su «Verificación».
+- `docs/do-not-touch.md` remite a los ADR 0002, 0006, 0007 y 0009.
+- `packages/testing/src/docs/adr.test.ts`: numeración, secciones, estado, fecha, enlaces, evidencia, índice y protección.

@@ -84,7 +84,7 @@ B1 (5 h), B2 (3 h), C1 (5 h), C2 (5 h), D1 (5 h), D2 (3 h), D3 (5 h), D4 (5 h), 
 | H4 | H Azure | Métricas de consumer lag en Grafana | 5 | ⛔ Bloqueado | 3 | | spec §11 | H3 | Cascada de Q1 |
 | H5 | H Azure | Grabar el video del reproceso | 2 | ⬜ Pendiente | 2 | 868mvty20 | spec §5, §12 | G2 | — |
 | I1 | I Docs | README (§12) con comparación contra la versión de WebSockets | 5 | ⬜ Pendiente | 2 | 868mvty22 | spec §12 | G2 | — |
-| I2 | I Docs | ADRs: outbox, 202 en la puja, GraphQL solo lecturas | 3 | ⬜ Pendiente | 2 | 868mvty26 | spec §10 | A1 | — |
+| I2 | I Docs | ADRs: outbox, 202 en la puja, GraphQL solo lecturas | 3 | ✅ Listo | 2 | 868mvty26 | spec §10 | A1 | — |
 
 **El board del tracker no es la verdad.** Los estados de esta tabla salen del repo, no del board.
 

@@ -11,6 +11,21 @@ Qué forzó esta decisión — el problema, restricción o trade-off.
 
 Qué se decidió, en forma de comando ("Se envía X sin Y").
 
+## Alternativas descartadas
+
+| Alternativa | Por qué no |
+| ----------- | ---------- |
+| …           | …          |
+
 ## Consecuencias
 
-Qué facilita esto, qué dificulta, qué descarta.
+**Se gana:** …
+
+**Se pierde:** …
+
+**Obliga a:** …
+
+## Verificación
+
+Evidencia con enlaces relativos que existen en el repositorio: el SDD de origen y las pruebas
+que respaldan la decisión. Un ADR sin evidencia es una opinión.

@@ -50,3 +50,8 @@ desde el log respeta el mismo orden.
 **Obliga a:** que todo productor use `lotId` como clave; que cualquier cambio
 de clave o de número de particiones pase por un ADR nuevo que reemplace a este
 (ver `docs/do-not-touch.md`).
+
+## Verificación
+
+- Spec: [§4](../product/bidstream_spec.md). SDD: [B1](../sdd/B1/SDD.md) (eventos y claves) y [D1](../sdd/D1/SDD.md) (orden de publicación).
+- Pruebas: [`kafka.int.test.ts`](../../packages/kafka/src/kafka.int.test.ts) («eventos del mismo lote: misma partición y en orden»).
