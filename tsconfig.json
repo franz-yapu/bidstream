@@ -42,6 +42,9 @@
     },
     {
       "path": "apps/decider/tsconfig.build.json"
+    },
+    {
+      "path": "apps/closer/tsconfig.build.json"
     }
   ]
 }

@@ -71,7 +71,7 @@ Los comandos devuelven `201` al aceptarse; el estado aparece en la proyección c
 ## Imágenes de contenedor
 
 ```bash
-make images                                              # las siete, etiquetadas bidstream-<app>:test
+make images                                              # las ocho, etiquetadas bidstream-<app>:test
 docker build --build-arg APP=relay -t bidstream-relay .  # o una sola
 docker run --rm -e DATABASE_URL=… -e KAFKA_BROKERS=… bidstream-relay
 ```

@@ -62,3 +62,24 @@ describe('PlaceBid', () => {
     expect(parseCommand({ eventId: 'x', type: 'BidPlaced' }).success).toBe(false);
   });
 });
+
+describe('CloseLot', () => {
+  const valid = () => buildCommand('CloseLot', TENANT, { lotId: LOT }, { deps });
+
+  it('se fabrica, se vuelve a parsear y usa lotId como clave de partición', () => {
+    const command = valid();
+    const parsed = parseCommand(JSON.parse(JSON.stringify(command)));
+    expect(parsed.success && parsed.command).toEqual(command);
+    expect(commandPartitionKey(command)).toBe(LOT);
+  });
+
+  it('acepta un commandId determinista y rechaza campos extra o un lotId inválido', () => {
+    const id = '0190a5c0-0000-7000-8000-0000000000bb';
+    expect(
+      buildCommand('CloseLot', TENANT, { lotId: LOT }, { deps, commandId: id }).commandId,
+    ).toBe(id);
+    const base = JSON.parse(JSON.stringify(valid())) as { payload: Record<string, unknown> };
+    expect(parseCommand({ ...base, payload: { lotId: LOT, extra: 1 } }).success).toBe(false);
+    expect(parseCommand({ ...base, payload: { lotId: 'x' } }).success).toBe(false);
+  });
+});

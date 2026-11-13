@@ -250,3 +250,8 @@ C3 implementado: la API acepta (`202`) y publica `PlaceBid`; `apps/decider` deci
 **Fecha:** 2026-11-13 · **Fuente:** Claude · **Estado:** activa
 
 La clave se reclama en la misma transacción que el comando (`(tenant, postor, clave)` en `idempotency_key`): repetir la petición devuelve el mismo `commandId`, reutilizarla con otro cuerpo da `422`, y 20 peticiones simultáneas producen un solo comando (lo resuelve la clave primaria). La tabla sirve también al límite por minuto de F2.
+
+## DEC-048 — D8 implementado: el closer da la señal, el decisor cierra
+**Fecha:** 2026-11-13 · **Fuente:** Claude · **Estado:** activa
+
+`apps/closer` emite `CloseLot` por la partición del lote y `AuctionClosed` con ids deterministas (el outbox deduplica); `LotClosed` lo escribe solo el decisor. Cada hora borra las claves de idempotencia caducadas. Lección: la señal de cierre que se adelanta a una extensión por anti-sniping no cierra el lote; hace falta una señal posterior (el `closer` la emite sola cuando la proyección refleja la nueva hora).

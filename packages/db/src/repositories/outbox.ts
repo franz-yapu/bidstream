@@ -18,9 +18,14 @@ export class PrismaOutbox {
    * Una sola inserción (todo o nada). El `id` de la fila es el `eventId`: reintentar el mismo
    * evento falla por clave primaria en lugar de duplicar el mensaje.
    */
-  async enqueue(events: readonly DomainEvent[], topic: string): Promise<void> {
+  async enqueue(
+    events: readonly DomainEvent[],
+    topic: string,
+    options: { readonly skipDuplicates?: boolean } = {},
+  ): Promise<void> {
     if (events.length === 0) return;
     await this.db.outboxMessage.createMany({
+      skipDuplicates: options.skipDuplicates === true,
       data: events.map((event) => ({
         id: event.eventId,
         topic,
@@ -35,14 +40,23 @@ export class PrismaOutbox {
    * mismo orden (ADR-0006). El `id` de la fila es el `commandId`, así que repetirlo falla por clave
    * primaria en lugar de duplicar el comando.
    */
-  async enqueueCommand(command: DomainCommand, topic: string): Promise<void> {
-    await this.db.outboxMessage.create({
-      data: {
-        id: command.commandId,
-        topic,
-        key: commandPartitionKey(command),
-        payload: JSON.parse(JSON.stringify(command)) as Prisma.InputJsonObject,
-      },
+  async enqueueCommand(
+    command: DomainCommand,
+    topic: string,
+    options: { readonly skipDuplicates?: boolean } = {},
+  ): Promise<void> {
+    // `skipDuplicates`: una señal repetida (p. ej. `CloseLot` del `closer`) con el mismo `commandId`
+    // determinista no vuelve a encolarse; sin la opción, repetir el comando es un error.
+    await this.db.outboxMessage.createMany({
+      skipDuplicates: options.skipDuplicates === true,
+      data: [
+        {
+          id: command.commandId,
+          topic,
+          key: commandPartitionKey(command),
+          payload: JSON.parse(JSON.stringify(command)) as Prisma.InputJsonObject,
+        },
+      ],
     });
   }
 

@@ -2,6 +2,7 @@ import type { PrismaClient } from '../generated/client.js';
 import { PrismaAuctionRepository } from './auction-repository.js';
 import { PrismaLotRepository } from './lot-repository.js';
 import { PrismaOutbox } from './outbox.js';
+import { PrismaClosingQueries } from '../closing/closing-queries.js';
 import { PrismaIdempotencyStore } from '../idempotency/idempotency-store.js';
 import { PrismaLotDecisionRepository } from '../decision/lot-decision-repository.js';
 
@@ -19,6 +20,8 @@ export interface TransactionScope {
   readonly decisions: PrismaLotDecisionRepository;
   /** Claves de idempotencia de la puja (C4). */
   readonly idempotency: PrismaIdempotencyStore;
+  /** Consultas del `closer` (D8). */
+  readonly closing: PrismaClosingQueries;
 }
 
 export interface TransactionOptions {
@@ -43,6 +46,7 @@ export function withTransaction<T>(
         outbox: new PrismaOutbox(tx),
         decisions: new PrismaLotDecisionRepository(tx),
         idempotency: new PrismaIdempotencyStore(tx),
+        closing: new PrismaClosingQueries(tx),
       }),
     { timeout: options.timeoutMs ?? 5_000 },
   );

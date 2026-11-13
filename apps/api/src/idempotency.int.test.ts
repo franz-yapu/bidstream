@@ -187,7 +187,7 @@ describe('atomicidad y mantenimiento', () => {
             new Proxy(tx, {
               get: (target, prop, receiver) =>
                 prop === 'outboxMessage'
-                  ? { create: () => Promise.reject(new Error('outbox caído')) }
+                  ? { createMany: () => Promise.reject(new Error('outbox caído')) }
                   : (Reflect.get(target, prop, receiver) as unknown),
             }),
           ),

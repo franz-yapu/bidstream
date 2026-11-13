@@ -2,12 +2,13 @@ import { z } from 'zod';
 import { v7 as uuidv7 } from 'uuid';
 import type { EventMeta } from '../events/index.js';
 import { COMMAND_VERSION } from './envelope.js';
+import { closeLot } from './closeLot.js';
 import { placeBid } from './placeBid.js';
 
 export { COMMAND_VERSION } from './envelope.js';
 
 /** Unión discriminada por `type`: el contrato de los comandos que viajan por `bidstream.commands.bid`. */
-export const domainCommandSchema = z.discriminatedUnion('type', [placeBid]);
+export const domainCommandSchema = z.discriminatedUnion('type', [placeBid, closeLot]);
 
 export type DomainCommand = z.infer<typeof domainCommandSchema>;
 export type CommandType = DomainCommand['type'];
