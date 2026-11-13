@@ -72,6 +72,16 @@ npm run dev:notifier   # opcional: Kafka → NOTIFY para las subscriptions de Gr
 
 Los comandos devuelven `201` al aceptarse; el estado aparece en la proyección cuando el relay y el `projector` procesan el evento (un `POST …/lots` inmediato tras crear la subasta puede dar `404` con `Retry-After`).
 
+## Imágenes de contenedor
+
+```bash
+make images                                              # las seis, etiquetadas bidstream-<app>:test
+docker build --build-arg APP=relay -t bidstream-relay .  # o una sola
+docker run --rm -e DATABASE_URL=… -e KAFKA_BROKERS=… bidstream-relay
+```
+
+Toda la configuración llega por variables de entorno en tiempo de ejecución; las imágenes no llevan secretos ni código fuente y corren como usuario no root. `scripts/docker-smoke.sh` (en la CI, un job por proceso) comprueba su contenido y que arrancan contra Kafka y PostgreSQL.
+
 ## Reproceso: reconstruir la proyección desde el log
 
 El log de Kafka es la fuente de verdad; la proyección se puede borrar y reconstruir. Es lo que una cola no permite.

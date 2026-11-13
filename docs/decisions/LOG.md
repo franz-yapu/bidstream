@@ -216,3 +216,8 @@ ADR 0002–0010 (outbox, `202` en la puja, GraphQL solo lecturas, proyección si
 **Fecha:** 2026-11-13 · **Fuente:** usuario («aprobados con tus propuestas»), Claude · **Estado:** activa
 
 Aprobados: (F4) paquete `@bidstream/logging`, correlación por `meta.correlationId` y cabecera Kafka sin cambiar `version`, redacción por clave y URL; (H2) un `Dockerfile` con `ARG APP`, `bookworm-slim` por digest y job `docker`; (H5) script reproducible con huella del estado, `PROJECTOR_GROUP_ID`, grabación opción C; (I1) README de producto y `docs/DESARROLLO.md`, `make demo`, comparación sin cifras. F4 implementado.
+
+## DEC-042 — H2 implementado: una imagen por proceso, verificada arrancándola
+**Fecha:** 2026-11-13 · **Fuente:** Claude · **Estado:** activa
+
+`Dockerfile` único con `ARG APP`, base `node:22-bookworm-slim` por digest, no root, sin secretos ni fuentes; la CI construye y arranca las seis imágenes contra Kafka y PostgreSQL reales. Se podan del runtime la CLI de Prisma y TypeScript. Lección: un arranque de prueba contra un clúster con datos consume de verdad; el humo lo prohíbe fuera de la CI. Pendiente: escaneo de imágenes y publicación en ACR (H1).
