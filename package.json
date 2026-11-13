@@ -23,7 +23,8 @@
     "dev:relay": "npm run dev -w @bidstream/relay",
     "dev:projector": "npm run dev -w @bidstream/projector",
     "dev:auditor": "npm run dev -w @bidstream/auditor",
-    "dev:notifier": "npm run dev -w @bidstream/notifier-app"
+    "dev:notifier": "npm run dev -w @bidstream/notifier-app",
+    "dev:graphql": "npm run dev -w @bidstream/graphql"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.4",

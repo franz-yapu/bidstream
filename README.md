@@ -82,3 +82,16 @@ npm run reprocess -w @bidstream/projector -- --yes
 ```
 
 Borra `bid`, `lot` y `auction`, reposiciona el grupo `projector` a `earliest` y reconstruye mostrando el progreso. La prueba `reprocess.int.test.ts` demuestra que el estado final es idéntico, con uno o con varios consumidores en paralelo. Mientras reconstruye, las lecturas devuelven un estado parcial.
+
+## API de lectura (GraphQL)
+
+```bash
+npm run dev:graphql   # http://localhost:4000/graphql · /health
+```
+
+Solo lecturas sobre la proyección (`auction`, `lot`, `lotBids`, `activeLots`), con paginación por cursor sobre el ranking de pujas. El importe va como cadena decimal (`Money`) y las fechas en ISO-8601 UTC. **No expone la identidad de postores ni de ganadores**, solo `hasWinner` y `finalAmount`. El tenant provisional va en la cabecera `X-Tenant-Id` (no arranca en producción hasta F1).
+
+```bash
+curl -s localhost:4000/graphql -H 'content-type: application/json' -H 'x-tenant-id: 11111111-1111-4111-8111-111111111111' \
+  -d '{"query":"{ lot(id: \"<id>\") { title currentPrice nextMinimumBid bids(first: 5) { edges { node { amount rank } } } } }"}'
+```

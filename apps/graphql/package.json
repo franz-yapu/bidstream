@@ -1,0 +1,32 @@
+{
+  "name": "@bidstream/graphql",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "@bidstream/db": "^0.0.0",
+    "@bidstream/domain": "^0.0.0",
+    "@graphql-tools/schema": "^11.0.9",
+    "dataloader": "^2.2.3",
+    "graphql": "^16.15.0",
+    "graphql-yoga": "^6.1.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@bidstream/testing": "^0.0.0",
+    "tsx": "^4.23.15"
+  },
+  "scripts": {
+    "dev": "node --import tsx --watch src/main.ts",
+    "start": "node dist/main.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  }
+}
