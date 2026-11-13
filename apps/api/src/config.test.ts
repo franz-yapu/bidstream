@@ -79,18 +79,9 @@ describe('loadConfig', () => {
     });
   });
 
-  describe('ADMIN_API_KEY', () => {
-    it('es opcional: sin ella las rutas de administración no existen', () => {
-      expect(loadConfig({ DATABASE_URL: DB })).not.toHaveProperty('ADMIN_API_KEY');
-    });
-    it('exige al menos 32 caracteres', () => {
-      expect(() => loadConfig({ DATABASE_URL: DB, ADMIN_API_KEY: 'corta' })).toThrow(
-        /32 caracteres/,
-      );
-      expect(() => loadConfig({ DATABASE_URL: DB, ADMIN_API_KEY: 'x'.repeat(31) })).toThrow();
-      expect(
-        loadConfig({ DATABASE_URL: DB, ADMIN_API_KEY: 'x'.repeat(32) }).ADMIN_API_KEY,
-      ).toHaveLength(32);
-    });
+  it('ADMIN_API_KEY ya no existe: la administración se hace con el rol ADMIN (F1)', () => {
+    expect(loadConfig({ DATABASE_URL: DB, ADMIN_API_KEY: 'x'.repeat(40) })).not.toHaveProperty(
+      'ADMIN_API_KEY',
+    );
   });
 });

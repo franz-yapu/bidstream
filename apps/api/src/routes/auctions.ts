@@ -54,6 +54,7 @@ export const auctionRoutes =
     app.post(
       '/auctions',
       {
+        config: { roles: ['ADMIN', 'SELLER'] },
         schema: {
           tags: ['comandos'],
           summary: 'Abre una subasta',
@@ -63,6 +64,7 @@ export const auctionRoutes =
             201: z.object({ auctionId: z.uuid(), status: z.literal('OPEN') }),
             400: problem,
             401: problem,
+            403: problem,
             422: problem,
           },
         },
@@ -82,6 +84,7 @@ export const auctionRoutes =
     app.post(
       '/auctions/:id/lots',
       {
+        config: { roles: ['ADMIN', 'SELLER'] },
         schema: {
           tags: ['comandos'],
           summary: 'Publica un lote en una subasta abierta',

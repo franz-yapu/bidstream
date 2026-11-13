@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **F1** (`868mw2q3j`, https://app.clickup.com/t/868mw2q3j).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Aprobado (2026-11-13) — parte 1 implementada (núcleo); parte 2 (RBAC y GraphQL) pendiente
+- **Estado:** Implementado (2026-11-13) en dos PR
 - **Versión:** 0.1 · **Fecha:** 2026-11-13
 - **Decisión que lo desbloquea:** **Q4** = autenticación propia completa (respuesta del usuario, 2026-11-13).
 - **Fuentes de verdad citadas:** spec §8 (A01 RBAC y propiedad, A02 Argon2, A07 JWT corto + refresco revocable + bloqueo por intentos); `docs/adr/0010` (tenant provisional); `apps/api/src/tenant.ts`, `config.ts` (no arranca en producción); `apps/graphql/src/tenant.ts`; `docs/sdd/D7/SDD.md` (`X-Admin-Key`)
@@ -125,3 +125,16 @@
 - API: `AUTH_MODE` (`jwt` por defecto en producción; `header` prohibido en producción), `/v1/auth/{register,login,refresh,logout,me}` con límite por IP (429 `problem+json`), `registerAuthentication`, `JwtTenantResolver`/`JwtBidderResolver` (el tenant y el postor salen del token y se **ignoran** `X-Tenant-Id`/`X-Bidder-Id`), administrador inicial por entorno e imágenes con argon2 verificadas. 20 pruebas de integración de la API.
 - Desviación: el modo `header` se conserva solo fuera de producción (pruebas y desarrollo) en lugar de retirarse; en producción la API ya arranca y exige token.
 - Pendiente (parte 2): `requireRole`, deny-by-default, creación de SELLER/ADMIN por un ADMIN, GraphQL con el mismo JWT, `/v1/admin/*` por rol, `make demo` autenticado, ADR-0013 y quitar el bloqueo de GraphQL en producción.
+
+---
+
+## Changelog de implementación — parte 2 (RBAC, GraphQL y demo)
+
+- Control de acceso: `registerAccessControl` (denegar por defecto: toda ruta exige token salvo las `public`, y debe declarar `config.roles` o responde `403`), `requireRole`, `app.routeDeclarations` y una prueba que enumera todas las rutas y comprueba que ninguna quedó sin política. Matriz: subastas y lotes `ADMIN`/`SELLER`, pujas `BIDDER`, `me` cualquier rol, creación de usuarios y administración del DLQ `ADMIN`.
+- `POST /v1/auth/users`: un `ADMIN` crea `ADMIN`/`SELLER`/`BIDDER` **en su propio tenant** (el tenant no se acepta en el cuerpo).
+- `X-Admin-Key` y `ADMIN_API_KEY` retirados (D7): la administración del DLQ exige un token `ADMIN`, también en modo `header`, y el log registra el `actor`.
+- GraphQL: `AUTH_MODE`, verificación del mismo JWT (`AUTH_JWT_PUBLIC_KEYS`) y tenant del token; deja de estar bloqueado en producción.
+- `make demo` corre con `NODE_ENV=production`, JWT y firma obligatorios: `scripts/generate-keys.mjs` crea las claves de emisión y verificación, el administrador `admin@demo.local` con contraseña aleatoria, y el humo de la CI recorre login, registro, subasta, lote, puja (un administrador no puede pujar) y lectura GraphQL con el token del postor.
+- ADR-0013 y ADR-0010 «Reemplazada por 0013». Pruebas: `access.int.test.ts` (matriz de roles, denegar por defecto, creación de usuarios, modo header), `auth.int.test.ts` de GraphQL (aislamiento, token inválido) y `admin.int.test.ts` por rol.
+- Desviaciones: el modo `header` se conserva fuera de producción (decisión de la parte 1); la creación de usuarios por un ADMIN es la única ruta nueva; el aislamiento entre tenants se comprueba en API y GraphQL (no hay recursos con propietario individual todavía).
+- Hallazgo: un gancho `onRequest` síncrono con una sola parámetro que no llama a `done()` deja la petición colgada; los ganchos de acceso usan la forma con callback.

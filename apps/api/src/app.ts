@@ -13,6 +13,7 @@ import type { Config } from './config.js';
 import { registerErrorHandlers } from './errors.js';
 import type { AuthService, TokenVerifier } from '@bidstream/auth';
 import type { DlqAdminPort } from './admin-dlq.js';
+import { registerAccessControl, type RouteDeclaration } from './access-control.js';
 import { registerAuthentication } from './auth-context.js';
 import { authRoutes } from './routes/auth.js';
 import { adminRoutes } from './routes/admin.js';
@@ -21,6 +22,13 @@ import { bidRoutes } from './routes/bids.js';
 import { HeaderBidderResolver, type BidderResolver } from './bidder.js';
 import { healthRoutes } from './routes/health.js';
 import type { TenantResolver } from './tenant.js';
+
+declare module 'fastify' {
+  interface FastifyInstance {
+    /** Rutas registradas y su política de acceso (para comprobar que ninguna quedó sin declarar). */
+    routeDeclarations: RouteDeclaration[];
+  }
+}
 
 export const API_PREFIX = '/v1';
 
@@ -38,7 +46,7 @@ export interface AppDeps {
   /** Topic de destino de los eventos (`bidstream.events.lot`). */
   readonly eventsTopic: string;
   /** Administración del DLQ (D7); si falta, esas rutas no existen. */
-  readonly adminDlq?: { readonly apiKey: string; readonly port: DlqAdminPort };
+  readonly adminDlq?: { readonly port: DlqAdminPort };
   /** Autenticación propia (F1): rutas `/v1/auth/*` y verificación del token de acceso. */
   readonly auth?: { readonly service: AuthService; readonly verifier: TokenVerifier };
   /** Destino de los logs; solo las pruebas lo cambian para capturarlos. */
@@ -90,6 +98,13 @@ export function buildApp(deps: AppDeps): FastifyInstance {
 
   if (deps.auth !== undefined) {
     registerAuthentication(app, deps.auth.verifier, () => deps.clock.now());
+  }
+  // Denegar por defecto (A01): solo en modo jwt toda ruta exige token y rol; en `header` (desarrollo) no.
+  app.decorate(
+    'routeDeclarations',
+    registerAccessControl(app, { enforce: deps.config.AUTH_MODE === 'jwt' }),
+  );
+  if (deps.auth !== undefined) {
     void app.register(
       authRoutes({
         service: deps.auth.service,
@@ -122,7 +137,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
     }),
     { prefix: API_PREFIX },
   );
-  if (deps.adminDlq !== undefined) {
+  if (deps.adminDlq !== undefined && deps.auth !== undefined) {
     void app.register(adminRoutes(deps.adminDlq), { prefix: `${API_PREFIX}/admin` });
   }
   return app;

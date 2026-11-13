@@ -36,7 +36,8 @@ flowchart LR
   K -. fallo tras 4 intentos .-> DLQ[(DLQ + reproceso)]
 ```
 
-1. **La API acepta comandos**, los valida y escribe el evento en la tabla `outbox` **en la misma
+1. **Quien opera se identifica con un JWT** (autenticación propia, roles `ADMIN`/`SELLER`/`BIDDER`, denegar por
+   defecto: [ADR-0013](docs/adr/0013-autenticacion-propia-y-rbac.md)). **La API acepta comandos**, los valida y escribe el evento en la tabla `outbox` **en la misma
    transacción**. Nunca habla con Kafka: así no hay escritura dual ([ADR-0002](docs/adr/0002-patron-outbox.md)).
 2. **Un relay** publica el outbox en Kafka, en orden, con `lotId` como clave de partición
    ([ADR-0001](docs/adr/0001-clave-de-particion-lotid.md), [ADR-0006](docs/adr/0006-un-unico-relay-activo.md)).
@@ -120,7 +121,8 @@ Cada decisión tiene su ADR, con las alternativas descartadas y las pruebas que 
 | [0009](docs/adr/0009-el-log-es-la-fuente-de-verdad.md)     | El log es la fuente de verdad: reproceso desde `earliest`     |
 | [0011](docs/adr/0011-decisor-unico-por-lote.md)            | Decisor único por lote con estado propio                      |
 | [0012](docs/adr/0012-firma-ed25519-de-eventos.md)          | Firma Ed25519 de los mensajes y verificación en el consumidor |
-| [0010](docs/adr/0010-tenant-provisional-por-cabecera.md)   | Tenant provisional por cabecera, prohibido en producción      |
+| [0010](docs/adr/0010-tenant-provisional-por-cabecera.md)   | Tenant provisional por cabecera _(reemplazada por la 0013)_   |
+| [0013](docs/adr/0013-autenticacion-propia-y-rbac.md)       | Autenticación propia, JWT corto, refresh rotatorio y RBAC     |
 
 Otros detalles que conviene mirar:
 
@@ -175,16 +177,14 @@ Para desarrollar, probar o depurar proceso a proceso: [`docs/DESARROLLO.md`](doc
 Lo que está hecho y probado (más de 360 pruebas unitarias y 230 de integración contra Kafka y
 PostgreSQL reales):
 
-- Comandos REST de subastas, lotes y pujas (con `Idempotency-Key`; la puja la decide un consumidor en orden por lote), cierre automático por tiempo, firma Ed25519 de los mensajes, outbox, relay, los tres consumidores, proyección, GraphQL con
+- Comandos REST de subastas, lotes y pujas (con `Idempotency-Key`; la puja la decide un consumidor en orden por lote), cierre automático por tiempo, firma Ed25519 de los mensajes, autenticación propia (JWT corto, refresh rotatorio, Argon2id) con roles y denegación por defecto, outbox, relay, los tres consumidores, proyección, GraphQL con
   límites y subscriptions, DLQ con reproceso administrativo, reproceso completo desde el log, logs con
   correlación, imágenes de contenedor y CI con auditoría de dependencias.
 
 Lo que **no** está todavía:
 
 - **Límite de pujas por postor** y cabeceras de seguridad (F2).
-- **Autenticación y usuarios.** Mientras tanto el tenant llega por cabecera y la API **no arranca con
-  `NODE_ENV=production`** ([ADR-0010](docs/adr/0010-tenant-provisional-por-cabecera.md)).
-- **`SECURITY.md`** con el mapeo OWASP con el mapeo OWASP.
+- **`SECURITY.md`** con el mapeo OWASP.
 - **Despliegue en Azure** (Bicep, Event Hubs, Container Apps) y métricas de _consumer lag_.
 
 Documentación: [especificación](docs/product/bidstream_spec.md) · [ADR](docs/adr/README.md) ·

@@ -1,6 +1,6 @@
 # 0010 — Tenant provisional por cabecera, prohibido en producción
 
-**Estado:** Aceptada (provisional hasta F1)
+**Estado:** Reemplazada por 0013
 **Fecha:** 2026-11-13 (decisión tomada en C2 y E1)
 
 ## Contexto
@@ -27,7 +27,7 @@ resolvedor de tenant.
 
 **Se pierde:** no se puede desplegar hasta F1.
 
-**Obliga a:** reemplazar este ADR cuando se decida Q4 e implemente F1.
+**Obliga a:** reemplazar este ADR cuando se decida Q4 e implemente F1 (hecho: [ADR-0013](0013-autenticacion-propia-y-rbac.md); el modo por cabecera sigue existiendo solo fuera de producción).
 
 ## Verificación
 

@@ -14,6 +14,7 @@ export const healthRoutes: FastifyPluginAsyncZod = (app) => {
   app.get(
     '/health',
     {
+      config: { public: true },
       schema: {
         tags: ['sistema'],
         summary: 'Liveness del servicio',

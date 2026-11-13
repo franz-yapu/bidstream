@@ -1,4 +1,4 @@
-import { InvalidAccessToken, PASSWORD_MAX_LENGTH, type AuthService } from '@bidstream/auth';
+import { InvalidAccessToken, PASSWORD_MAX_LENGTH, ROLES, type AuthService } from '@bidstream/auth';
 import rateLimit from '@fastify/rate-limit';
 import { primitives } from '@bidstream/domain';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
@@ -56,6 +56,7 @@ export const authRoutes =
     app.post(
       '/register',
       {
+        config: { public: true },
         schema: {
           tags: ['autenticación'],
           summary: 'Registra un postor (rol BIDDER)',
@@ -79,6 +80,7 @@ export const authRoutes =
     app.post(
       '/login',
       {
+        config: { public: true },
         schema: {
           tags: ['autenticación'],
           summary: 'Inicia sesión',
@@ -92,6 +94,7 @@ export const authRoutes =
     app.post(
       '/refresh',
       {
+        config: { public: true },
         schema: {
           tags: ['autenticación'],
           summary: 'Cambia un refresh token por un par nuevo (rotación)',
@@ -105,6 +108,7 @@ export const authRoutes =
     app.post(
       '/logout',
       {
+        config: { public: true },
         schema: {
           tags: ['autenticación'],
           summary: 'Cierra la sesión (revoca la familia del refresh token)',
@@ -121,6 +125,7 @@ export const authRoutes =
     app.get(
       '/me',
       {
+        config: { roles: ['ADMIN', 'SELLER', 'BIDDER'] },
         schema: {
           tags: ['autenticación'],
           summary: 'Usuario autenticado',
@@ -132,6 +137,7 @@ export const authRoutes =
               email: z.string(),
             }),
             401: problem,
+            403: problem,
           },
         },
       },
@@ -141,6 +147,30 @@ export const authRoutes =
         // el usuario del token ya no existe, está deshabilitado o es de otro tenant
         if (profile === null) throw new InvalidAccessToken();
         return { ...identity, email: profile.email };
+      },
+    );
+
+    app.post(
+      '/users',
+      {
+        config: { roles: ['ADMIN'] },
+        schema: {
+          tags: ['autenticación'],
+          summary: 'Crea un usuario en el tenant del administrador (ADMIN, SELLER o BIDDER)',
+          body: z.strictObject({ email, password, role: z.enum(ROLES) }),
+          response: {
+            201: z.object({ userId: z.uuid(), email: z.string(), role: z.enum(ROLES) }),
+            400: problem,
+            401: problem,
+            403: problem,
+            409: problem,
+          },
+        },
+      },
+      async (request, reply) => {
+        const admin = requireIdentity(request);
+        const user = await deps.service.createUser({ ...request.body, tenantId: admin.tenantId });
+        return reply.code(201).send({ userId: user.id, email: user.email, role: user.role });
       },
     );
 

@@ -1,9 +1,8 @@
 import { primitives } from '@bidstream/domain';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
-import { adminKeyMatches } from '../admin-auth.js';
 import type { DlqAdminPort } from '../admin-dlq.js';
-import { ProblemError } from '../problem.js';
+import { requireRole } from '../access-control.js';
 
 const problem = z.object({
   type: z.string(),
@@ -43,42 +42,34 @@ const summarySchema = z.object({
   remaining: z.number().int(),
 });
 
-const keyHeader = z.object({
-  'x-admin-key': z
-    .string()
-    .optional()
-    .describe('Clave de servicio del operador (provisional hasta F1).'),
-});
-
 export interface AdminRoutesDeps {
-  readonly apiKey: string;
   readonly port: DlqAdminPort;
 }
 
 /**
- * Administración del DLQ. **Provisional hasta F1:** se protege con una clave de servicio, que identifica
- * al operador de la plataforma (el DLQ mezcla eventos de todos los tenants). Estas rutas solo se
- * registran si hay `ADMIN_API_KEY`; sin ella no existen.
+ * Administración del DLQ. Solo para el rol `ADMIN` (F1): el DLQ mezcla eventos de todos los tenants, así
+ * que la ejerce quien administra la plataforma. Estas rutas solo se registran si hay autenticación.
  */
 export const adminRoutes =
   (deps: AdminRoutesDeps): FastifyPluginAsyncZod =>
   (app) => {
+    // Siempre ADMIN, también fuera del modo jwt: nunca hay administración sin un token de administrador.
     app.addHook('onRequest', (request, _reply, done) => {
-      const header = request.headers['x-admin-key'];
-      if (!adminKeyMatches(typeof header === 'string' ? header : undefined, deps.apiKey)) {
-        done(new ProblemError(401, 'urn:bidstream:problem:unauthorized', 'No autenticado'));
-        return;
+      try {
+        requireRole(request, ['ADMIN']);
+        done();
+      } catch (error) {
+        done(error as Error);
       }
-      done();
     });
 
     app.get(
       '/dlq',
       {
+        config: { roles: ['ADMIN'] },
         schema: {
           tags: ['administración'],
           summary: 'Lista el contenido del DLQ sin consumirlo',
-          headers: keyHeader,
           querystring: z.object({
             limit: z.coerce.number().int().min(1).max(1_000).optional(),
             includeOriginal: z.enum(['true', 'false']).optional(),
@@ -90,6 +81,7 @@ export const adminRoutes =
               total: z.number().int(),
             }),
             401: problem,
+            403: problem,
           },
         },
       },
@@ -106,13 +98,13 @@ export const adminRoutes =
     app.post(
       '/dlq/reprocess',
       {
+        config: { roles: ['ADMIN'] },
         schema: {
           tags: ['administración'],
           summary: 'Republica los eventos fallidos del DLQ en su topic original',
           description:
             'Modo pendientes (por defecto) o selectivo por `eventIds`. El evento llega al final de su partición: ' +
             'sirve para fallos transitorios; para reconstruir la proyección en orden use el reproceso desde el log.',
-          headers: keyHeader,
           body: z
             .strictObject({
               limit: z.number().int().min(1).max(1_000).optional(),
@@ -122,7 +114,13 @@ export const adminRoutes =
               message: 'limit y eventIds son excluyentes: el modo selectivo no usa límite',
               path: ['limit'],
             }),
-          response: { 200: summarySchema, 400: problem, 401: problem, 409: problem },
+          response: {
+            200: summarySchema,
+            400: problem,
+            401: problem,
+            403: problem,
+            409: problem,
+          },
         },
       },
       async (request) => {
@@ -130,11 +128,12 @@ export const adminRoutes =
           ...(request.body.limit === undefined ? {} : { limit: request.body.limit }),
           ...(request.body.eventIds === undefined ? {} : { eventIds: request.body.eventIds }),
         });
-        // Trazabilidad de una operación de administración (OWASP A09): quién la pidió no está
-        // disponible hasta F1, pero sí qué se hizo y con qué resultado. Nunca el contenido de los eventos.
+        // Trazabilidad de una operación de administración (OWASP A09): quién la pidió (`actor`, el
+        // administrador del token), qué se hizo y con qué resultado. Nunca el contenido de los eventos.
         request.log.info(
           {
             requestId: request.id,
+            actor: request.identity?.userId,
             mode: summary.mode,
             examined: summary.examined,
             republished: summary.republished,

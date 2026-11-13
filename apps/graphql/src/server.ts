@@ -8,13 +8,17 @@ import { useLimits } from './limits/index.js';
 import { resolvers } from './resolvers.js';
 import { SubscriptionRegistry } from './subscriptions/registry.js';
 import { typeDefs } from './schema.js';
-import { resolveTenant } from './tenant.js';
+import type { TokenVerifier } from '@bidstream/auth';
+import { resolveTenant, resolveTenantFromToken } from './tenant.js';
 
 export interface ServerDeps {
   readonly config: Config;
   readonly db: ReadDb;
   /** Bus del que se alimentan las subscriptions; por defecto uno vacío (solo lecturas). */
   readonly bus?: NotificationBus;
+  /** Verificador del JWT (F1); obligatorio con `AUTH_MODE=jwt`. */
+  readonly verifier?: TokenVerifier;
+  readonly now?: () => Date;
 }
 
 /** Esquema ejecutable: el SDL de `schema.ts` y sus resolvers. */
@@ -56,8 +60,15 @@ export function buildYoga(deps: ServerDeps) {
     batching: false,
     logging:
       config.LOG_LEVEL === 'silent' ? false : config.LOG_LEVEL === 'error' ? 'error' : 'warn',
-    context: ({ request }): GraphQLContext => {
-      const tenantId = resolveTenant(request.headers);
+    context: async ({ request }): Promise<GraphQLContext> => {
+      let tenantId: string;
+      if (config.AUTH_MODE === 'jwt') {
+        if (deps.verifier === undefined)
+          throw new Error('AUTH_MODE=jwt exige un verificador de tokens');
+        tenantId = await resolveTenantFromToken(request.headers, deps.verifier, deps.now?.());
+      } else {
+        tenantId = resolveTenant(request.headers);
+      }
       return {
         tenantId,
         db: deps.db,

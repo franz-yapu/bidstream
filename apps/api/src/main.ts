@@ -34,9 +34,8 @@ const app = buildApp({
   ...(authConfig === undefined || authService === undefined
     ? {}
     : { auth: { service: authService, verifier: authConfig.verifier } }),
-  ...(config.ADMIN_API_KEY === undefined
-    ? {}
-    : { adminDlq: { apiKey: config.ADMIN_API_KEY, port: lazyDlqAdmin({ env: process.env }) } }),
+  // la administración del DLQ (rol ADMIN) solo existe si hay autenticación
+  ...(authService === undefined ? {} : { adminDlq: { port: lazyDlqAdmin({ env: process.env }) } }),
 });
 app.addHook('onClose', async () => {
   await prisma.$disconnect();

@@ -99,17 +99,18 @@ Genera un historial por la API real, borra la proyección, vuelve a `earliest` y
 
 ## Reproceso del DLQ (administración)
 
-Un evento que agota sus 4 intentos va al DLQ. Con `ADMIN_API_KEY` definida (≥ 32 caracteres) la API expone, protegidas por la cabecera `X-Admin-Key`:
+Un evento que agota sus 4 intentos va al DLQ. La API expone, **solo al rol `ADMIN`** (token de acceso; ver [ADR-0013](adr/0013-autenticacion-propia-y-rbac.md)):
 
 ```bash
-curl -H "X-Admin-Key: $ADMIN_API_KEY" localhost:3000/v1/admin/dlq                      # lista sin consumir
-curl -X POST -H "X-Admin-Key: $ADMIN_API_KEY" -H 'content-type: application/json' \
+TOKEN=…   # POST /v1/auth/login como administrador
+curl -H "Authorization: Bearer $TOKEN" localhost:3000/v1/admin/dlq                      # lista sin consumir
+curl -X POST -H "Authorization: Bearer $TOKEN" -H 'content-type: application/json' \
      -d '{"limit": 10}' localhost:3000/v1/admin/dlq/reprocess                          # pendientes
-curl -X POST -H "X-Admin-Key: $ADMIN_API_KEY" -H 'content-type: application/json' \
+curl -X POST -H "Authorization: Bearer $TOKEN" -H 'content-type: application/json' \
      -d '{"eventIds": ["<uuid>"]}' localhost:3000/v1/admin/dlq/reprocess               # selectivo
 ```
 
-Solo se republican los `retries-exhausted` (los `poison` se quedan), con un máximo de 3 reprocesos por evento. **Advertencia de orden:** el evento reprocesado llega al final de su partición, después de los posteriores; si la integridad de la proyección importa, usa el reproceso completo de arriba. Sin `ADMIN_API_KEY` las rutas no existen (404).
+Solo se republican los `retries-exhausted` (los `poison` se quedan), con un máximo de 3 reprocesos por evento. **Advertencia de orden:** el evento reprocesado llega al final de su partición, después de los posteriores; si la integridad de la proyección importa, usa el reproceso completo de arriba. Un SELLER o un BIDDER reciben `403` y sin token, `401`. El log registra el `actor` (el administrador del token).
 
 ## API de lectura (GraphQL)
 
