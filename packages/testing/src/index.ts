@@ -3,6 +3,7 @@ export { createTestDatabase, testDatabaseServerUrl, type TestDatabase } from './
 export {
   createTestTopic,
   collectMessages,
+  warmUpGroupCoordinator,
   testKafkaConfig,
   type TestTopic,
   type CollectOptions,

@@ -12,6 +12,7 @@ import {
   createTestTopic,
   testKafkaConfig,
   waitFor,
+  warmUpGroupCoordinator,
   type TestDatabase,
   type TestTopic,
 } from '@bidstream/testing';
@@ -36,8 +37,9 @@ let admin: KafkaAdmin;
 
 beforeAll(async () => {
   db = await createTestDatabase();
+  await warmUpGroupCoordinator();
   admin = await createKafkaAdmin(kafka);
-});
+}, 120_000);
 afterAll(async () => {
   await admin.disconnect();
   await db.drop();

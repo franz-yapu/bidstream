@@ -13,6 +13,7 @@ import {
   createTestTopic,
   testKafkaConfig,
   waitFor,
+  warmUpGroupCoordinator,
   type TestTopic,
 } from '@bidstream/testing';
 import type { FastifyInstance } from 'fastify';
@@ -48,8 +49,9 @@ let app: FastifyInstance | undefined;
 let logs: string[] = [];
 
 beforeAll(async () => {
+  await warmUpGroupCoordinator();
   admin = await createKafkaAdmin(kafka);
-});
+}, 120_000);
 afterAll(async () => {
   await admin.disconnect();
 });
