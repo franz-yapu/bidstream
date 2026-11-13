@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **E1** (`868mvty0w`, https://app.clickup.com/t/868mvty0w).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Borrador
+- **Estado:** Implementado (2026-11-12) — aprobado el mismo día
 - **Versión:** 1.0 · **Fecha:** 2026-11-12
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §7 (esquema GraphQL: `auction`, `lot`, `lotBids(first, after)`, `activeLots`; "GraphQL solo para lecturas"; paginación por cursor), §6 (índice del ranking de pujas), §8 A01/A03/A05
@@ -150,12 +150,12 @@ Integración con PostgreSQL real (base desechable) y el servidor en proceso (`fe
 
 ## 5 · Definition of Done
 
-- [ ] SDD en `docs/sdd/E1/SDD.md`, Estado = Aprobado
-- [ ] Las cuatro consultas de la spec funcionan sobre la proyección, con cursor y sin N+1
-- [ ] Sin identidad de postores en ningún tipo; aislamiento por tenant
-- [ ] Tests del §4 en verde; `npm run check` y `npm run test:integration` en verde
-- [ ] `schema.graphql` documentado en el README
-- [ ] PR con CI verde y fusionado
+- [x] SDD en `docs/sdd/E1/SDD.md`, Estado = Aprobado
+- [x] Las cuatro consultas de la spec funcionan sobre la proyección, con cursor y sin N+1
+- [x] Sin identidad de postores en ningún tipo; aislamiento por tenant
+- [x] Tests del §4 en verde; `npm run check` y `npm run test:integration` en verde
+- [x] `schema.graphql` documentado en el README
+- [x] PR con CI verde y fusionado
 
 ---
 
@@ -180,3 +180,19 @@ Integración con PostgreSQL real (base desechable) y el servidor en proceso (`fe
 4. **Campo calculado `Lot.nextMinimumBid`** que reutiliza la regla del dominio. ¿Lo incluimos (propuesta)?
 5. **Versión de `graphql`:** 16.x (propuesta) o intentar 17.1.0 tras un *spike*.
 6. **Tenant provisional** con las mismas condiciones que C2 (prohibido en producción). ¿De acuerdo?
+
+---
+
+## Changelog de implementación
+
+- **Implementado (2026-11-12)** con todas las propuestas aprobadas de §7: Yoga 6 sobre `node:http` y schema-first con resolvers tipados a mano, sin identidad de postores, listas acotadas con `first` (defecto 50/20, máximo 100), `Lot.nextMinimumBid`, `graphql` 16.15 y tenant por cabecera prohibido en producción.
+- `apps/graphql`: `schema.ts` (el SDL, que documenta el esquema), `resolvers.ts`, `data.ts` (lecturas y *keyset*), `cursor.ts` (opaco, validado con Zod), `context.ts` (`DataLoader` por petición), `tenant.ts`, `server.ts` (`buildYoga` sin escuchar, y `buildHttpServer` con `/health`) y `main.ts` (arranque y apagado ordenado).
+- **Desviaciones menores del diseño:**
+  - `Lot.auction` es **nulo-able** (`Auction`, no `Auction!`): como no hay clave foránea y la proyección es eventualmente consistente (D4 §2.4), un lote puede existir antes que su subasta, y declararlo no nulo haría fallar la consulta entera.
+  - El SDL vive en `schema.ts` como cadena en lugar de un archivo `.graphql`, porque `tsc` no copia archivos que no son TypeScript a `dist/`.
+  - El puerto es `GRAPHQL_PORT` (4000), no `PORT`, para no colisionar con la API (3000) si comparten `.env`.
+  - Una conexión de pujas de un lote de otro tenant o inexistente devuelve una conexión vacía (no un error) para no revelar su existencia.
+- **Problema de entorno de pruebas resuelto:** bajo Vitest, `graphql` se cargaba como dos copias (ESM por Yoga y CJS por el código procesado por Vite) y `instanceof GraphQLError` fallaba, enmascarando los errores de entrada como `INTERNAL_SERVER_ERROR`. En aislamiento funcionaba. La configuración de integración procesa `graphql`, `@graphql-tools`, `@whatwg-node` y `@envelop` de forma uniforme (`server.deps.inline`).
+- 33 pruebas nuevas: 12 unitarias (configuración y cursor) y 21 de integración con PostgreSQL real sobre una proyección poblada con `applyEventToProjection` desde `generateHistory`: **los 6 lotes coinciden con `foldLot`** campo a campo (precio vigente, estado, adjudicación, `nextMinimumBid`), recorrer todas las páginas reproduce el ranking de `compareBids` sin repetir ni omitir, el tamaño de página no cambia el resultado, los empates por monto y por instante se ordenan por antigüedad y `id` sin que el cursor los confunda, validación de `first`, cursores e IDs (un ID inválido no toca la base de datos), aislamiento por tenant (401 sin cabecera), `activeLots`, sin N+1 (la consulta anidada hace un número acotado de lecturas), el esquema no contiene ningún campo con identidad de postor (solo `hasWinner`), un error interno se enmascara sin trazas ni secretos, y `/health` más `/graphql` por HTTP real. Estables en tres ejecuciones seguidas.
+- Comprobado a mano con el proceso real: `/health`, una consulta y un 401 sin tenant; se detiene con SIGTERM por su PID.
+- **Pendiente para E2:** el esquema aún no limita profundidad ni complejidad; solo el tope de `first`. La introspección está activa.

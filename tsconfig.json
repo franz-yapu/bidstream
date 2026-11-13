@@ -33,6 +33,9 @@
     },
     {
       "path": "apps/notifier/tsconfig.build.json"
+    },
+    {
+      "path": "apps/graphql/tsconfig.build.json"
     }
   ]
 }

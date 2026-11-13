@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **E3** (`868mvty15`, https://app.clickup.com/t/868mvty15).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Borrador
+- **Estado:** Aprobado (2026-11-12)
 - **Versión:** 1.0 · **Fecha:** 2026-11-12
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §7 (`Subscription.lotUpdated(lotId: ID!): LotUpdate!` "alimentada por el consumidor `notifier`"), §8 A01 (control de acceso), A04 (diseño inseguro)

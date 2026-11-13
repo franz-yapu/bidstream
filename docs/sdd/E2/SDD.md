@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **E2** (`868mvty12`, https://app.clickup.com/t/868mvty12).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Borrador
+- **Estado:** Aprobado (2026-11-12)
 - **Versión:** 1.0 · **Fecha:** 2026-11-12
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §7 ("Límites obligatorios: profundidad máxima de consulta, cálculo de complejidad y paginación por cursor. Una API GraphQL sin esos tres límites es una denegación de servicio esperando a ocurrir, y conviene decirlo en el README"), §8 A03 (límites de profundidad en GraphQL), A04 (diseño inseguro), A05 (mala configuración)
