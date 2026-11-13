@@ -20,6 +20,13 @@ export class LotNotFound extends Error {
   }
 }
 
+export class IdempotencyKeyReused extends Error {
+  constructor() {
+    super('la Idempotency-Key ya se usó con otra petición');
+    this.name = 'IdempotencyKeyReused';
+  }
+}
+
 export class AuctionClosed extends Error {
   constructor(readonly auctionId: string) {
     super(`la subasta ${auctionId} está cerrada`);

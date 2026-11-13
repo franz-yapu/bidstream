@@ -4,7 +4,13 @@ import {
   isResponseSerializationError,
 } from 'fastify-type-provider-zod';
 import { STATUS_CODES } from 'node:http';
-import { AuctionClosed, AuctionNotFound, InvalidCommand, LotNotFound } from './commands/index.js';
+import {
+  AuctionClosed,
+  AuctionNotFound,
+  IdempotencyKeyReused,
+  InvalidCommand,
+  LotNotFound,
+} from './commands/index.js';
 import { ProblemError } from './problem.js';
 
 /** Cuerpo de error RFC 9457 (`application/problem+json`). Nunca incluye trazas ni detalles internos. */
@@ -83,6 +89,14 @@ export function registerErrorHandlers(app: FastifyInstance): void {
       return sendProblem(request, reply, 404, {
         detail: 'La subasta no existe. Si acaba de crearse, reintente en un instante.',
         headers: { 'retry-after': '1' },
+      });
+    }
+    if (error instanceof IdempotencyKeyReused) {
+      return sendProblem(request, reply, 422, {
+        type: 'urn:bidstream:problem:idempotency-key-reused',
+        title: 'Idempotency-Key reutilizada',
+        detail:
+          'La clave ya se usó con otra petición (distinto lote o monto). Use una clave nueva.',
       });
     }
     if (error instanceof LotNotFound) {

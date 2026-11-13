@@ -94,6 +94,24 @@ model LotDecision {
   @@map("lot_decision")
 }
 
+/// Claves de idempotencia de la puja (C4): `(tenant, postor, clave)` produce un solo comando. Se
+/// escribe en la misma transacción que el comando en el outbox. F2 cuenta aquí las pujas por minuto.
+model IdempotencyKey {
+  tenantId    String   @map("tenant_id") @db.Uuid
+  bidderId    String   @map("bidder_id") @db.Uuid
+  key         String
+  /// SHA-256 del cuerpo canónico: detecta que la clave se reutiliza con otra petición.
+  requestHash String   @map("request_hash")
+  commandId   String   @map("command_id") @db.Uuid
+  lotId       String   @map("lot_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@id([tenantId, bidderId, key])
+  @@index([tenantId, bidderId, createdAt])
+  @@index([createdAt])
+  @@map("idempotency_key")
+}
+
 /// Un mismo evento lo registra cada consumidor una vez: clave primaria compuesta (corrige la spec §6).
 model ProcessedEvent {
   eventId   String   @map("event_id") @db.Uuid

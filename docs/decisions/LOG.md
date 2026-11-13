@@ -245,3 +245,8 @@ Hallazgo de diseño: para que no haya pujas aceptadas tras el cierre, el cierre 
 Aprobados C3, C4, D8, F1, F2 y F3 con las propuestas (anti-sniping 2 min + 2 min, `X-Bidder-Id` provisional, estado propio del decisor, `LotStateNotReady` → DLQ, 202 con `commandId`; `Idempotency-Key` de 16–128 caracteres; `closer` cada 5 s; firma `enforce` en producción con corte para el historial; registro abierto solo para `BIDDER`, tokens 10 min/7 días, bloqueo 5/15 min, F1 en dos PR; 30 pujas por minuto). Tickets creados en ClickUp (C3 `868mw2q2m`, C4 `868mw2q2w`, D8 `868mw2q32`, F3 `868mw2q37`, F1 `868mw2q3j`, F2 `868mw2q3t`).
 
 C3 implementado: la API acepta (`202`) y publica `PlaceBid`; `apps/decider` decide en orden por partición con `lot_decision` como estado autoritativo (ADR-0011). Lección: el nombre del consumidor de estado debe ser el de su grupo, o los eventos propios se reaplican y el estado retrocede.
+
+## DEC-047 — C4 implementado: Idempotency-Key en la puja
+**Fecha:** 2026-11-13 · **Fuente:** Claude · **Estado:** activa
+
+La clave se reclama en la misma transacción que el comando (`(tenant, postor, clave)` en `idempotency_key`): repetir la petición devuelve el mismo `commandId`, reutilizarla con otro cuerpo da `422`, y 20 peticiones simultáneas producen un solo comando (lo resuelve la clave primaria). La tabla sirve también al límite por minuto de F2.

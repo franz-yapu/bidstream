@@ -23,6 +23,12 @@ const identityHeaders = z.object({
     .string()
     .optional()
     .describe('Postor (UUID). Provisional hasta F1: solo fuera de producción.'),
+  'idempotency-key': z
+    .string()
+    .regex(/^[A-Za-z0-9._-]{16,128}$/, 'debe tener 16–128 caracteres [A-Za-z0-9._-]')
+    .describe(
+      'Obligatoria. La misma clave con la misma petición devuelve el mismo commandId (cabecera `Idempotency-Replayed: true`); con otra petición, 422.',
+    ),
 });
 
 export interface BidRoutesDeps extends CommandDeps {
@@ -60,14 +66,15 @@ export const bidRoutes =
       async (request, reply) => {
         const tenantId = deps.tenantResolver.resolve(request);
         const bidderId = deps.bidderResolver.resolve(request);
-        const { commandId } = await placeBid(
+        const { commandId, replayed } = await placeBid(
           deps,
           tenantId,
           bidderId,
           request.params.id,
-          request.body,
+          { amount: request.body.amount, idempotencyKey: request.headers['idempotency-key'] },
           { correlationId: request.id },
         );
+        if (replayed) void reply.header('idempotency-replayed', 'true');
         return reply.code(202).send({ commandId, status: 'ACCEPTED' as const });
       },
     );

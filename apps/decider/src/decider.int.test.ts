@@ -141,7 +141,7 @@ const bid = (lotId: string, bidderId: string, amount: string) =>
   app.inject({
     method: 'POST',
     url: `/v1/lots/${lotId}/bids`,
-    headers: { 'x-bidder-id': bidderId },
+    headers: { 'x-bidder-id': bidderId, 'idempotency-key': `clave-${randomUUID()}` },
     payload: { amount },
   });
 
@@ -201,12 +201,13 @@ describe('API: aceptar la puja', () => {
     const none = await app.inject({
       method: 'POST',
       url: `/v1/lots/${lotId}/bids`,
+      headers: { 'idempotency-key': `clave-${randomUUID()}` },
       payload: { amount: '100.00' },
     });
     const bad = await app.inject({
       method: 'POST',
       url: `/v1/lots/${lotId}/bids`,
-      headers: { 'x-bidder-id': 'no-uuid' },
+      headers: { 'x-bidder-id': 'no-uuid', 'idempotency-key': `clave-${randomUUID()}` },
       payload: { amount: '100.00' },
     });
     expect([none.statusCode, bad.statusCode]).toEqual([401, 400]);
@@ -241,7 +242,7 @@ describe('API: aceptar la puja', () => {
         TENANT,
         bidders[0] ?? '',
         lotId,
-        { amount: '100.00' },
+        { amount: '100.00', idempotencyKey: `clave-${randomUUID()}` },
       ),
     ).rejects.toThrow('outbox caído');
     expect(await db.prisma.outboxMessage.count({ where: { topic: commands.name } })).toBe(before);
