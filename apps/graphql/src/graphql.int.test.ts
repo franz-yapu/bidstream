@@ -435,7 +435,8 @@ describe('N+1, privacidad y errores', () => {
       body.data?.['__schema'] as { types: { name: string; fields: { name: string }[] | null }[] }
     ).types;
     const names = types.flatMap((t) => (t.fields ?? []).map((f) => f.name));
-    expect(names.filter((n) => /bidder|winner/i.test(n)).sort()).toEqual(['hasWinner']);
+    // `hasWinner` (en Lot y en LotClosedUpdate) es lo único permitido: un booleano, nunca la identidad.
+    expect([...new Set(names.filter((n) => /bidder|winner/i.test(n)))]).toEqual(['hasWinner']);
   });
 
   it('un error interno se enmascara: el cliente no ve ni el mensaje ni la traza', async () => {

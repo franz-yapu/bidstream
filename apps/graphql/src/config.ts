@@ -22,6 +22,9 @@ const envSchema = z
     GQL_MAX_ALIASES: z.coerce.number().int().min(1).default(15),
     GQL_MAX_TOKENS: z.coerce.number().int().min(50).default(2_000),
     GQL_MAX_BODY_BYTES: z.coerce.number().int().min(1_024).default(102_400),
+    /** Subscriptions (E3): cupo por tenant y cola por suscriptor. */
+    GQL_MAX_SUBSCRIPTIONS_PER_TENANT: z.coerce.number().int().min(1).default(500),
+    GQL_SUBSCRIPTION_QUEUE: z.coerce.number().int().min(1).default(50),
     /** Por defecto activa, salvo en producción. */
     GQL_INTROSPECTION: z.enum(['true', 'false']).optional(),
   })

@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **E3** (`868mvty15`, https://app.clickup.com/t/868mvty15).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Aprobado (2026-11-12)
+- **Estado:** Implementado (2026-11-12) — aprobado el mismo día
 - **Versión:** 1.0 · **Fecha:** 2026-11-12
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §7 (`Subscription.lotUpdated(lotId: ID!): LotUpdate!` "alimentada por el consumidor `notifier`"), §8 A01 (control de acceso), A04 (diseño inseguro)
@@ -133,13 +133,13 @@ Integración con PostgreSQL y el servidor en proceso; el cliente SSE lee el fluj
 
 ## 5 · Definition of Done
 
-- [ ] SDD en `docs/sdd/E3/SDD.md`, Estado = Aprobado
-- [ ] `lotUpdated` entrega los 4 tipos y `ResyncRequired`, en orden y por tenant
-- [ ] Sin fugas al desconectar; cola acotada; límite por tenant
-- [ ] Flujo completo API → … → GraphQL probado
-- [ ] Tests del §4 en verde; `npm run check` y `npm run test:integration` en verde
-- [ ] README muestra cómo suscribirse
-- [ ] PR con CI verde y fusionado
+- [x] SDD en `docs/sdd/E3/SDD.md`, Estado = Aprobado
+- [x] `lotUpdated` entrega los 4 tipos y `ResyncRequired`, en orden y por tenant
+- [x] Sin fugas al desconectar; cola acotada; límite por tenant
+- [x] Flujo completo API → … → GraphQL probado
+- [x] Tests del §4 en verde; `npm run check` y `npm run test:integration` en verde
+- [x] README muestra cómo suscribirse
+- [x] PR con CI verde y fusionado
 
 ---
 
@@ -163,3 +163,19 @@ Integración con PostgreSQL y el servidor en proceso; el cliente SSE lee el fluj
 3. **Comprobar que el lote existe al suscribirse** (propuesta) a costa de una lectura por suscripción.
 4. **Límites:** 500 suscripciones por tenant y cola de 50 por suscriptor. ¿De acuerdo?
 5. **Prueba de flujo completo** incluida en este ticket (propuesta), ya que es el cierre natural de los seis procesos del núcleo.
+
+---
+
+## Changelog de implementación
+
+- **Implementado (2026-11-12)** con todas las propuestas aprobadas de §7: SSE de Yoga como transporte, `LotUpdate` como unión con `ResyncRequired`, comprobación de que el lote existe, cola de 50 por suscriptor y 500 suscripciones por tenant (`GQL_SUBSCRIPTION_QUEUE`, `GQL_MAX_SUBSCRIPTIONS_PER_TENANT`) y la prueba del flujo completo dentro del ticket.
+- `apps/graphql/src/subscriptions/`: `iterator.ts` (`lotUpdates`, cola acotada con limpieza), `registry.ts` (`SubscriptionRegistry`, cupo por tenant, error `TOO_MANY_SUBSCRIPTIONS` con 429) y `lot-updated.ts` (resolutores de `Subscription.lotUpdated` y de la unión). `@bidstream/notifier` gana `subscriptionCount()` en el bus. `main.ts` arranca `startNotificationListener` y lo detiene en el apagado. El escalar `DateTime` acepta también texto ISO (las notificaciones ya lo traen así).
+- **Comportamiento real de Yoga que hay que conocer:**
+  - Los errores previos al flujo (`NOT_FOUND`, `BAD_USER_INPUT`, `UNAUTHENTICATED`, `TOO_MANY_SUBSCRIPTIONS`, límites de E2) llegan como una respuesta JSON normal con su código HTTP, no dentro de un flujo SSE, **siempre que el cliente acepte `application/graphql-response+json`**; si pide solo `text/event-stream`, llegan como evento.
+  - La suscripción solo arranca cuando el cliente empieza a leer el flujo.
+  - Al desconectarse el cliente (HTTP real) o cancelar el flujo, Yoga cierra el iterador y se libera la suscripción y el cupo; **probado con un servidor HTTP real**. El `AbortSignal` de `yoga.fetch` en proceso **no** se propaga al servidor (artefacto de probar sin red): las pruebas cancelan el flujo, que es lo que hace un cliente que se desconecta.
+  - El transporte envía latidos (comentarios SSE) de forma periódica.
+- 17 pruebas unitarias nuevas del iterador y del registro y 13 de integración de la subscription, más **la prueba del flujo completo**; todas estables en tres ejecuciones seguidas (47 de integración en `apps/graphql`).
+- **Prueba de flujo completo** (todo real): `POST /v1/auctions` → outbox → relay → Kafka → `projector` y `notifier` → PostgreSQL (proyección y `NOTIFY`) → GraphQL. `lot(id)` muestra el lote con la regla del dominio (`nextMinimumBid`), una subscription abierta recibe dos `BidPlacedUpdate` y un `LotClosedUpdate` **en orden y sin ninguna identidad**, la consulta final muestra el lote cerrado con el ranking (`rank` 1 = adjudicada), todo coincide con `foldLot` del historial del outbox y ningún evento acaba en el DLQ.
+- Cubierto por las pruebas: las 4 variantes de la unión con sus campos, orden, difusión a varios clientes, otro tenant (`NOT_FOUND`), otro lote u otro tenant en el canal (no llega), lote inexistente, id inválido y sin tenant, límites de E2 sobre subscriptions (profundidad), sin fugas al cancelar, cupo por tenant (se respeta, se recupera y es independiente entre tenants), cola desbordada (un único `ResyncRequired`, la cola no supera su máximo y un cliente lento no frena a los demás) y reconexión del oyente (`ResyncRequired` y luego sigue recibiendo).
+- **Pendiente:** WebSocket (`graphql-ws`) como evolución, y la verificación en Azure de `LISTEN` y de las conexiones largas SSE (H1).

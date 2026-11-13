@@ -1,5 +1,7 @@
 import type { Auction, Lot, PrismaClient } from '@bidstream/db';
+import type { NotificationBus } from '@bidstream/notifier';
 import DataLoader from 'dataloader';
+import type { SubscriptionRegistry } from './subscriptions/registry.js';
 
 /** Solo lecturas sobre la proyección. */
 export type ReadDb = Pick<PrismaClient, 'auction' | 'lot' | 'bid'>;
@@ -15,6 +17,10 @@ export interface GraphQLContext {
   readonly db: ReadDb;
   readonly loaders: Loaders;
   readonly maxPageSize: number;
+  readonly bus: NotificationBus;
+  readonly subscriptions: SubscriptionRegistry;
+  readonly maxSubscriptionsPerTenant: number;
+  readonly subscriptionQueue: number;
 }
 
 /**
