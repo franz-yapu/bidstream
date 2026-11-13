@@ -35,12 +35,12 @@ verify: ## Comprobaciones del entorno local (ver docs/sdd/0.2)
 
 DATABASE_URL ?= postgresql://bidstream:bidstream@localhost:5432/bidstream
 
-images: ## Construye las imágenes de los seis procesos (H2)
-	@for app in api relay projector auditor notifier graphql; do \
+images: ## Construye las imágenes de los siete procesos (H2)
+	@for app in api relay projector auditor notifier graphql decider; do \
 	  docker build -q --build-arg APP=$$app -t bidstream-$$app:test . || exit 1; \
 	done
 
-demo: ## Todo el sistema en un comando: infraestructura, migraciones y los seis procesos (requiere `npm ci`)
+demo: ## Todo el sistema en un comando: infraestructura, migraciones y los siete procesos (requiere `npm ci`)
 	@$(MAKE) --no-print-directory up
 	@$(MAKE) --no-print-directory migrate
 	$(COMPOSE) --profile app up -d --build --wait

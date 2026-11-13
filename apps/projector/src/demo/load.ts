@@ -57,6 +57,7 @@ const app = buildApp({
   ids: new Uuid7Generator(),
   tenantResolver: new HeaderTenantResolver(),
   eventsTopic: topic,
+  commandsTopic: 'bidstream.commands.bid',
 });
 const producer = await createProducer(kafka);
 const relay = new OutboxRelay({

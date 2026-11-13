@@ -13,6 +13,13 @@ export class AuctionNotFound extends Error {
   }
 }
 
+export class LotNotFound extends Error {
+  constructor(readonly lotId: string) {
+    super(`el lote ${lotId} no existe`);
+    this.name = 'LotNotFound';
+  }
+}
+
 export class AuctionClosed extends Error {
   constructor(readonly auctionId: string) {
     super(`la subasta ${auctionId} está cerrada`);

@@ -1,0 +1,8 @@
+{
+  "name": "[FEAT] Seguridad: límite de pujas, cabeceras y CORS (3 h)",
+  "markdown_content": "## Explicación\n\n30 pujas por postor y minuto, helmet y CORS con lista blanca.\n\n## Referencias\n\n- SDD: docs/sdd/F2/SDD.md (Aprobado 2026-11-13)\n- Decisiones: docs/decisions/LOG.md DEC-045\n- Estimación: 3 h\n",
+  "assignees": [
+    114193632
+  ],
+  "custom_fields": []
+}

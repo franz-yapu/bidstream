@@ -1,0 +1,8 @@
+{
+  "name": "[FEAT] Seguridad: firma Ed25519 de eventos y verificación (5 h)",
+  "markdown_content": "## Explicación\n\nEl relay firma el valor publicado y los consumidores verifican; fallo = poison (Q5).\n\n## Referencias\n\n- SDD: docs/sdd/F3/SDD.md (Aprobado 2026-11-13)\n- Decisiones: docs/decisions/LOG.md DEC-045\n- Estimación: 5 h\n",
+  "assignees": [
+    114193632
+  ],
+  "custom_fields": []
+}

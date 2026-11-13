@@ -35,6 +35,7 @@ describe('createTestDatabase', () => {
       'audit_log',
       'bid',
       'lot',
+      'lot_decision',
       'outbox_message',
       'processed_event',
     ]);

@@ -56,6 +56,7 @@ beforeAll(async () => {
     ids: new Uuid7Generator(),
     tenantResolver: new HeaderTenantResolver(),
     eventsTopic: events.name,
+    commandsTopic: 'bidstream.commands.bid',
     logStream: { write: (chunk) => void apiLines.push(chunk) },
   });
   relay = new OutboxRelay({

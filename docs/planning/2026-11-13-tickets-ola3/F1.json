@@ -1,0 +1,8 @@
+{
+  "name": "[FEAT] Seguridad: autenticación propia, JWT, refresh, Argon2 y RBAC (8 h)",
+  "markdown_content": "## Explicación\n\nUsuarios, Argon2id, JWT corto, refresh con rotación, bloqueo por intentos y RBAC; retira el tenant por cabecera (Q4).\n\n## Referencias\n\n- SDD: docs/sdd/F1/SDD.md (Aprobado 2026-11-13)\n- Decisiones: docs/decisions/LOG.md DEC-045\n- Estimación: 8 h\n",
+  "assignees": [
+    114193632
+  ],
+  "custom_fields": []
+}

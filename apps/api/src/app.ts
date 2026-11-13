@@ -14,6 +14,8 @@ import { registerErrorHandlers } from './errors.js';
 import type { DlqAdminPort } from './admin-dlq.js';
 import { adminRoutes } from './routes/admin.js';
 import { auctionRoutes } from './routes/auctions.js';
+import { bidRoutes } from './routes/bids.js';
+import { HeaderBidderResolver, type BidderResolver } from './bidder.js';
 import { healthRoutes } from './routes/health.js';
 import type { TenantResolver } from './tenant.js';
 
@@ -26,6 +28,10 @@ export interface AppDeps {
   readonly clock: Clock;
   readonly ids: IdGenerator;
   readonly tenantResolver: TenantResolver;
+  /** Por defecto `X-Bidder-Id` (provisional hasta F1). */
+  readonly bidderResolver?: BidderResolver;
+  /** Topic de comandos de puja. */
+  readonly commandsTopic: string;
   /** Topic de destino de los eventos (`bidstream.events.lot`). */
   readonly eventsTopic: string;
   /** Administración del DLQ (D7); si falta, esas rutas no existen. */
@@ -84,7 +90,20 @@ export function buildApp(deps: AppDeps): FastifyInstance {
       clock: deps.clock,
       ids: deps.ids,
       eventsTopic: deps.eventsTopic,
+      commandsTopic: deps.commandsTopic,
       tenantResolver: deps.tenantResolver,
+    }),
+    { prefix: API_PREFIX },
+  );
+  void app.register(
+    bidRoutes({
+      prisma: deps.prisma,
+      clock: deps.clock,
+      ids: deps.ids,
+      eventsTopic: deps.eventsTopic,
+      commandsTopic: deps.commandsTopic,
+      tenantResolver: deps.tenantResolver,
+      bidderResolver: deps.bidderResolver ?? new HeaderBidderResolver(),
     }),
     { prefix: API_PREFIX },
   );

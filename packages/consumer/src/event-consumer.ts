@@ -1,4 +1,5 @@
 import type { PrismaClient } from '@bidstream/db';
+import type { DomainEvent } from '@bidstream/domain';
 import {
   createConsumer,
   createProducer,
@@ -13,7 +14,10 @@ import {
   type ProcessorDeps,
 } from './processor.js';
 
-export interface EventConsumerOptions extends Omit<ProcessorDeps, 'publishDlq' | 'prisma'> {
+export interface EventConsumerOptions<T = DomainEvent> extends Omit<
+  ProcessorDeps<T>,
+  'publishDlq' | 'prisma'
+> {
   readonly kafka: KafkaConfig;
   readonly prisma: Pick<PrismaClient, '$transaction'>;
   /** Por defecto `[bidstream.events.lot]`. */
@@ -36,7 +40,9 @@ export interface EventConsumer {
  * Consumidor base de `projector`, `notifier` y `auditor`: el nombre del consumidor es también el
  * grupo de Kafka. Cada uno solo aporta su `handler`.
  */
-export async function createEventConsumer(options: EventConsumerOptions): Promise<EventConsumer> {
+export async function createEventConsumer<T = DomainEvent>(
+  options: EventConsumerOptions<T>,
+): Promise<EventConsumer> {
   const { kafka, topics, dlqTopic, fromBeginning, onOutcome, ...processorOptions } = options;
   const consumer = await createConsumer(kafka, {
     groupId: options.consumerName,

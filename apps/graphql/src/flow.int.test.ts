@@ -69,6 +69,7 @@ beforeAll(async () => {
     ids: new Uuid7Generator(),
     tenantResolver: new HeaderTenantResolver(),
     eventsTopic: events.name,
+    commandsTopic: 'bidstream.commands.bid',
   });
   relay = new OutboxRelay({
     prisma: db.prisma,

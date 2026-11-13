@@ -72,6 +72,7 @@ async function start(options: { withKey?: boolean } = {}): Promise<FastifyInstan
     ids: new SequentialIdGenerator(),
     tenantResolver: new HeaderTenantResolver(),
     eventsTopic: events.name,
+    commandsTopic: 'bidstream.commands.bid',
     logStream: { write: (chunk) => void logs.push(chunk) },
     ...(options.withKey === false
       ? {}

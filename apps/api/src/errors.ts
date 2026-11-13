@@ -4,7 +4,7 @@ import {
   isResponseSerializationError,
 } from 'fastify-type-provider-zod';
 import { STATUS_CODES } from 'node:http';
-import { AuctionClosed, AuctionNotFound, InvalidCommand } from './commands/index.js';
+import { AuctionClosed, AuctionNotFound, InvalidCommand, LotNotFound } from './commands/index.js';
 import { ProblemError } from './problem.js';
 
 /** Cuerpo de error RFC 9457 (`application/problem+json`). Nunca incluye trazas ni detalles internos. */
@@ -82,6 +82,13 @@ export function registerErrorHandlers(app: FastifyInstance): void {
       // La proyección es eventualmente consistente: una subasta recién creada puede no estar aún.
       return sendProblem(request, reply, 404, {
         detail: 'La subasta no existe. Si acaba de crearse, reintente en un instante.',
+        headers: { 'retry-after': '1' },
+      });
+    }
+    if (error instanceof LotNotFound) {
+      // La proyección es eventualmente consistente: un lote recién publicado puede no estar aún.
+      return sendProblem(request, reply, 404, {
+        detail: 'El lote no existe. Si acaba de publicarse, reintente en un instante.',
         headers: { 'retry-after': '1' },
       });
     }

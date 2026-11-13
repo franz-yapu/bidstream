@@ -1,0 +1,8 @@
+{
+  "name": "[FEAT] API comandos: POST /v1/lots/:id/bids con 202 y consumidor decisor (8 h)",
+  "markdown_content": "## Explicación\n\nAcepta la puja (202), la publica como comando `PlaceBid` y un consumidor decisor con estado propio emite `BidPlaced`/`BidRejected`/`LotExtended` (Q2).\n\n## Referencias\n\n- SDD: docs/sdd/C3/SDD.md (Aprobado 2026-11-13)\n- Decisiones: docs/decisions/LOG.md DEC-045\n- Estimación: 8 h\n",
+  "assignees": [
+    114193632
+  ],
+  "custom_fields": []
+}

@@ -8,6 +8,8 @@ export interface CommandDeps {
   readonly ids: IdGenerator;
   /** Topic de destino de los eventos (`bidstream.events.lot`). */
   readonly eventsTopic: string;
+  /** Topic de comandos (`bidstream.commands.bid`). */
+  readonly commandsTopic: string;
 }
 
 /** Contexto de la petición que origina un comando (F4). */

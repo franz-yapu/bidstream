@@ -93,15 +93,16 @@ describe('enlaces y comandos', () => {
 });
 
 describe('honestidad', () => {
-  it('lo pendiente solo aparece como pendiente: la puja se nombra únicamente en «Estado y límites» y los ADR', () => {
+  it('describe la puja como implementada y lo pendiente solo en «Estado y límites»', () => {
     const state = section('Estado y límites');
     expect(state).toMatch(/\*\*no\*\* está/i);
-    expect(state).toContain('POST …/bids');
-    const outside = readme.replace(state, '');
-    expect(outside).not.toMatch(/POST\s+…\/bids|POST \/v1\/[^ ]*bids/);
-    // el ADR-0003 se menciona como «decidido», con su aviso de que aún no está implementado
-    expect(outside).toMatch(/ADR-0003|0003-la-puja/);
-    expect(readme).toMatch(/se implementa con C3/);
+    expect(readme).toContain('POST /v1/lots/:id/bids');
+    expect(readme).toContain('docs/adr/0011-decisor-unico-por-lote.md');
+    // lo que sigue pendiente está en «Estado y límites» y no se presenta como hecho en otra parte
+    for (const pending of ['Autenticación y usuarios', 'Despliegue en Azure']) {
+      expect(state, pending).toContain(pending);
+    }
+    expect(state).not.toMatch(/pendiente de una decisión/);
   });
 
   it('no afirma cifras de rendimiento sin medir', () => {

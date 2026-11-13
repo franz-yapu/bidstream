@@ -52,6 +52,7 @@ function make(ids: IdGenerator = realIds): FastifyInstance {
     ids,
     tenantResolver: new HeaderTenantResolver(),
     eventsTopic: TOPIC,
+    commandsTopic: 'bidstream.commands.bid',
   });
   return app;
 }

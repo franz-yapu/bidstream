@@ -9,8 +9,12 @@ export {
   type DlqReason,
 } from './dlq.js';
 export {
+  commandCodec,
   createMessageProcessor,
+  eventCodec,
   type DlqPublication,
+  type MessageCodec,
+  type ParsedMessage,
   type EventHandler,
   type HandlerContext,
   type Logger,

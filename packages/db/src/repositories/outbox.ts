@@ -1,4 +1,9 @@
-import { partitionKey, type DomainEvent } from '@bidstream/domain';
+import {
+  commandPartitionKey,
+  partitionKey,
+  type DomainCommand,
+  type DomainEvent,
+} from '@bidstream/domain';
 import type { Prisma } from '../generated/client.js';
 import type { DbClient } from './transaction.js';
 
@@ -22,6 +27,22 @@ export class PrismaOutbox {
         key: partitionKey(event),
         payload: JSON.parse(JSON.stringify(event)) as Prisma.InputJsonObject,
       })),
+    });
+  }
+
+  /**
+   * Escribe un **comando** (p. ej. `PlaceBid`) en la misma tabla: lo publica el mismo relay, con el
+   * mismo orden (ADR-0006). El `id` de la fila es el `commandId`, así que repetirlo falla por clave
+   * primaria en lugar de duplicar el comando.
+   */
+  async enqueueCommand(command: DomainCommand, topic: string): Promise<void> {
+    await this.db.outboxMessage.create({
+      data: {
+        id: command.commandId,
+        topic,
+        key: commandPartitionKey(command),
+        payload: JSON.parse(JSON.stringify(command)) as Prisma.InputJsonObject,
+      },
     });
   }
 
