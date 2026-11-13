@@ -11,6 +11,13 @@ import {
   InvalidCommand,
   LotNotFound,
 } from './commands/index.js';
+import {
+  EmailAlreadyRegistered,
+  InvalidAccessToken,
+  InvalidCredentials,
+  InvalidRefreshToken,
+  WeakPassword,
+} from '@bidstream/auth';
 import { ProblemError } from './problem.js';
 
 /** Cuerpo de error RFC 9457 (`application/problem+json`). Nunca incluye trazas ni detalles internos. */
@@ -90,6 +97,30 @@ export function registerErrorHandlers(app: FastifyInstance): void {
         detail: 'La subasta no existe. Si acaba de crearse, reintente en un instante.',
         headers: { 'retry-after': '1' },
       });
+    }
+    if (
+      error instanceof InvalidCredentials ||
+      error instanceof InvalidRefreshToken ||
+      error instanceof InvalidAccessToken
+    ) {
+      // Un único mensaje genérico: no se revela qué falló (usuario, contraseña, bloqueo o caducidad).
+      return sendProblem(request, reply, 401, {
+        detail:
+          error instanceof InvalidCredentials
+            ? 'Credenciales inválidas.'
+            : 'Token inválido, caducado o revocado.',
+        headers: { 'www-authenticate': 'Bearer' },
+      });
+    }
+    if (error instanceof WeakPassword) {
+      return sendProblem(request, reply, 400, {
+        type: 'urn:bidstream:problem:validation-error',
+        title: 'Contraseña no aceptable',
+        errors: error.problems.map((message) => ({ path: 'password', message })),
+      });
+    }
+    if (error instanceof EmailAlreadyRegistered) {
+      return sendProblem(request, reply, 409, { detail: 'No se pudo completar el registro.' });
     }
     if (error instanceof IdempotencyKeyReused) {
       return sendProblem(request, reply, 422, {

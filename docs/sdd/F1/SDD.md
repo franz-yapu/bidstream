@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **F1** (`868mw2q3j`, https://app.clickup.com/t/868mw2q3j).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Aprobado (2026-11-13)
+- **Estado:** Aprobado (2026-11-13) — parte 1 implementada (núcleo); parte 2 (RBAC y GraphQL) pendiente
 - **Versión:** 0.1 · **Fecha:** 2026-11-13
 - **Decisión que lo desbloquea:** **Q4** = autenticación propia completa (respuesta del usuario, 2026-11-13).
 - **Fuentes de verdad citadas:** spec §8 (A01 RBAC y propiedad, A02 Argon2, A07 JWT corto + refresco revocable + bloqueo por intentos); `docs/adr/0010` (tenant provisional); `apps/api/src/tenant.ts`, `config.ts` (no arranca en producción); `apps/graphql/src/tenant.ts`; `docs/sdd/D7/SDD.md` (`X-Admin-Key`)
@@ -115,3 +115,13 @@
 3. **Bloqueo:** 5 fallos → 15 min (propuesta).
 4. **`X-Admin-Key` de D7** se sustituye por el rol `ADMIN` (propuesta); la clave de servicio desaparece. ¿O se mantiene para operaciones sin usuario?
 5. **Dos PR** (núcleo y RBAC/GraphQL) en lugar de uno. ¿Bien?
+
+---
+
+## Changelog de implementación — parte 1 (núcleo)
+
+- Migración `0006_auth` (`app_user`, `refresh_token`, enums `user_role`/`user_status`; sin deriva respecto al esquema).
+- `@bidstream/auth`: Argon2id (19 MiB, 2 iteraciones, 1 hilo) con verificación contra un hash falso para igualar tiempos, política de contraseñas, JWT EdDSA con `jose` (solo `EdDSA`; rechaza `none`, HS256 con la clave pública como secreto, emisor/audiencia distintos, `kid` desconocido, rol inventado), `AuthService` (registro, login con bloqueo 5/15 min, refresh con rotación y detección de reutilización atómica, logout, perfil) y configuración con rotación por `kid`. 14 pruebas unitarias y 15 de integración.
+- API: `AUTH_MODE` (`jwt` por defecto en producción; `header` prohibido en producción), `/v1/auth/{register,login,refresh,logout,me}` con límite por IP (429 `problem+json`), `registerAuthentication`, `JwtTenantResolver`/`JwtBidderResolver` (el tenant y el postor salen del token y se **ignoran** `X-Tenant-Id`/`X-Bidder-Id`), administrador inicial por entorno e imágenes con argon2 verificadas. 20 pruebas de integración de la API.
+- Desviación: el modo `header` se conserva solo fuera de producción (pruebas y desarrollo) en lugar de retirarse; en producción la API ya arranca y exige token.
+- Pendiente (parte 2): `requireRole`, deny-by-default, creación de SELLER/ADMIN por un ADMIN, GraphQL con el mismo JWT, `/v1/admin/*` por rol, `make demo` autenticado, ADR-0013 y quitar el bloqueo de GraphQL en producción.

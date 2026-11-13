@@ -11,7 +11,10 @@ import type { Clock, IdGenerator } from '@bidstream/domain';
 import type { PrismaClient } from '@bidstream/db';
 import type { Config } from './config.js';
 import { registerErrorHandlers } from './errors.js';
+import type { AuthService, TokenVerifier } from '@bidstream/auth';
 import type { DlqAdminPort } from './admin-dlq.js';
+import { registerAuthentication } from './auth-context.js';
+import { authRoutes } from './routes/auth.js';
 import { adminRoutes } from './routes/admin.js';
 import { auctionRoutes } from './routes/auctions.js';
 import { bidRoutes } from './routes/bids.js';
@@ -36,6 +39,8 @@ export interface AppDeps {
   readonly eventsTopic: string;
   /** Administración del DLQ (D7); si falta, esas rutas no existen. */
   readonly adminDlq?: { readonly apiKey: string; readonly port: DlqAdminPort };
+  /** Autenticación propia (F1): rutas `/v1/auth/*` y verificación del token de acceso. */
+  readonly auth?: { readonly service: AuthService; readonly verifier: TokenVerifier };
   /** Destino de los logs; solo las pruebas lo cambian para capturarlos. */
   readonly logStream?: { write(chunk: string): void };
 }
@@ -83,6 +88,16 @@ export function buildApp(deps: AppDeps): FastifyInstance {
   });
   void app.register(fastifySwaggerUI, { routePrefix: `${API_PREFIX}/docs` });
 
+  if (deps.auth !== undefined) {
+    registerAuthentication(app, deps.auth.verifier, () => deps.clock.now());
+    void app.register(
+      authRoutes({
+        service: deps.auth.service,
+        rateLimitPerMinute: deps.config.AUTH_RATE_LIMIT_PER_MINUTE,
+      }),
+      { prefix: `${API_PREFIX}/auth` },
+    );
+  }
   void app.register(healthRoutes, { prefix: API_PREFIX });
   void app.register(
     auctionRoutes({

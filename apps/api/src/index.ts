@@ -4,4 +4,6 @@ export { placeBid, type PlaceBidInput, type PlaceBidResult } from './commands/in
 export { lazyDlqAdmin, type DlqAdminPort } from './admin-dlq.js';
 export { SystemClock, Uuid7Generator } from './system.js';
 export { HeaderTenantResolver, type TenantResolver } from './tenant.js';
+export { JwtBidderResolver, JwtTenantResolver, registerAuthentication } from './auth-context.js';
+export { bootstrapAdmin } from './bootstrap-admin.js';
 export { HeaderBidderResolver, type BidderResolver } from './bidder.js';

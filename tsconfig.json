@@ -48,6 +48,9 @@
     },
     {
       "path": "apps/closer/tsconfig.build.json"
+    },
+    {
+      "path": "packages/auth/tsconfig.build.json"
     }
   ]
 }
