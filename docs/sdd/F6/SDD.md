@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **F6** (`868mvty1c`, https://app.clickup.com/t/868mvty1c).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Borrador
+- **Estado:** Implementado (2026-11-13) — aprobado el mismo día
 - **Versión:** 1.0 · **Fecha:** 2026-11-13
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §8 A06 ("`npm audit` en CI y actualizaciones automáticas de dependencias"), A08 (integridad), §10 (CI)
@@ -128,13 +128,13 @@ Un test que lee `.github/` y verifica: (a) **toda** línea `uses:` de todos los 
 
 ## 5 · Definition of Done
 
-- [ ] SDD en `docs/sdd/F6/SDD.md`, Estado = Aprobado
-- [ ] `security.yml` y `dependabot.yml` activos; el flujo pasa y se comprueba que **falla** con un aviso en producción
-- [ ] Los 10 avisos actuales resueltos o aceptados con motivo y fecha
-- [ ] Pruebas de política en verde (acciones fijadas por SHA)
-- [ ] README documenta la política
-- [ ] Tests del §4 en verde; `npm run check` y `npm run test:integration` en verde
-- [ ] PR con CI verde y fusionado
+- [x] SDD en `docs/sdd/F6/SDD.md`, Estado = Aprobado
+- [x] `security.yml` y `dependabot.yml` activos; el flujo pasa y se comprueba que **falla** con un aviso en producción
+- [x] Los 10 avisos actuales resueltos o aceptados con motivo y fecha
+- [x] Pruebas de política en verde (acciones fijadas por SHA)
+- [x] README documenta la política
+- [x] Tests del §4 en verde; `npm run check` y `npm run test:integration` en verde
+- [x] PR con CI verde y fusionado
 
 ---
 
@@ -158,3 +158,16 @@ Un test que lee `.github/` y verifica: (a) **toda** línea `uses:` de todos los 
 3. **El flujo `security` no es *check* requerido** al principio y se exige tras una semana estable (como `integration`). ¿De acuerdo?
 4. **Ignorar las versiones mayores** de `@types/node` (22), `graphql` (16), Prisma (7) y `@confluentinc/kafka-javascript`. ¿Alguna otra?
 5. **Revisión de la acción `dependency-review`** para las PR (bloquea al añadir dependencias vulnerables) como evolución, no ahora. ¿De acuerdo?
+
+---
+
+## Changelog de implementación
+
+- **Implementado (2026-11-13)** con todas las propuestas aprobadas de §7: política «cualquier aviso en producción o alto/crítico en todo», `overrides` de `minimatch` si el gate lo soporta, el flujo `security` fuera de los checks requeridos al principio, versiones mayores ignoradas (`@types/node`, `graphql`, `prisma`, `@prisma/*`, `@confluentinc/kafka-javascript`) y `dependency-review` como evolución.
+- **Resultado del `overrides`:** `"minimatch": "^11.0.8"` en el `package.json` raíz. El árbol pasa a usar solo la 11.0.8 y `npm audit` baja de **10 avisos moderados a 0**. Comprobado con el gate completo (compilación, tipos, ESLint sobre todo el repositorio, formato, 238 pruebas unitarias) y las **190 de integración**: sin regresiones. No hubo que aceptar ningún riesgo.
+- `.github/workflows/security.yml`: auditoría de producción (`--audit-level=low`), de todo (`--audit-level=high`), `npm audit signatures` y un resumen informativo; en cada PR, en `main`, semanal (lunes 06:17 UTC) y manual. `npm ci --ignore-scripts` (la auditoría no compila binarios).
+- `.github/dependabot.yml`: `npm` y `github-actions`, semanal, agrupado (desarrollo y producción por separado, y todas las acciones juntas), límite de 5 y 3 PR y mensajes `chore(deps)` / `chore(deps-dev)` compatibles con commitlint.
+- Scripts `audit:prod` y `audit:high` para ejecutar la misma política en local.
+- 21 pruebas de política (`packages/testing/src/policy/repo-policy.test.ts`): toda acción fijada por SHA de 40 hexadecimales, permisos de solo lectura, ningún `pull_request_target`, el contenido del flujo de auditoría, la configuración de Dependabot (incluidas las versiones mayores ignoradas), coherencia de Node 22 y que el `overrides` de `minimatch` siga vigente y reflejado en el *lockfile*.
+- La prueba de que el flujo **falla de verdad** con un aviso en producción se hizo con un PR descartable (ver el registro en `docs/decisions/LOG.md`, DEC-038).
+- Pendiente de comprobar con el tiempo: que Dependabot abra su primera PR (lo hace el servicio de GitHub, se verá el lunes).

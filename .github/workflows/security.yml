@@ -1,0 +1,40 @@
+name: Security
+
+# Auditoría de dependencias (OWASP A06). Se ejecuta también cada semana: los avisos nuevos aparecen
+# sin que cambie el código. Política en docs/sdd/F6/SDD.md §2.1.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      # --ignore-scripts: la auditoría no necesita compilar binarios ni generar el cliente de Prisma.
+      - run: npm ci --ignore-scripts
+      - name: Dependencias de producción, cualquier aviso
+        run: npm audit --omit=dev --audit-level=low
+      - name: Todas las dependencias, aviso alto o crítico
+        run: npm audit --audit-level=high
+      - name: Firmas del registro
+        run: npm audit signatures
+      - name: Resumen informativo
+        if: always()
+        run: npm audit || true

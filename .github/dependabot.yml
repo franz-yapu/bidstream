@@ -1,0 +1,49 @@
+version: 2
+
+# Actualizaciones automáticas (OWASP A06). Se revisan a mano: la CI completa, con las pruebas de
+# integración, decide cada PR. Política en docs/sdd/F6/SDD.md §2.3.
+updates:
+  - package-ecosystem: npm
+    # un único package-lock.json en la raíz cubre todos los workspaces
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: 'chore(deps)'
+      prefix-development: 'chore(deps-dev)'
+    groups:
+      desarrollo:
+        dependency-type: development
+        update-types: [minor, patch]
+      produccion:
+        dependency-type: production
+        update-types: [minor, patch]
+    ignore:
+      # Node 22 es la versión objetivo (.nvmrc, engines y CI).
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
+      # Decisión de E1: graphql 16.x por compatibilidad con Yoga y el ecosistema.
+      - dependency-name: graphql
+        update-types: ['version-update:semver-major']
+      # Prisma 7 es la estable; la 8 sigue en candidata a versión.
+      - dependency-name: prisma
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@prisma/*'
+        update-types: ['version-update:semver-major']
+      # Binario nativo: no compila en todas las versiones de Node; se actualiza a mano tras probarlo.
+      - dependency-name: '@confluentinc/kafka-javascript'
+        update-types: ['version-update:semver-major']
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: 'chore(deps)'
+    groups:
+      acciones:
+        patterns: ['*']
