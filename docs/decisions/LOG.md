@@ -231,3 +231,10 @@ Aprobados: (F4) paquete `@bidstream/logging`, correlación por `meta.correlation
 **Fecha:** 2026-11-13 · **Fuente:** Claude · **Estado:** activa
 
 README según la spec §12 con comparación honesta contra la versión anterior (sin cifras sin medir) y `docs/DESARROLLO.md` para lo técnico; `make demo` levanta infraestructura, migraciones y seis procesos en contenedores y un job de la CI lo comprueba en un entorno limpio. El vídeo sigue marcado como pendiente (H5).
+
+## DEC-045 — Decisiones Q2, Q3, Q4 y Q5; SDD en borrador de la Ola 3
+**Fecha:** 2026-11-13 · **Fuente:** usuario (respuestas a la consulta), Claude · **Estado:** activa (SDD pendientes de aprobación)
+
+Decisiones del usuario: **Q2** consumidor decisor por Kafka (la API acepta con 202 y publica un comando en `bidstream.commands.bid`; el decisor, con estado propio y orden de partición, emite `BidPlaced`/`BidRejected`/`LotExtended`); **Q3** worker `closer` con líder único; **Q4** autenticación propia completa (Argon2id, JWT corto, refresh con rotación, bloqueo, RBAC); **Q5** firma Ed25519 asimétrica. **Q1** (suscripción Azure y presupuesto) sigue abierta: H1, H3 y H4 siguen bloqueados.
+
+Hallazgo de diseño: para que no haya pujas aceptadas tras el cierre, el cierre entra por la misma partición que las pujas como comando `CloseLot` (emitido por el `closer`) y lo decide el decisor, que es el único escritor de cada lote. SDD en borrador: C3, C4, D8, F1, F2 y F3; F5 (`SECURITY.md`) al final.
