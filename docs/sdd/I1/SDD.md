@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **I1** (`868mvty22`, https://app.clickup.com/t/868mvty22).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Aprobado (2026-11-13)
+- **Estado:** Implementado (2026-11-13) — con el vídeo marcado como pendiente (H5)
 - **Versión:** 0.1 · **Fecha:** 2026-11-13
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §12 (seis puntos del README; «la sección más valiosa del repositorio» es la comparación) y §5 (el diagrama), §6 (detalles que el README debe dejar explícitos: dinero `Decimal(12,2)`, índice único parcial, límites de GraphQL)
@@ -144,3 +144,13 @@
 3. **`make demo`** como comando único (Kafka + PostgreSQL + migraciones + procesos). ¿Debe arrancar también los procesos de aplicación o basta con la infraestructura y los comandos de abajo?
 4. **Orden de entrega:** I1 después de H5 para enlazar el vídeo, o antes con marcador (propuesta: antes, con marcador).
 5. **Idioma:** español (como el resto del repositorio). ¿Añadimos un resumen en inglés para el portafolio?
+
+---
+
+## Changelog de implementación
+
+- `README.md` reescrito con las secciones de §12 (qué es, flujo en Mermaid, «qué cambió respecto a la versión con WebSockets» con ganas/pierdes/cuándo, decisiones con enlace a los diez ADR, reproceso y vídeo, stack y puesta en marcha, estado y límites). El contenido técnico anterior pasó íntegro a `docs/DESARROLLO.md`.
+- La comparación se apoya en el código de `project-cafe/backend-c` (`pg_advisory_xact_lock` por lote, Socket.io) y no incluye cifras de rendimiento; reconoce lo que bidstream pierde (simplicidad, consistencia inmediata, funciones de producto).
+- `make demo` (infraestructura + migraciones + los seis procesos en contenedores con el perfil `app` del compose), `make demo-down`, `scripts/demo-smoke.sh` y job `demo` en la CI (entorno limpio). `make down`/`make reset` también cubren el perfil.
+- Pruebas de documentación: `packages/testing/src/docs/readme.test.ts` (estructura, sección clave, diagrama, enlaces, comandos, honestidad, vídeo enlazado o marcado pendiente).
+- Preguntas §7: estructura README + DESARROLLO (1), nombre `subastas-cafe-api` de la spec (2), `make demo` arranca también los procesos (3), I1 antes de H5 con marcador (4), solo español (5; el resumen en inglés queda como mejora opcional).
