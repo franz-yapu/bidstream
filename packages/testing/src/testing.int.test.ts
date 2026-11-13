@@ -8,6 +8,7 @@ import {
   createTestTopic,
   testDatabaseServerUrl,
   testKafkaConfig,
+  waitFor,
 } from './index.js';
 
 async function databaseExists(name: string): Promise<boolean> {
@@ -71,7 +72,10 @@ describe('Kafka de pruebas', () => {
       const meta = await a.fetchTopicMetadata({ topics: [topic.name] });
       expect(meta[0]?.partitions).toHaveLength(3);
       await topic.drop();
-      expect(await a.listTopics()).not.toContain(topic.name);
+      // el borrado de topics en Kafka es asíncrono: se espera a que desaparezca
+      await waitFor(async () => !(await a.listTopics()).includes(topic.name), {
+        description: 'que el topic desaparezca',
+      });
     } finally {
       await a.disconnect();
     }
