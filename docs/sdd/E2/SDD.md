@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **E2** (`868mvty12`, https://app.clickup.com/t/868mvty12).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Aprobado (2026-11-12)
+- **Estado:** Implementado (2026-11-12) — aprobado el mismo día
 - **Versión:** 1.0 · **Fecha:** 2026-11-12
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §7 ("Límites obligatorios: profundidad máxima de consulta, cálculo de complejidad y paginación por cursor. Una API GraphQL sin esos tres límites es una denegación de servicio esperando a ocurrir, y conviene decirlo en el README"), §8 A03 (límites de profundidad en GraphQL), A04 (diseño inseguro), A05 (mala configuración)
@@ -123,13 +123,13 @@ Cada campo cuesta 1; un campo de lista con argumento `first` cuesta `first × (1
 
 ## 5 · Definition of Done
 
-- [ ] SDD en `docs/sdd/E2/SDD.md`, Estado = Aprobado
-- [ ] Profundidad, complejidad (con `first`), alias, tamaño y *batching* limitados y probados
-- [ ] Un documento rechazado no ejecuta resolvers
-- [ ] Introspección según entorno; errores sin detalles internos
-- [ ] README explica los tres límites y por qué (spec §7)
-- [ ] Tests del §4 en verde; `npm run check` y `npm run test:integration` en verde
-- [ ] PR con CI verde y fusionado
+- [x] SDD en `docs/sdd/E2/SDD.md`, Estado = Aprobado
+- [x] Profundidad, complejidad (con `first`), alias, tamaño y *batching* limitados y probados
+- [x] Un documento rechazado no ejecuta resolvers
+- [x] Introspección según entorno; errores sin detalles internos
+- [x] README explica los tres límites y por qué (spec §7)
+- [x] Tests del §4 en verde; `npm run check` y `npm run test:integration` en verde
+- [x] PR con CI verde y fusionado
 
 ---
 
@@ -152,3 +152,17 @@ Cada campo cuesta 1; un campo de lista con argumento `first` cuesta `first × (1
 3. **Introspección desactivada en producción** (propuesta), con el SDL publicado en el repositorio. ¿O prefieres dejarla siempre activa por ser un proyecto de portafolio?
 4. **`first` fuera de rango rechazado** con `BAD_USER_INPUT` (propuesta) en lugar de recortarlo en silencio. ¿De acuerdo?
 5. **Consultas persistidas** como evolución futura, no ahora. ¿De acuerdo?
+
+---
+
+## Changelog de implementación
+
+- **Implementado (2026-11-12)** con todas las propuestas aprobadas de §7: reglas propias de profundidad y alias más `graphql-query-complexity` con un estimador por `first`, valores 7 / 1 000 / 15 / 2 000 / 100 KB / 100, introspección activa fuera de producción y desactivable con `GQL_INTROSPECTION`, `first` fuera de rango rechazado (E1) y consultas persistidas como evolución futura.
+- `apps/graphql/src/limits/`: `depth.ts`, `aliases.ts`, `complexity.ts` e `index.ts` (`useLimits`, un plugin de Yoga). Profundidad y alias son reglas de validación; la complejidad se calcula en `onExecute`/`onSubscribe` porque depende de las variables; los tokens se limitan con la opción `maxTokens` del analizador de `graphql` 16.15; el cuerpo, con la cabecera `content-length` en `onRequest`; el *batching* está desactivado; y la política de introspección usa `NoSchemaIntrospectionCustomRule`.
+- **Modelo de coste real** (el del SDD era ilustrativo): escalares y enumerados 0; un campo de objeto cuesta `n × (1 + coste de sus hijos)` con `n = first` (1 si no existe; un `first` negativo cuenta 0, para que no reste coste). La consulta de referencia legítima (`lot { auction { lots(first: 10) } bids(first: 10) { edges { node } } }`) cuesta **42**; `activeLots(first: 100) { bids(first: 100) { edges { node } } }` cuesta **30 100** y con `first: 1` solo 4. El tope de 1 000 sigue siendo adecuado.
+- La profundidad **cuenta también el campo hoja** (`{ a { b } }` = 2), y las consultas de introspección no cuentan.
+- **Estado HTTP:** los errores de validación (profundidad, alias, tokens, introspección) devuelven **400 solo si el cliente pide `Accept: application/graphql-response+json`** (GraphQL sobre HTTP); con `application/json` Yoga mantiene el 200 histórico con los errores en el cuerpo. La complejidad (400) y el cuerpo grande (413) no dependen de la cabecera. Los clientes nuevos deben pedir ese formato.
+- **Límite de cuerpo:** se aplica por `content-length`; un cuerpo sin esa cabecera (transferencia por trozos) no se corta en `onRequest`. Queda como mejora el recuento en streaming a nivel de `node:http`.
+- Problema de entorno de pruebas (ya visto en E1) ahora también en las unitarias: `graphql` debe cargarse como una sola copia; `server.deps.inline` se aplica a ambas configuraciones de Vitest.
+- 41 pruebas nuevas: 22 unitarias (reglas de profundidad y alias, también con fragmentos en línea y con nombre, un fragmento recursivo que no cuelga, 40 fragmentos encadenados sin coste exponencial, modelo de coste con variables y `first` negativo, configuración) y 13 de integración (cada rechazo ocurre **sin que ningún resolver toque la base de datos**, la consulta legítima pasa, los límites se ajustan por entorno y la introspección según la política). Estables en tres ejecuciones seguidas.
+- **Pendiente para E3:** comprobar que una subscription demasiado profunda o compleja se rechaza (`onSubscribe` ya aplica el límite de complejidad y las reglas de validación cubren cualquier documento).

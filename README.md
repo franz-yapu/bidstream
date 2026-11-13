@@ -95,3 +95,18 @@ Solo lecturas sobre la proyección (`auction`, `lot`, `lotBids`, `activeLots`), 
 curl -s localhost:4000/graphql -H 'content-type: application/json' -H 'x-tenant-id: 11111111-1111-4111-8111-111111111111' \
   -d '{"query":"{ lot(id: \"<id>\") { title currentPrice nextMinimumBid bids(first: 5) { edges { node { amount rank } } } } }"}'
 ```
+
+### Límites de la API GraphQL
+
+Una API GraphQL sin límites es una denegación de servicio esperando a ocurrir: una sola consulta puede pedir listas anidadas que multipliquen el trabajo. Por eso hay tres límites obligatorios, más algunos de apoyo; todo se comprueba **antes de ejecutar ningún resolver** y es configurable por entorno.
+
+| Límite                                 |  Valor | Variable             |
+| -------------------------------------- | -----: | -------------------- |
+| Profundidad máxima                     |      7 | `GQL_MAX_DEPTH`      |
+| Complejidad máxima (coste por `first`) |  1 000 | `GQL_MAX_COMPLEXITY` |
+| Paginación por cursor, `first` máximo  |    100 | `GQL_MAX_PAGE_SIZE`  |
+| Alias por documento                    |     15 | `GQL_MAX_ALIASES`    |
+| Tokens por documento                   |  2 000 | `GQL_MAX_TOKENS`     |
+| Tamaño del cuerpo                      | 100 KB | `GQL_MAX_BODY_BYTES` |
+
+El coste de una lista es `first × (1 + coste de sus hijos)`: `activeLots(first: 100) { bids(first: 100) { … } }` cuesta 30 100 y se rechaza; con `first: 10` en ambas, 310, y pasa. Los errores llevan un código estable (`QUERY_TOO_DEEP`, `QUERY_TOO_COMPLEX`, `TOO_MANY_ALIASES`, `QUERY_TOO_LARGE`, `BAD_USER_INPUT`). Los clientes deben enviar `Accept: application/graphql-response+json` para recibir un 400 en los errores de validación.

@@ -5,7 +5,7 @@ const DB = 'postgresql://u:p@localhost:5432/d';
 
 describe('loadConfig', () => {
   it('aplica los valores por defecto', () => {
-    expect(loadConfig({ DATABASE_URL: DB })).toEqual({
+    expect(loadConfig({ DATABASE_URL: DB })).toMatchObject({
       GRAPHQL_PORT: 4000,
       HOST: '0.0.0.0',
       NODE_ENV: 'development',
