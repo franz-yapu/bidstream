@@ -12,6 +12,12 @@ export interface HandlerContext {
 
 export type EventHandler = (event: DomainEvent, context: HandlerContext) => Promise<void>;
 
+/** Id de correlación que el relay copia a la cabecera `correlationId` (F4). */
+function headerCorrelation(message: IncomingMessage): string | undefined {
+  const value = message.headers['correlationId'];
+  return value !== undefined && value !== '' && value.length <= 128 ? value : undefined;
+}
+
 export interface Logger {
   info(fields: Record<string, unknown>, message: string): void;
   warn(fields: Record<string, unknown>, message: string): void;
@@ -74,6 +80,7 @@ export function createMessageProcessor(
     attempts: number,
     reason: DlqReason,
     eventId: string | undefined,
+    correlationId: string | undefined,
   ): Promise<ProcessOutcome> {
     const dlq = buildDlqMessage({
       message,
@@ -82,6 +89,7 @@ export function createMessageProcessor(
       attempts,
       reason,
       now: now(),
+      correlationId,
     });
     await deps.publishDlq({
       key: message.key,
@@ -90,6 +98,7 @@ export function createMessageProcessor(
         consumer: deps.consumerName,
         reason,
         ...(eventId === undefined ? {} : { eventId }),
+        ...(correlationId === undefined ? {} : { correlationId }),
       },
     });
     logger.error(
@@ -98,6 +107,7 @@ export function createMessageProcessor(
         reason,
         attempts,
         eventId,
+        correlationId,
         topic: message.topic,
         offset: message.offset,
       },
@@ -129,13 +139,27 @@ export function createMessageProcessor(
   return async (message) => {
     // 1. Contrato: un mensaje que no es un evento válido es veneno y nunca se arreglará reintentando.
     if (message.value === null) {
-      return deadLetter(message, new Error('mensaje sin valor'), 1, 'poison', undefined);
+      return deadLetter(
+        message,
+        new Error('mensaje sin valor'),
+        1,
+        'poison',
+        undefined,
+        headerCorrelation(message),
+      );
     }
     let json: unknown;
     try {
       json = JSON.parse(message.value);
     } catch {
-      return deadLetter(message, new Error('el valor no es JSON válido'), 1, 'poison', undefined);
+      return deadLetter(
+        message,
+        new Error('el valor no es JSON válido'),
+        1,
+        'poison',
+        undefined,
+        headerCorrelation(message),
+      );
     }
     const parsed = parseEvent(json);
     if (!parsed.success) {
@@ -143,9 +167,17 @@ export function createMessageProcessor(
         .slice(0, 5)
         .map((i) => `${i.path.join('.') || '(raíz)'}: ${i.message}`)
         .join('; ');
-      return deadLetter(message, new Error(`evento inválido: ${summary}`), 1, 'poison', undefined);
+      return deadLetter(
+        message,
+        new Error(`evento inválido: ${summary}`),
+        1,
+        'poison',
+        undefined,
+        headerCorrelation(message),
+      );
     }
     const event = parsed.event;
+    const correlationId = event.meta?.correlationId ?? headerCorrelation(message);
     if (deps.verify !== undefined && !(await deps.verify(message, event))) {
       return deadLetter(
         message,
@@ -153,6 +185,7 @@ export function createMessageProcessor(
         1,
         'poison',
         event.eventId,
+        correlationId,
       );
     }
 
@@ -163,17 +196,33 @@ export function createMessageProcessor(
         const result = await attempt(event, message);
         if (result === 'duplicate') {
           logger.info(
-            { consumer: deps.consumerName, eventId: event.eventId },
+            { consumer: deps.consumerName, eventId: event.eventId, correlationId },
             'evento duplicado ignorado',
           );
           return { kind: 'duplicate' };
         }
+        logger.info(
+          {
+            consumer: deps.consumerName,
+            eventId: event.eventId,
+            correlationId,
+            type: event.type,
+            attempts: n,
+          },
+          'evento procesado',
+        );
         return { kind: 'processed', attempts: n };
       } catch (error) {
         lastError = error;
         if (n <= policy.maxRetries) {
           logger.warn(
-            { consumer: deps.consumerName, eventId: event.eventId, attempt: n, err: error },
+            {
+              consumer: deps.consumerName,
+              eventId: event.eventId,
+              correlationId,
+              attempt: n,
+              err: error,
+            },
             'fallo del handler; se reintenta',
           );
           await sleep(backoffDelay(n, policy, random));
@@ -186,6 +235,7 @@ export function createMessageProcessor(
       policy.maxRetries + 1,
       'retries-exhausted',
       event.eventId,
+      correlationId,
     );
   };
 }

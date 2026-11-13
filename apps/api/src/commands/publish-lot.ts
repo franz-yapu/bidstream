@@ -1,6 +1,6 @@
 import { buildDepsFrom, buildEvent, parseMoney } from '@bidstream/domain';
 import { withTransaction } from '@bidstream/db';
-import type { CommandDeps } from './deps.js';
+import type { CommandContext, CommandDeps } from './deps.js';
 import { AuctionClosed, AuctionNotFound, InvalidCommand } from './errors.js';
 
 export interface PublishLotInput {
@@ -26,6 +26,7 @@ export async function publishLot(
   tenantId: string,
   auctionId: string,
   input: PublishLotInput,
+  context: CommandContext = {},
 ): Promise<PublishLotResult> {
   // Reglas que no necesitan la base de datos, primero.
   if (Date.parse(input.closesAt) <= deps.clock.now().getTime()) {
@@ -57,7 +58,12 @@ export async function publishLot(
         currency: input.currency,
         closesAt: input.closesAt,
       },
-      { deps: eventDeps },
+      {
+        deps: eventDeps,
+        ...(context.correlationId === undefined
+          ? {}
+          : { meta: { correlationId: context.correlationId } }),
+      },
     );
     await outbox.enqueue([event], deps.eventsTopic);
   });

@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **H5** (`868mvty20`, https://app.clickup.com/t/868mvty20).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Borrador (2026-11-13) — pendiente de aprobación
+- **Estado:** Aprobado (2026-11-13)
 - **Versión:** 0.1 · **Fecha:** 2026-11-13
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §5 («Reproceso (lo que hay que grabar en video)… es la mejor demostración del proyecto») y §12 punto 5

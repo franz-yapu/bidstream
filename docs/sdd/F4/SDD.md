@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **F4** (`868mvty18`, https://app.clickup.com/t/868mvty18).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Borrador (2026-11-13) — pendiente de aprobación
+- **Estado:** Implementado (2026-11-13)
 - **Versión:** 0.1 · **Fecha:** 2026-11-13
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §8 (A09: «logs estructurados con id de correlación, bitácora append-only, alertas»)
@@ -143,3 +143,13 @@ Se reemplaza por `"[REDACTED]"` el **valor** de toda clave (a cualquier profundi
 2. **Correlación por cabecera Kafka `correlationId` y `meta.correlationId`** sin cambiar `version` del evento (propuesta).
 3. **Redacción por nombre de clave y URLs con contraseña** (propuesta), sin registrar jamás el `payload` de los eventos. ¿De acuerdo?
 4. **Alcance:** también GraphQL (solo `requestId`) y el notifier; sin OpenTelemetry. ¿Bien?
+
+---
+
+## Changelog de implementación
+
+- `@bidstream/logging`: logger JSON, `child`, redacción (claves sensibles y contraseñas de URL, circulares, profundidad) y 20 pruebas unitarias.
+- API: `meta.correlationId = request.id` en `AuctionOpened` y `LotPublished`. Relay: cabecera `correlationId` y log `evento publicado`. Consumidores: `correlationId` en todos los logs y en el DLQ (también se conserva al reprocesar, D7); el consumidor ahora registra `evento procesado`, por lo que se eliminaron los `onOutcome` duplicados de los `main.ts`.
+- `describeError` del DLQ enmascara contraseñas de URL en el mensaje.
+- Relay, projector, auditor, notifier y GraphQL usan `createLogger` (cuatro copias del `log` eliminadas). La API sigue con pino. GraphQL no tiene logs por petición, así que no hay `requestId` que añadir allí (desviación respecto a §1, sin impacto).
+- Prueba de la cadena completa: `apps/projector/src/correlation.int.test.ts`.

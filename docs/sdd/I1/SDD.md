@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **I1** (`868mvty22`, https://app.clickup.com/t/868mvty22).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Borrador (2026-11-13) — pendiente de aprobación
+- **Estado:** Aprobado (2026-11-13)
 - **Versión:** 0.1 · **Fecha:** 2026-11-13
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §12 (seis puntos del README; «la sección más valiosa del repositorio» es la comparación) y §5 (el diagrama), §6 (detalles que el README debe dejar explícitos: dinero `Decimal(12,2)`, índice único parcial, límites de GraphQL)

@@ -26,6 +26,7 @@
     "@bidstream/api": "^0.0.0",
     "@bidstream/consumer": "^0.0.0",
     "@bidstream/kafka": "^0.0.0",
+    "@bidstream/logging": "^0.0.0",
     "@bidstream/notifier-app": "^0.0.0",
     "@bidstream/projector": "^0.0.0",
     "@bidstream/relay": "^0.0.0",

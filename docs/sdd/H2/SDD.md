@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **H2** (`868mvty1v`, https://app.clickup.com/t/868mvty1v).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Borrador (2026-11-13) — pendiente de aprobación
+- **Estado:** Aprobado (2026-11-13)
 - **Versión:** 0.1 · **Fecha:** 2026-11-13
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §9 (Azure Container Apps: API, relay y tres consumidores, cada uno con su escalado; Azure Container Registry)

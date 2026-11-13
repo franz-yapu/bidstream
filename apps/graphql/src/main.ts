@@ -1,31 +1,28 @@
 import { createPrismaClient } from '@bidstream/db';
+import { createLogger, levelFromEnv } from '@bidstream/logging';
 import { InMemoryNotificationBus, startNotificationListener } from '@bidstream/notifier';
 import { loadConfig } from './config.js';
 import { buildHttpServer } from './server.js';
 
 const config = loadConfig(process.env);
 const prisma = createPrismaClient(config.DATABASE_URL);
+const logger = createLogger({ service: 'graphql', level: levelFromEnv(process.env['LOG_LEVEL']) });
 
 // Las subscriptions se alimentan del canal LISTEN/NOTIFY de PostgreSQL (D5): cada réplica escucha el
 // canal con una conexión dedicada y reparte en su propio bus.
 const bus = new InMemoryNotificationBus((error) => {
-  console.log(JSON.stringify({ level: 'warn', msg: 'un suscriptor falló', error: String(error) }));
+  logger.warn({ err: error }, 'un suscriptor falló');
 });
-const log =
-  (level: string) =>
-  (fields: Record<string, unknown>, message: string): void => {
-    console.log(JSON.stringify({ level, time: new Date().toISOString(), msg: message, ...fields }));
-  };
 const listener = startNotificationListener({
   connectionString: config.DATABASE_URL,
   bus,
-  logger: { info: log('info'), warn: log('warn') },
+  logger,
 });
 
 const server = buildHttpServer({ config, db: prisma, bus });
 
 function shutdown(signal: string): void {
-  console.log(JSON.stringify({ level: 'info', msg: 'apagando', signal }));
+  logger.info({ signal }, 'apagando');
   server.close(() => {
     void listener
       .stop()
@@ -42,7 +39,5 @@ process.on('SIGINT', () => {
 });
 
 server.listen(config.GRAPHQL_PORT, config.HOST, () => {
-  console.log(
-    JSON.stringify({ level: 'info', msg: 'graphql iniciado', port: config.GRAPHQL_PORT }),
-  );
+  logger.info({ port: config.GRAPHQL_PORT }, 'graphql iniciado');
 });

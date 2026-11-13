@@ -9,3 +9,9 @@ export interface CommandDeps {
   /** Topic de destino de los eventos (`bidstream.events.lot`). */
   readonly eventsTopic: string;
 }
+
+/** Contexto de la petición que origina un comando (F4). */
+export interface CommandContext {
+  /** `request.id` de la API: viaja en `meta.correlationId` hasta los consumidores. */
+  readonly correlationId?: string;
+}

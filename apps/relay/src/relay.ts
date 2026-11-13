@@ -57,7 +57,9 @@ function toRequest(row: PendingOutboxMessage): PublishRequest {
   const payload = (typeof row.payload === 'object' && row.payload !== null ? row.payload : {}) as {
     type?: unknown;
     version?: unknown;
+    meta?: { correlationId?: unknown } | null;
   };
+  const correlationId = payload.meta?.correlationId;
   return {
     topic: row.topic,
     key: row.key,
@@ -66,6 +68,7 @@ function toRequest(row: PendingOutboxMessage): PublishRequest {
       eventId: row.id,
       ...(typeof payload.type === 'string' ? { type: payload.type } : {}),
       ...(typeof payload.version === 'number' ? { version: String(payload.version) } : {}),
+      ...(typeof correlationId === 'string' && correlationId !== '' ? { correlationId } : {}),
     },
   };
 }
@@ -115,8 +118,18 @@ export class OutboxRelay {
           const done: string[] = [];
           for (const row of rows) {
             try {
-              await this.options.publish(toRequest(row));
+              const request = toRequest(row);
+              await this.options.publish(request);
               done.push(row.id);
+              this.logger.info(
+                {
+                  eventId: row.id,
+                  type: request.headers['type'],
+                  correlationId: request.headers['correlationId'],
+                  topic: request.topic,
+                },
+                'evento publicado',
+              );
             } catch (error) {
               publishError = error;
               break;

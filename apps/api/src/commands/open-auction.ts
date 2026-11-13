@@ -1,6 +1,6 @@
 import { buildDepsFrom, buildEvent } from '@bidstream/domain';
 import { withTransaction } from '@bidstream/db';
-import type { CommandDeps } from './deps.js';
+import type { CommandContext, CommandDeps } from './deps.js';
 import { InvalidCommand } from './errors.js';
 
 export interface OpenAuctionInput {
@@ -21,6 +21,7 @@ export async function openAuction(
   deps: CommandDeps,
   tenantId: string,
   input: OpenAuctionInput,
+  context: CommandContext = {},
 ): Promise<OpenAuctionResult> {
   if (Date.parse(input.closesAt) <= deps.clock.now().getTime()) {
     throw new InvalidCommand('closesAt debe estar en el futuro');
@@ -30,7 +31,12 @@ export async function openAuction(
     'AuctionOpened',
     tenantId,
     { auctionId, title: input.title, opensAt: input.opensAt, closesAt: input.closesAt },
-    { deps: buildDepsFrom(deps.clock, deps.ids) },
+    {
+      deps: buildDepsFrom(deps.clock, deps.ids),
+      ...(context.correlationId === undefined
+        ? {}
+        : { meta: { correlationId: context.correlationId } }),
+    },
   );
   await withTransaction(deps.prisma, ({ outbox }) => outbox.enqueue([event], deps.eventsTopic));
   return { auctionId };
