@@ -117,11 +117,13 @@ async function drain(
   const topic = options.dlqTopic ?? TOPICS.eventsLotDlq;
   let handled = 0;
   let committed = 0;
+  console.error('DBG createConsumer');
   const consumer = await createConsumer(options.kafka, {
     groupId,
     topics: [topic],
     fromBeginning: true,
   });
+  console.error('DBG consumer ok');
   try {
     await new Promise<void>((resolve, reject) => {
       const timer = setTimeout(() => {
@@ -138,6 +140,7 @@ async function drain(
           {
             onCommitted: () => {
               committed += 1;
+              console.error('DBG committed', committed);
               if (committed >= count) {
                 clearTimeout(timer);
                 resolve();
@@ -182,9 +185,12 @@ export async function peekDlq(
   const admin = await createKafkaAdmin(options.kafka);
   const ephemeral = `dlq-peek-${randomUUID()}`;
   try {
+    console.error('DBG lag1');
     const total = (await admin.consumerLag(ephemeral, topic)).total;
+    console.error('DBG lag1 ok', total);
     const pending = (await admin.consumerLag(options.reprocessorGroup ?? REPROCESSOR_GROUP, topic))
       .total;
+    console.error('DBG lag2 ok');
     const entries: DlqEntry[] = [];
     const limit = Math.min(options.limit ?? 50, 1_000);
     // Se lee todo (el DLQ es pequeño) y se muestran los `limit` más recientes.
