@@ -2,6 +2,7 @@ export type { CommandDeps } from './deps.js';
 export {
   AuctionClosed,
   AuctionNotFound,
+  BidRateLimited,
   IdempotencyKeyReused,
   InvalidCommand,
   LotNotFound,

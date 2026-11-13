@@ -15,6 +15,27 @@ const envSchema = z
      * en producción. Por defecto, `jwt` en producción y `header` fuera de ella.
      */
     AUTH_MODE: z.enum(['header', 'jwt']).optional(),
+    /** Pujas por postor y minuto (OWASP A04); superado, `429`. */
+    BID_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().min(1).default(30),
+    /** Peticiones por minuto y por IP a toda la API (red de seguridad gruesa; por réplica). */
+    API_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().min(1).default(600),
+    /**
+     * Orígenes que pueden llamar a la API desde un navegador (CORS), separados por comas. Vacío (por
+     * defecto): ninguno. Se exige el origen exacto (`https://app.ejemplo.com`); `*` no se admite.
+     */
+    CORS_ALLOWED_ORIGINS: z
+      .string()
+      .default('')
+      .transform((value) =>
+        value
+          .split(',')
+          .map((origin) => origin.trim())
+          .filter((origin) => origin !== ''),
+      )
+      .refine((origins) => origins.every((o) => /^https?:\/\/[^/*\s]+$/.test(o)), {
+        message:
+          'CORS_ALLOWED_ORIGINS solo admite orígenes exactos (https://host[:puerto]); no `*` ni rutas',
+      }),
     /** Peticiones por minuto y por IP a `/v1/auth/*` (red de seguridad contra fuerza bruta). */
     AUTH_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().min(1).default(20),
     /** Primer administrador de un tenant (se crea al arrancar si aún no hay ninguno): los tres o ninguno. */

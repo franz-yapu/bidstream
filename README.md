@@ -177,13 +177,12 @@ Para desarrollar, probar o depurar proceso a proceso: [`docs/DESARROLLO.md`](doc
 Lo que está hecho y probado (más de 360 pruebas unitarias y 230 de integración contra Kafka y
 PostgreSQL reales):
 
-- Comandos REST de subastas, lotes y pujas (con `Idempotency-Key`; la puja la decide un consumidor en orden por lote), cierre automático por tiempo, firma Ed25519 de los mensajes, autenticación propia (JWT corto, refresh rotatorio, Argon2id) con roles y denegación por defecto, outbox, relay, los tres consumidores, proyección, GraphQL con
+- Comandos REST de subastas, lotes y pujas (con `Idempotency-Key`; la puja la decide un consumidor en orden por lote), cierre automático por tiempo, firma Ed25519 de los mensajes, autenticación propia (JWT corto, refresh rotatorio, Argon2id) con roles y denegación por defecto, límite de pujas por postor, cabeceras de seguridad y CORS con lista blanca, outbox, relay, los tres consumidores, proyección, GraphQL con
   límites y subscriptions, DLQ con reproceso administrativo, reproceso completo desde el log, logs con
   correlación, imágenes de contenedor y CI con auditoría de dependencias.
 
 Lo que **no** está todavía:
 
-- **Límite de pujas por postor** y cabeceras de seguridad (F2).
 - **`SECURITY.md`** con el mapeo OWASP.
 - **Despliegue en Azure** (Bicep, Event Hubs, Container Apps) y métricas de _consumer lag_.
 

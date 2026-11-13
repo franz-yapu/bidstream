@@ -16,6 +16,8 @@ export interface IdempotencyClaim {
   readonly requestHash: string;
   readonly commandId: string;
   readonly lotId: string;
+  /** Instante de la petición (el reloj de la aplicación): la ventana del límite por minuto se mide con él. */
+  readonly at?: Date;
 }
 
 export type ClaimResult =
@@ -45,6 +47,7 @@ export class PrismaIdempotencyStore {
           requestHash: claim.requestHash,
           commandId: claim.commandId,
           lotId: claim.lotId,
+          ...(claim.at === undefined ? {} : { createdAt: claim.at }),
         },
       ],
       skipDuplicates: true,
@@ -64,7 +67,28 @@ export class PrismaIdempotencyStore {
       : { status: 'conflict' };
   }
 
-  /** Pujas aceptadas por el postor desde `since` (la usará el límite por minuto, F2). */
+  /**
+   * Serializa las pujas de un mismo postor durante la transacción en curso (bloqueo asesor de
+   * transacción): sin él, una ráfaga simultánea contaría las mismas filas y superaría el límite.
+   */
+  async lockBidder(tenantId: string, bidderId: string): Promise<void> {
+    // `pg_advisory_xact_lock` devuelve `void`, que Prisma no sabe leer: se envuelve en una columna entera.
+    await this.db.$queryRaw`SELECT 1 AS locked FROM (
+      SELECT pg_advisory_xact_lock(hashtextextended(${`bidder:${tenantId}:${bidderId}`}, 0))
+    ) AS l`;
+  }
+
+  /** La puja más antigua del postor desde `since`, para calcular cuándo vuelve a tener cupo. */
+  async oldestSince(tenantId: string, bidderId: string, since: Date): Promise<Date | null> {
+    const row = await this.db.idempotencyKey.findFirst({
+      where: { tenantId, bidderId, createdAt: { gte: since } },
+      orderBy: { createdAt: 'asc' },
+      select: { createdAt: true },
+    });
+    return row?.createdAt ?? null;
+  }
+
+  /** Pujas aceptadas por el postor desde `since` (el límite por minuto, F2). */
   countSince(tenantId: string, bidderId: string, since: Date): Promise<number> {
     return this.db.idempotencyKey.count({
       where: { tenantId, bidderId, createdAt: { gte: since } },

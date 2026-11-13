@@ -99,7 +99,7 @@ describe('honestidad', () => {
     expect(readme).toContain('POST /v1/lots/:id/bids');
     expect(readme).toContain('docs/adr/0011-decisor-unico-por-lote.md');
     // lo que sigue pendiente está en «Estado y límites» y no se presenta como hecho en otra parte
-    for (const pending of ['Límite de pujas', 'Despliegue en Azure']) {
+    for (const pending of ['SECURITY.md', 'Despliegue en Azure']) {
       expect(state, pending).toContain(pending);
     }
     expect(state).not.toMatch(/pendiente de una decisión/);

@@ -9,6 +9,7 @@ import { resolvers } from './resolvers.js';
 import { SubscriptionRegistry } from './subscriptions/registry.js';
 import { typeDefs } from './schema.js';
 import type { TokenVerifier } from '@bidstream/auth';
+import { securityHeaders } from './security-headers.js';
 import { resolveTenant, resolveTenantFromToken } from './tenant.js';
 
 export interface ServerDeps {
@@ -43,7 +44,19 @@ export function buildYoga(deps: ServerDeps) {
     // GraphiQL solo en desarrollo.
     graphiql: config.NODE_ENV === 'development',
     maskedErrors: { isDev: false },
+    // CORS con lista blanca (A05): vacía, no se emite ninguna cabecera CORS
+    cors:
+      config.CORS_ALLOWED_ORIGINS.length === 0
+        ? false
+        : {
+            origin: [...config.CORS_ALLOWED_ORIGINS],
+            credentials: false,
+            methods: ['GET', 'POST', 'OPTIONS'],
+            allowedHeaders: ['authorization', 'content-type', 'accept', 'x-request-id'],
+            exposedHeaders: ['x-request-id'],
+          },
     plugins: [
+      securityHeaders(config),
       useLimits(
         {
           maxDepth: config.GQL_MAX_DEPTH,

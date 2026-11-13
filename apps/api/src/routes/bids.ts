@@ -62,6 +62,7 @@ export const bidRoutes =
             403: problem,
             404: problem,
             422: problem,
+            429: problem,
           },
         },
       },

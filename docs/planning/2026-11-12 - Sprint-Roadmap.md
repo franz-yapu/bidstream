@@ -71,7 +71,7 @@ B1 (5 h), B2 (3 h), C1 (5 h), C2 (5 h), D1 (5 h), D2 (3 h), D3 (5 h), D4 (5 h), 
 | E2 | E GraphQL | Límites de profundidad y complejidad de consulta | 3 | ✅ Listo | 2 | 868mvty12 | spec §7 | E1 | — |
 | E3 | E GraphQL | Subscription `lotUpdated` alimentada por `notifier` | 5 | ✅ Listo | 2 | 868mvty15 | spec §7 | E1, D5 | — |
 | F1 | F Seguridad | Auth: JWT corto + refresh revocable, Argon2, bloqueo por intentos, RBAC | 8 | ✅ Listo | 3 | 868mw2q3j | spec §8 | C1, B1 | Q4: modelo de usuarios/postores no está en el esquema |
-| F2 | F Seguridad | Límite de pujas por postor y minuto, cabeceras de seguridad, CORS con lista blanca | 3 | ⬜ Pendiente | 3 | 868mw2q3t | spec §8 | C3 | Cascada de Q2 |
+| F2 | F Seguridad | Límite de pujas por postor y minuto, cabeceras de seguridad, CORS con lista blanca | 3 | ✅ Listo | 3 | 868mw2q3t | spec §8 | C3 | Cascada de Q2 |
 | F3 | F Seguridad | Firma de eventos y verificación en el consumidor | 5 | ✅ Listo | 3 | 868mw2q37 | spec §8 | A2, D3 | Q5: algoritmo y gestión de clave de firma |
 | F4 | F Seguridad | Logs estructurados con id de correlación | 3 | ✅ Listo | 2 | 868mvty18 | spec §8 | C1 | — |
 | F5 | F Seguridad | SECURITY.md con el mapeo OWASP Top 10 | 2 | ⛔ Bloqueado | 3 | | spec §8 | F1, F2, F3, F4, F6 | Cascada de Q2/Q4/Q5 |
