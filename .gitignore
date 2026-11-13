@@ -9,3 +9,6 @@ coverage
 
 # cliente Prisma generado (npm run db:generate, tambien en postinstall)
 packages/db/src/generated
+
+# claves de firma de desarrollo (F3): nunca se versionan
+.env.signing.*

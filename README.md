@@ -53,7 +53,9 @@ flowchart LR
    vean el mismo mensaje; un log, sí.
 6. **GraphQL solo lee** de la proyección y empuja cambios por SSE ([ADR-0004](docs/adr/0004-graphql-solo-lecturas.md),
    [ADR-0008](docs/adr/0008-tiempo-real-listen-notify-sse.md)).
-7. **Cada consumidor es idempotente** y los fallos van a un DLQ reprocesable
+7. **Todo mensaje va firmado** (Ed25519) por el relay y los consumidores lo verifican: uno manipulado
+   va al DLQ sin aplicarse ([ADR-0012](docs/adr/0012-firma-ed25519-de-eventos.md)).
+8. **Cada consumidor es idempotente** y los fallos van a un DLQ reprocesable
    ([ADR-0007](docs/adr/0007-consumidores-idempotentes-y-dlq.md)).
 
 ## Qué cambió respecto a la versión con WebSockets y bloqueos en base de datos
@@ -105,19 +107,20 @@ diferencias, sin cifras que no he medido:
 Cada decisión tiene su ADR, con las alternativas descartadas y las pruebas que la respaldan
 ([índice](docs/adr/README.md)).
 
-| ADR                                                        | Decisión                                                  |
-| ---------------------------------------------------------- | --------------------------------------------------------- |
-| [0001](docs/adr/0001-clave-de-particion-lotid.md)          | Clave de partición `lotId`: el orden por lote lo da Kafka |
-| [0002](docs/adr/0002-patron-outbox.md)                     | Outbox: nunca escritura dual                              |
-| [0003](docs/adr/0003-la-puja-devuelve-202.md)              | La puja devuelve `202 Accepted`                           |
-| [0004](docs/adr/0004-graphql-solo-lecturas.md)             | GraphQL solo para lecturas, REST para comandos            |
-| [0005](docs/adr/0005-proyeccion-sin-fk-entre-agregados.md) | Proyección sin clave foránea entre agregados              |
-| [0006](docs/adr/0006-un-unico-relay-activo.md)             | Un único relay activo con bloqueo asesor                  |
-| [0007](docs/adr/0007-consumidores-idempotentes-y-dlq.md)   | Consumidores idempotentes, reintentos y DLQ               |
-| [0008](docs/adr/0008-tiempo-real-listen-notify-sse.md)     | Tiempo real con `LISTEN/NOTIFY` y SSE                     |
-| [0009](docs/adr/0009-el-log-es-la-fuente-de-verdad.md)     | El log es la fuente de verdad: reproceso desde `earliest` |
-| [0011](docs/adr/0011-decisor-unico-por-lote.md)            | Decisor único por lote con estado propio                  |
-| [0010](docs/adr/0010-tenant-provisional-por-cabecera.md)   | Tenant provisional por cabecera, prohibido en producción  |
+| ADR                                                        | Decisión                                                      |
+| ---------------------------------------------------------- | ------------------------------------------------------------- |
+| [0001](docs/adr/0001-clave-de-particion-lotid.md)          | Clave de partición `lotId`: el orden por lote lo da Kafka     |
+| [0002](docs/adr/0002-patron-outbox.md)                     | Outbox: nunca escritura dual                                  |
+| [0003](docs/adr/0003-la-puja-devuelve-202.md)              | La puja devuelve `202 Accepted`                               |
+| [0004](docs/adr/0004-graphql-solo-lecturas.md)             | GraphQL solo para lecturas, REST para comandos                |
+| [0005](docs/adr/0005-proyeccion-sin-fk-entre-agregados.md) | Proyección sin clave foránea entre agregados                  |
+| [0006](docs/adr/0006-un-unico-relay-activo.md)             | Un único relay activo con bloqueo asesor                      |
+| [0007](docs/adr/0007-consumidores-idempotentes-y-dlq.md)   | Consumidores idempotentes, reintentos y DLQ                   |
+| [0008](docs/adr/0008-tiempo-real-listen-notify-sse.md)     | Tiempo real con `LISTEN/NOTIFY` y SSE                         |
+| [0009](docs/adr/0009-el-log-es-la-fuente-de-verdad.md)     | El log es la fuente de verdad: reproceso desde `earliest`     |
+| [0011](docs/adr/0011-decisor-unico-por-lote.md)            | Decisor único por lote con estado propio                      |
+| [0012](docs/adr/0012-firma-ed25519-de-eventos.md)          | Firma Ed25519 de los mensajes y verificación en el consumidor |
+| [0010](docs/adr/0010-tenant-provisional-por-cabecera.md)   | Tenant provisional por cabecera, prohibido en producción      |
 
 Otros detalles que conviene mirar:
 
@@ -172,7 +175,7 @@ Para desarrollar, probar o depurar proceso a proceso: [`docs/DESARROLLO.md`](doc
 Lo que está hecho y probado (más de 360 pruebas unitarias y 230 de integración contra Kafka y
 PostgreSQL reales):
 
-- Comandos REST de subastas, lotes y pujas (con `Idempotency-Key`; la puja la decide un consumidor en orden por lote), cierre automático por tiempo, outbox, relay, los tres consumidores, proyección, GraphQL con
+- Comandos REST de subastas, lotes y pujas (con `Idempotency-Key`; la puja la decide un consumidor en orden por lote), cierre automático por tiempo, firma Ed25519 de los mensajes, outbox, relay, los tres consumidores, proyección, GraphQL con
   límites y subscriptions, DLQ con reproceso administrativo, reproceso completo desde el log, logs con
   correlación, imágenes de contenedor y CI con auditoría de dependencias.
 
@@ -181,7 +184,7 @@ Lo que **no** está todavía:
 - **Límite de pujas por postor** y cabeceras de seguridad (F2).
 - **Autenticación y usuarios.** Mientras tanto el tenant llega por cabecera y la API **no arranca con
   `NODE_ENV=production`** ([ADR-0010](docs/adr/0010-tenant-provisional-por-cabecera.md)).
-- **Firma de eventos** (F3) y `SECURITY.md` con el mapeo OWASP.
+- **`SECURITY.md`** con el mapeo OWASP con el mapeo OWASP.
 - **Despliegue en Azure** (Bicep, Event Hubs, Container Apps) y métricas de _consumer lag_.
 
 Documentación: [especificación](docs/product/bidstream_spec.md) · [ADR](docs/adr/README.md) ·

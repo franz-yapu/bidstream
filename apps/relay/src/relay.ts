@@ -1,4 +1,5 @@
 import { PrismaOutbox, type PendingOutboxMessage, type PrismaClient } from '@bidstream/db';
+import { signatureHeaders, type SigningKey } from '@bidstream/signing';
 import { backoffDelay, DEFAULT_BACKOFF, type BackoffPolicy } from './backoff.js';
 import { tryAcquireLeadership, type Leadership } from './leader.js';
 
@@ -29,6 +30,8 @@ export interface RelayOptions {
   readonly publish: (request: PublishRequest) => Promise<void>;
   /** Conexión dedicada para el bloqueo asesor; obligatoria en `start()`. */
   readonly databaseUrl?: string;
+  /** Clave de firma (F3): si está, cada mensaje se firma con Ed25519 antes de publicarse. */
+  readonly signer?: SigningKey | null;
   readonly batchSize?: number;
   readonly pollIntervalMs?: number;
   readonly standbyPollMs?: number;
@@ -53,18 +56,21 @@ const defaultSleep = (ms: number, signal: AbortSignal): Promise<void> =>
     );
   });
 
-function toRequest(row: PendingOutboxMessage): PublishRequest {
+function toRequest(row: PendingOutboxMessage, signer: SigningKey | null): PublishRequest {
   const payload = (typeof row.payload === 'object' && row.payload !== null ? row.payload : {}) as {
     type?: unknown;
     version?: unknown;
     meta?: { correlationId?: unknown } | null;
   };
   const correlationId = payload.meta?.correlationId;
+  const value = JSON.stringify(row.payload);
   return {
     topic: row.topic,
     key: row.key,
-    value: JSON.stringify(row.payload),
+    value,
     headers: {
+      // se firman los bytes exactos que se publican (F3)
+      ...(signer === null ? {} : signatureHeaders(value, signer)),
       eventId: row.id,
       ...(typeof payload.type === 'string' ? { type: payload.type } : {}),
       ...(typeof payload.version === 'number' ? { version: String(payload.version) } : {}),
@@ -118,7 +124,7 @@ export class OutboxRelay {
           const done: string[] = [];
           for (const row of rows) {
             try {
-              const request = toRequest(row);
+              const request = toRequest(row, this.options.signer ?? null);
               await this.options.publish(request);
               done.push(row.id);
               this.logger.info(

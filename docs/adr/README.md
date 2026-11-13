@@ -18,3 +18,4 @@ opinión: se escribe otro que lo **reemplace** (ver [`do-not-touch.md`](../do-no
 | [0009](0009-el-log-es-la-fuente-de-verdad.md) | El log es la fuente de verdad: reproceso desde `earliest` | Aceptada | 2026-11-13 | Spec §5; G1, G2 |
 | [0010](0010-tenant-provisional-por-cabecera.md) | Tenant provisional por cabecera, prohibido en producción | Aceptada (provisional hasta F1) | 2026-11-13 | C2, E1 |
 | [0011](0011-decisor-unico-por-lote.md) | Decisor único por lote con estado propio | Aceptada | 2026-11-13 | Q2; C3 |
+| [0012](0012-firma-ed25519-de-eventos.md) | Firma Ed25519 de los mensajes y verificación en el consumidor | Aceptada | 2026-11-13 | Q5; F3 |

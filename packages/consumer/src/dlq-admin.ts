@@ -263,6 +263,8 @@ export async function reprocessDlq(options: ReprocessOptions): Promise<Reprocess
         type: decoded.type ?? '',
         version: '1',
         ...(dlq.correlationId === undefined ? {} : { correlationId: dlq.correlationId }),
+        ...(dlq.signature === undefined ? {} : { 'x-signature': dlq.signature }),
+        ...(dlq.keyId === undefined ? {} : { 'x-key-id': dlq.keyId }),
         'x-reprocess-count': String(previous + 1),
         'x-dlq-source': `${dlq.source.topic}:${String(dlq.source.partition)}:${dlq.source.offset}`,
       },

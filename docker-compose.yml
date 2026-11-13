@@ -6,6 +6,10 @@ name: bidstream
 x-app: &app
   profiles: [app]
   restart: unless-stopped
+  # F3: claves PÚBLICAS de verificación (las genera `make demo`; opcionales)
+  env_file:
+    - path: .env.signing.public
+      required: false
   depends_on:
     kafka: { condition: service_healthy }
     postgres: { condition: service_healthy }
@@ -121,6 +125,12 @@ services:
 
   relay:
     <<: *app
+    # la clave PRIVADA de firma solo la tiene el relay
+    env_file:
+      - path: .env.signing.public
+        required: false
+      - path: .env.signing.private
+        required: false
     build: { context: ., args: { APP: relay } }
     image: bidstream-relay:local
 

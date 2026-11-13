@@ -28,6 +28,12 @@ export const dlqMessageSchema = z.strictObject({
   reprocessCount: z.number().int().min(0).optional(),
   /** Id de correlación de la petición que originó el evento (F4); opcional por compatibilidad. */
   correlationId: z.string().min(1).max(128).optional(),
+  /**
+   * Firma del mensaje original y su clave (F3): el reproceso (D7) republica `original` con las mismas
+   * cabeceras, o la verificación lo rechazaría. Es la firma recibida, no un secreto.
+   */
+  signature: z.string().min(1).optional(),
+  keyId: z.string().min(1).optional(),
 });
 export type DlqMessage = z.infer<typeof dlqMessageSchema>;
 
@@ -70,5 +76,9 @@ export function buildDlqMessage(input: {
     failedAt: input.now.toISOString(),
     reprocessCount: reprocessCountOf(message),
     ...(input.correlationId === undefined ? {} : { correlationId: input.correlationId }),
+    ...(message.headers['x-signature'] === undefined
+      ? {}
+      : { signature: message.headers['x-signature'] }),
+    ...(message.headers['x-key-id'] === undefined ? {} : { keyId: message.headers['x-key-id'] }),
   };
 }

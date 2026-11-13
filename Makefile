@@ -40,7 +40,8 @@ images: ## Construye las imágenes de los ocho procesos (H2)
 	  docker build -q --build-arg APP=$$app -t bidstream-$$app:test . || exit 1; \
 	done
 
-demo: ## Todo el sistema en un comando: infraestructura, migraciones y los siete procesos (requiere `npm ci`)
+demo: ## Todo el sistema en un comando: infraestructura, migraciones y los ocho procesos, con eventos firmados (requiere `npm ci`)
+	@node scripts/generate-keys.mjs --if-missing
 	@$(MAKE) --no-print-directory up
 	@$(MAKE) --no-print-directory migrate
 	$(COMPOSE) --profile app up -d --build --wait

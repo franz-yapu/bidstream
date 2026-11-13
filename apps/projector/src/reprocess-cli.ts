@@ -1,5 +1,7 @@
 import { createPrismaClient } from '@bidstream/db';
+import type { DomainEvent } from '@bidstream/domain';
 import { createKafkaAdmin, loadKafkaConfig } from '@bidstream/kafka';
+import { verifierFromEnv } from '@bidstream/signing';
 import { loadProjectorConfig } from './config.js';
 import { createProjector } from './projector.js';
 import { GroupActiveError, reprocessProjection, waitForLagZero } from './reprocess.js';
@@ -24,6 +26,7 @@ if (!args.has('--yes')) {
 const config = loadProjectorConfig(process.env);
 const kafka = loadKafkaConfig({ KAFKA_CLIENT_ID: 'bidstream-reprocess', ...process.env });
 const prisma = createPrismaClient(config.DATABASE_URL);
+const verify = verifierFromEnv<DomainEvent>(process.env, (event) => event.occurredAt);
 const topic = config.PROJECTOR_TOPIC;
 const groupId = config.PROJECTOR_GROUP_ID;
 
@@ -47,6 +50,7 @@ try {
     prisma,
     groupId,
     topics: [topic],
+    ...(verify === undefined ? {} : { verify }),
     onOutcome: () => {
       applied += 1;
       if (applied % 100 === 0) say(`    ${String(applied)} / ${String(eventsInLog)}`);

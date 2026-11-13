@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **F3** (`868mw2q37`, https://app.clickup.com/t/868mw2q37).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Aprobado (2026-11-13)
+- **Estado:** Implementado (2026-11-13)
 - **Versión:** 0.1 · **Fecha:** 2026-11-13
 - **Decisión que lo desbloquea:** **Q5** = Ed25519 asimétrica (respuesta del usuario, 2026-11-13).
 - **Fuentes de verdad citadas:** spec §8 (A08: «firma de los eventos y verificación en el consumidor»); `packages/consumer/src/processor.ts` (ya existe el gancho `verify(message, event)` que envía a DLQ como `poison`); `apps/relay/src/relay.ts` (`toRequest`); `packages/consumer/src/dlq-admin.ts` (republica el original intacto)
@@ -105,3 +105,14 @@
 1. **Modo por defecto:** `enforce` en producción y `off` fuera (propuesta). ¿O `enforce` también en desarrollo?
 2. **Corte del historial** con `EVENT_SIGNING_REQUIRED_FROM` (propuesta). ¿Bien?
 3. **Claves de desarrollo** generadas automáticamente por `make demo` (no versionadas). ¿Bien?
+
+---
+
+## Changelog de implementación
+
+- `@bidstream/signing`: `signMessage`/`verifySignature` (Ed25519, base64url), `createMessageVerifier` (modos `enforce`/`off`, corte del historial, rotación por `kid`), `loadSigningKey`, `loadVerificationConfig`, `verifierFromEnv`; 19 pruebas unitarias (manipulación de un byte, otra clave, asimetría, rotación, corte, PEM o base64, la clave no aparece en los errores).
+- Relay: `signer` y cabeceras `x-signature`/`x-key-id`. Consumidores (projector —también su CLI de reproceso—, notifier, auditor y los dos del decisor): `verify` desde el entorno; fallo → `poison`.
+- DLQ: `signature` y `keyId` opcionales en el mensaje; el reproceso (D7) los vuelve a poner como cabeceras.
+- `scripts/generate-keys.mjs` (+ `make demo`): claves de desarrollo en dos archivos ignorados por git; el compose da la privada solo al relay y activa `enforce` con `EVENT_SIGNING_REQUIRED_FROM` = instante de generación, de modo que el historial previo no se rechaza. El job `demo` de la CI recorre así todo el flujo con firma obligatoria.
+- 9 pruebas de integración (`signing.int.test.ts`), repetidas 3 veces en verde.
+- Límite documentado (ADR-0012): la fecha de un mensaje sin firma la declara el propio mensaje; el corte es una ayuda de migración, no una defensa, y debe quitarse cuando el historial esté sellado.

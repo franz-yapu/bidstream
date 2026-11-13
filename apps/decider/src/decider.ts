@@ -26,6 +26,9 @@ export interface DeciderOptions {
   readonly stateGroup?: string;
   readonly retry?: EventConsumerOptions['retry'];
   readonly logger?: EventConsumerOptions['logger'];
+  /** Verificación de firma (F3) de los comandos y de los eventos; por defecto, sin verificar. */
+  readonly verifyCommand?: EventConsumerOptions<DomainCommand>['verify'];
+  readonly verifyEvent?: EventConsumerOptions['verify'];
   readonly onCommandOutcome?: EventConsumerOptions<DomainCommand>['onOutcome'];
   readonly onStateOutcome?: EventConsumerOptions['onOutcome'];
 }
@@ -56,6 +59,7 @@ export async function createDecider(options: DeciderOptions): Promise<Decider> {
     consumerName: options.commandsGroup ?? DECIDER_GROUP,
     topics: [options.commandsTopic ?? TOPICS.commandsBid],
     codec: commandCodec,
+    ...(options.verifyCommand === undefined ? {} : { verify: options.verifyCommand }),
     handler: async (command, { tx }) => {
       const deps = { antiSniping: options.antiSniping, eventsTopic, stateConsumer };
       switch (command.type) {
@@ -73,6 +77,7 @@ export async function createDecider(options: DeciderOptions): Promise<Decider> {
     ...common,
     consumerName: stateConsumer,
     topics: [eventsTopic],
+    ...(options.verifyEvent === undefined ? {} : { verify: options.verifyEvent }),
     handler: (event, { tx }) => applyEventToDecision(tx, event),
     ...(options.onStateOutcome === undefined ? {} : { onOutcome: options.onStateOutcome }),
   });
