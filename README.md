@@ -93,6 +93,14 @@ npm run reprocess -w @bidstream/projector -- --yes
 
 Borra `bid`, `lot` y `auction`, reposiciona el grupo `projector` a `earliest` y reconstruye mostrando el progreso. La prueba `reprocess.int.test.ts` demuestra que el estado final es idéntico, con uno o con varios consumidores en paralelo. Mientras reconstruye, las lecturas devuelven un estado parcial.
 
+### Demostración (con huella del estado)
+
+```bash
+make up && make demo-reprocess
+```
+
+Genera un historial por la API real, borra la proyección, vuelve a `earliest` y comprueba que la proyección reconstruida es **idéntica** (SHA-256 del estado antes y después). Usa su propia base de datos, topic y grupo, y los limpia al terminar. Guion para grabar el vídeo: [`docs/demo/GUION.md`](docs/demo/GUION.md).
+
 ## Reproceso del DLQ (administración)
 
 Un evento que agota sus 4 intentos va al DLQ. Con `ADMIN_API_KEY` definida (≥ 32 caracteres) la API expone, protegidas por la cabecera `X-Admin-Key`:

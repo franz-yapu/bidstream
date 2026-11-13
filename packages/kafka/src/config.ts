@@ -7,6 +7,8 @@ const envSchema = z
     KAFKA_SASL_USERNAME: z.string().min(1).optional(),
     KAFKA_SASL_PASSWORD: z.string().min(1).optional(),
     KAFKA_CLIENT_ID: z.string().min(1).default('bidstream'),
+    /** Ruido del propio cliente (conexiones, rebalanceos); `error` en demostraciones. */
+    KAFKA_LOG_LEVEL: z.enum(['nothing', 'error', 'warn', 'info', 'debug']).optional(),
   })
   .superRefine((env, ctx) => {
     if (env.KAFKA_SECURITY_PROTOCOL !== 'SASL_SSL') return;
@@ -26,6 +28,8 @@ export interface KafkaConfig {
   readonly clientId: string;
   readonly securityProtocol: 'PLAINTEXT' | 'SASL_SSL';
   readonly sasl?: { readonly username: string; readonly password: string };
+  /** Nivel de log del cliente; si falta, el predeterminado de la librería. */
+  readonly logLevel?: 'nothing' | 'error' | 'warn' | 'info' | 'debug';
 }
 
 /**
@@ -41,6 +45,7 @@ export function loadKafkaConfig(env: Readonly<Record<string, string | undefined>
       .filter((b) => b.length > 0),
     clientId: parsed.KAFKA_CLIENT_ID,
     securityProtocol: parsed.KAFKA_SECURITY_PROTOCOL,
+    ...(parsed.KAFKA_LOG_LEVEL === undefined ? {} : { logLevel: parsed.KAFKA_LOG_LEVEL }),
   };
   if (
     parsed.KAFKA_SECURITY_PROTOCOL === 'SASL_SSL' &&

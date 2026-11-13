@@ -1,5 +1,5 @@
 import { createPrismaClient } from '@bidstream/db';
-import { CONSUMER_GROUPS, createKafkaAdmin, loadKafkaConfig, TOPICS } from '@bidstream/kafka';
+import { createKafkaAdmin, loadKafkaConfig } from '@bidstream/kafka';
 import { loadProjectorConfig } from './config.js';
 import { createProjector } from './projector.js';
 import { GroupActiveError, reprocessProjection, waitForLagZero } from './reprocess.js';
@@ -24,12 +24,19 @@ if (!args.has('--yes')) {
 const config = loadProjectorConfig(process.env);
 const kafka = loadKafkaConfig({ KAFKA_CLIENT_ID: 'bidstream-reprocess', ...process.env });
 const prisma = createPrismaClient(config.DATABASE_URL);
-const topic = TOPICS.eventsLot;
+const topic = config.PROJECTOR_TOPIC;
+const groupId = config.PROJECTOR_GROUP_ID;
 
 try {
   say('1/3 Comprobando que el projector está parado…');
   say('2/3 Borrando la proyección y reposicionando el grupo a earliest…');
-  const { eventsInLog } = await reprocessProjection({ prisma, kafka, yes: true, topic });
+  const { eventsInLog } = await reprocessProjection({
+    prisma,
+    kafka,
+    yes: true,
+    topic,
+    groupId,
+  });
   say(`    proyección vacía; ${String(eventsInLog)} eventos por reaplicar desde el log`);
 
   say('3/3 Reconstruyendo desde el log…');
@@ -38,6 +45,8 @@ try {
   const projector = await createProjector({
     kafka,
     prisma,
+    groupId,
+    topics: [topic],
     onOutcome: () => {
       applied += 1;
       if (applied % 100 === 0) say(`    ${String(applied)} / ${String(eventsInLog)}`);
@@ -46,7 +55,7 @@ try {
   void projector.run();
   const admin = await createKafkaAdmin(kafka);
   try {
-    await waitForLagZero(admin, CONSUMER_GROUPS.projector, topic, { timeoutMs: 10 * 60_000 });
+    await waitForLagZero(admin, groupId, topic, { timeoutMs: 10 * 60_000 });
   } finally {
     await admin.disconnect();
   }

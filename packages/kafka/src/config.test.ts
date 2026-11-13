@@ -10,6 +10,11 @@ describe('loadKafkaConfig', () => {
       securityProtocol: 'PLAINTEXT',
     });
   });
+  it('KAFKA_LOG_LEVEL es opcional y solo acepta niveles conocidos', () => {
+    expect(loadKafkaConfig({ KAFKA_LOG_LEVEL: 'error' }).logLevel).toBe('error');
+    expect(loadKafkaConfig({})).not.toHaveProperty('logLevel');
+    expect(() => loadKafkaConfig({ KAFKA_LOG_LEVEL: 'ruidoso' })).toThrow();
+  });
   it('acepta varios brokers y limpia espacios', () => {
     expect(loadKafkaConfig({ KAFKA_BROKERS: 'a:9092, b:9092 ,' }).brokers).toEqual([
       'a:9092',

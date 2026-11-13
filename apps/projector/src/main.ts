@@ -17,6 +17,8 @@ const projector = await createProjector({
   kafka,
   prisma,
   logger,
+  groupId: config.PROJECTOR_GROUP_ID,
+  topics: [config.PROJECTOR_TOPIC],
 });
 
 async function shutdown(signal: string): Promise<void> {
