@@ -19,6 +19,9 @@
     },
     {
       "path": "../../packages/kafka/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/consumer/tsconfig.build.json"
     }
   ]
 }

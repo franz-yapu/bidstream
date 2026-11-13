@@ -14,6 +14,11 @@ const envSchema = z
      * (`X-Tenant-Id`), que cualquiera puede falsificar: por eso está prohibido en producción.
      */
     TENANT_MODE: z.enum(['header']).default('header'),
+    /**
+     * Clave de servicio del administrador del DLQ (D7). Opcional: sin ella las rutas de administración no
+     * existen. Provisional hasta que F1 aporte roles.
+     */
+    ADMIN_API_KEY: z.string().min(32, 'ADMIN_API_KEY debe tener al menos 32 caracteres').optional(),
   })
   .superRefine((env, ctx) => {
     // Hoy el único modo es `header`; cuando F1 añada otro, la condición pasará a comprobar el modo.

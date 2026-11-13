@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **D7** (`868mvty0q`, https://app.clickup.com/t/868mvty0q).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Aprobado (2026-11-13)
+- **Estado:** Implementado (2026-11-13)
 - **Versión:** 1.0 · **Fecha:** 2026-11-13
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §5 ("Reintentos y DLQ… al cuarto fallo el evento va al dead-letter topic con el error adjunto y un endpoint administrativo permite reprocesarlo"), §4 (`bidstream.events.lot.dlq`: 1 partición, 30 días), §8 A01/A09
@@ -173,3 +173,11 @@ Integración con Kafka y PostgreSQL reales y la API con `app.inject()`.
 3. **Tope de 3 reprocesos** por evento y `limit` máximo de 1 000. ¿De acuerdo?
 4. **Importación diferida de Kafka** en la API (propuesta) frente a un `apps/admin` separado. ¿De acuerdo?
 5. **Los `poison` se quedan en el DLQ** sin opción de republicarlos. ¿De acuerdo?
+
+---
+
+## Changelog de implementación
+
+- `@bidstream/consumer`: `reprocessCount` en el mensaje DLQ; `dlq-admin.ts` (`peekDlq`, `reprocessDlq`, `DlqBusyError`, `MAX_REPROCESS=3`); 10 pruebas de integración (ciclo completo fallo → DLQ → reproceso → procesado; un fallo permanente se detiene tras 3).
+- `apps/api`: `admin-auth.ts` (SHA-256 + `timingSafeEqual`), `admin-dlq.ts` (importación diferida), rutas `/v1/admin/dlq` y `/v1/admin/dlq/reprocess`, `ADMIN_API_KEY` opcional (≥ 32); 25 pruebas de integración y unitarias de clave y configuración.
+- Sin cambios respecto a lo aprobado.

@@ -37,4 +37,19 @@ describe('loadConfig', () => {
   it('el tenant por cabecera no puede usarse en producción (hasta F1)', () => {
     expect(() => loadConfig({ DATABASE_URL: DB, NODE_ENV: 'production' })).toThrow(/producción/);
   });
+
+  describe('ADMIN_API_KEY', () => {
+    it('es opcional: sin ella las rutas de administración no existen', () => {
+      expect(loadConfig({ DATABASE_URL: DB })).not.toHaveProperty('ADMIN_API_KEY');
+    });
+    it('exige al menos 32 caracteres', () => {
+      expect(() => loadConfig({ DATABASE_URL: DB, ADMIN_API_KEY: 'corta' })).toThrow(
+        /32 caracteres/,
+      );
+      expect(() => loadConfig({ DATABASE_URL: DB, ADMIN_API_KEY: 'x'.repeat(31) })).toThrow();
+      expect(
+        loadConfig({ DATABASE_URL: DB, ADMIN_API_KEY: 'x'.repeat(32) }).ADMIN_API_KEY,
+      ).toHaveLength(32);
+    });
+  });
 });

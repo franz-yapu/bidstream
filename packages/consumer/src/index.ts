@@ -1,6 +1,7 @@
 export { backoffDelay, DEFAULT_RETRY_POLICY, type RetryPolicy } from './backoff.js';
 export {
   buildDlqMessage,
+  reprocessCountOf,
   describeError,
   dlqMessageSchema,
   DLQ_REASONS,
@@ -21,3 +22,15 @@ export {
   type EventConsumer,
   type EventConsumerOptions,
 } from './event-consumer.js';
+export {
+  DlqBusyError,
+  MAX_REPROCESS,
+  peekDlq,
+  REPROCESSOR_GROUP,
+  reprocessDlq,
+  type DlqAdminOptions,
+  type DlqEntry,
+  type PeekResult,
+  type ReprocessOptions,
+  type ReprocessSummary,
+} from './dlq-admin.js';

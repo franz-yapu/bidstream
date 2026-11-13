@@ -1,5 +1,6 @@
 import { createPrismaClient } from '@bidstream/db';
 import { TOPICS } from '@bidstream/kafka/topics';
+import { lazyDlqAdmin } from './admin-dlq.js';
 import { buildApp } from './app.js';
 import { loadConfig } from './config.js';
 import { SystemClock, Uuid7Generator } from './system.js';
@@ -14,6 +15,9 @@ const app = buildApp({
   ids: new Uuid7Generator(),
   tenantResolver: new HeaderTenantResolver(),
   eventsTopic: TOPICS.eventsLot,
+  ...(config.ADMIN_API_KEY === undefined
+    ? {}
+    : { adminDlq: { apiKey: config.ADMIN_API_KEY, port: lazyDlqAdmin({ env: process.env }) } }),
 });
 app.addHook('onClose', async () => {
   await prisma.$disconnect();

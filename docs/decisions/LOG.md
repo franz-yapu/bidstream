@@ -201,3 +201,8 @@ SDD en borrador: `docs/sdd/D7`, `F6` e `I2`. Hallazgos: (1) D7: el DLQ de D3 no 
 **Fecha:** 2026-11-13 · **Fuente:** usuario · **Estado:** activa
 
 Aprobados con las propuestas de Claude: (D7) clave de servicio `X-Admin-Key` con rutas inexistentes sin clave, dos modos (pendientes por offset y selectivo por `eventId`), tope de 3 reprocesos con `reprocessCount` en el DLQ, importación diferida de Kafka en la API y los `poison` se quedan en el DLQ; (F6) política de auditoría, `overrides` de `minimatch`, flujo `security` no requerido al principio, mayores ignoradas y `dependency-review` como evolución; (I2) los 3 ADRs del ticket más 6 de decisiones implementadas, ADR-0003 con estado Aceptada y una nota, ADR del tenant provisional y pruebas de documentación. F6 implementado: `npm audit` baja de 10 avisos moderados a 0 con `overrides: { minimatch: ^11.0.8 }`. **Pendiente:** exigir `security` como check de `main` tras una semana estable.
+
+## DEC-039 — D7 implementado: reproceso del DLQ por HTTP
+**Fecha:** 2026-11-13 · **Fuente:** Claude · **Estado:** activa
+
+`GET /v1/admin/dlq` y `POST /v1/admin/dlq/reprocess` con `X-Admin-Key` (rutas inexistentes sin `ADMIN_API_KEY`), modos pendientes y selectivo, tope de 3 reprocesos, 409 si hay otro reproceso en marcha. Limitación documentada: el evento reprocesado llega al final de su partición. Sigue siendo provisional hasta F1 (Q4).

@@ -5,6 +5,7 @@
   "type": "module",
   "main": "dist/index.js",
   "dependencies": {
+    "@bidstream/consumer": "^0.0.0",
     "@bidstream/db": "^0.0.0",
     "@bidstream/domain": "^0.0.0",
     "@bidstream/kafka": "^0.0.0",

@@ -11,6 +11,8 @@ import type { Clock, IdGenerator } from '@bidstream/domain';
 import type { PrismaClient } from '@bidstream/db';
 import type { Config } from './config.js';
 import { registerErrorHandlers } from './errors.js';
+import type { DlqAdminPort } from './admin-dlq.js';
+import { adminRoutes } from './routes/admin.js';
 import { auctionRoutes } from './routes/auctions.js';
 import { healthRoutes } from './routes/health.js';
 import type { TenantResolver } from './tenant.js';
@@ -26,6 +28,10 @@ export interface AppDeps {
   readonly tenantResolver: TenantResolver;
   /** Topic de destino de los eventos (`bidstream.events.lot`). */
   readonly eventsTopic: string;
+  /** Administración del DLQ (D7); si falta, esas rutas no existen. */
+  readonly adminDlq?: { readonly apiKey: string; readonly port: DlqAdminPort };
+  /** Destino de los logs; solo las pruebas lo cambian para capturarlos. */
+  readonly logStream?: { write(chunk: string): void };
 }
 
 const REQUEST_ID = /^[A-Za-z0-9._-]{1,128}$/;
@@ -37,7 +43,10 @@ const REQUEST_ID = /^[A-Za-z0-9._-]{1,128}$/;
 export function buildApp(deps: AppDeps): FastifyInstance {
   const { config } = deps;
   const app = Fastify({
-    logger: { level: config.LOG_LEVEL },
+    logger: {
+      level: config.LOG_LEVEL,
+      ...(deps.logStream === undefined ? {} : { stream: deps.logStream }),
+    },
     // Se acepta el id del cliente solo si es inofensivo (evita inyección en logs).
     requestIdHeader: false,
     genReqId: (req) => {
@@ -79,5 +88,8 @@ export function buildApp(deps: AppDeps): FastifyInstance {
     }),
     { prefix: API_PREFIX },
   );
+  if (deps.adminDlq !== undefined) {
+    void app.register(adminRoutes(deps.adminDlq), { prefix: `${API_PREFIX}/admin` });
+  }
   return app;
 }
