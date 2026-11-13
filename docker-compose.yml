@@ -1,6 +1,46 @@
 # Entorno local: Kafka (KRaft, sin Zookeeper) + PostgreSQL. Uso: `make up`.
 name: bidstream
 
+# Configuración común de los procesos de la aplicación (perfil `app`, `make demo`). NODE_ENV=development
+# porque la API y GraphQL no arrancan en producción hasta F1 (autenticación, Q4): es una demostración local.
+x-app: &app
+  profiles: [app]
+  restart: unless-stopped
+  depends_on:
+    kafka: { condition: service_healthy }
+    postgres: { condition: service_healthy }
+  environment:
+    NODE_ENV: development
+    DATABASE_URL: postgresql://${POSTGRES_USER:-bidstream}:${POSTGRES_PASSWORD:-bidstream}@postgres:5432/${POSTGRES_DB:-bidstream}
+    KAFKA_BROKERS: kafka:19092
+    KAFKA_LOG_LEVEL: error
+
+x-health-api: &health-api
+  test:
+    [
+      'CMD',
+      'node',
+      '-e',
+      "fetch('http://localhost:3000/v1/health').then((r)=>process.exit(r.ok?0:1),()=>process.exit(1))",
+    ]
+  interval: 5s
+  timeout: 5s
+  retries: 12
+  start_period: 5s
+
+x-health-graphql: &health-graphql
+  test:
+    [
+      'CMD',
+      'node',
+      '-e',
+      "fetch('http://localhost:4000/health').then((r)=>process.exit(r.ok?0:1),()=>process.exit(1))",
+    ]
+  interval: 5s
+  timeout: 5s
+  retries: 12
+  start_period: 5s
+
 services:
   kafka:
     image: apache/kafka:4.3.2
@@ -63,6 +103,41 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+
+  # --- Aplicación: una imagen por proceso, construida con el Dockerfile (H2) ---
+  api:
+    <<: *app
+    build: { context: ., args: { APP: api } }
+    image: bidstream-api:local
+    ports: ['${API_PORT:-3000}:3000']
+    healthcheck: *health-api
+
+  graphql:
+    <<: *app
+    build: { context: ., args: { APP: graphql } }
+    image: bidstream-graphql:local
+    ports: ['${GRAPHQL_PORT:-4000}:4000']
+    healthcheck: *health-graphql
+
+  relay:
+    <<: *app
+    build: { context: ., args: { APP: relay } }
+    image: bidstream-relay:local
+
+  projector:
+    <<: *app
+    build: { context: ., args: { APP: projector } }
+    image: bidstream-projector:local
+
+  auditor:
+    <<: *app
+    build: { context: ., args: { APP: auditor } }
+    image: bidstream-auditor:local
+
+  notifier:
+    <<: *app
+    build: { context: ., args: { APP: notifier } }
+    image: bidstream-notifier:local
 
 volumes:
   bidstream_kafka:

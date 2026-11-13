@@ -2,159 +2,175 @@
 
 [![CI](https://github.com/franz-yapu/bidstream/actions/workflows/ci.yml/badge.svg)](https://github.com/franz-yapu/bidstream/actions/workflows/ci.yml)
 
-Motor de subastas en tiempo real orientado a eventos (Kafka, event sourcing, proyecciones, GraphQL, Azure).
-Especificación: [`docs/product/bidstream_spec.md`](docs/product/bidstream_spec.md).
+## Qué es
 
-## Desarrollo
+Motor de subastas en tiempo real orientado a eventos: cada puja, apertura y cierre es un evento
+inmutable en **Kafka**, y todo lo demás (lo que se ve, lo que se notifica, lo que se audita) se deriva
+de ese log. Sirve para cualquier producto con cierres competitivos y varios espectadores a la vez:
+subastas de arte o de café, compra de capacidad, licitaciones, ofertas relámpago.
 
-```bash
-nvm use        # Node 22 (obligatorio: el cliente de Kafka no compila en Node 26)
-npm ci
-npm run check  # typecheck + lint + formato + tests + build
+Es la segunda versión de un dominio que ya construí con WebSockets y bloqueos en base de datos
+([`subastas-cafe-api`](#qué-cambió-respecto-a-la-versión-con-websockets-y-bloqueos-en-base-de-datos)):
+aquí el interés está en **cómo** se resuelve, no en el catálogo de funciones.
+
+## Cómo funciona
+
+```mermaid
+flowchart LR
+  C[Cliente] -->|comando REST · 201 aceptado| API
+  API -->|misma transacción| OUT[(outbox + PostgreSQL)]
+  OUT --> RELAY[relay · líder único]
+  RELAY -->|clave = lotId| K[(Kafka · bidstream.events.lot)]
+  K --> PROJ[projector]
+  K --> NOT[notifier]
+  K --> AUD[auditor]
+  PROJ --> DB[(proyección PostgreSQL)]
+  NOT -->|LISTEN/NOTIFY| GQL
+  AUD --> LOG[(bitácora append-only)]
+  DB --> GQL[GraphQL · solo lecturas + SSE]
+  GQL --> C
+  K -. fallo tras 4 intentos .-> DLQ[(DLQ + reproceso)]
 ```
 
-## Entorno local
+1. **La API acepta comandos**, los valida y escribe el evento en la tabla `outbox` **en la misma
+   transacción**. Nunca habla con Kafka: así no hay escritura dual ([ADR-0002](docs/adr/0002-patron-outbox.md)).
+2. **Un relay** publica el outbox en Kafka, en orden, con `lotId` como clave de partición
+   ([ADR-0001](docs/adr/0001-clave-de-particion-lotid.md), [ADR-0006](docs/adr/0006-un-unico-relay-activo.md)).
+3. **Tres consumidores independientes** leen el mismo topic: `projector` (la vista consultable),
+   `notifier` (tiempo real) y `auditor` (bitácora inmutable). Una cola no permite que tres lectores
+   vean el mismo mensaje; un log, sí.
+4. **GraphQL solo lee** de la proyección y empuja cambios por SSE ([ADR-0004](docs/adr/0004-graphql-solo-lecturas.md),
+   [ADR-0008](docs/adr/0008-tiempo-real-listen-notify-sse.md)).
+5. **Cada consumidor es idempotente** y los fallos van a un DLQ reprocesable
+   ([ADR-0007](docs/adr/0007-consumidores-idempotentes-y-dlq.md)).
 
-```bash
-make up      # Kafka (KRaft) + PostgreSQL + topics
-make migrate # aplica las migraciones de PostgreSQL
-make verify  # comprobaciones del entorno
-make down    # detener (conserva datos); make reset borra los datos
-```
+## Qué cambió respecto a la versión con WebSockets y bloqueos en base de datos
 
-Puertos configurables en `.env` (ver `.env.example`): Kafka `9092`, PostgreSQL `5432`.
+La versión anterior ([`subastas-cafe-api`](https://github.com/franz-yapu/subastas-cafe-api): NestJS, Prisma,
+Socket.io) serializa las pujas de un lote con `pg_advisory_xact_lock(hashtext(loteId))` dentro de una
+transacción y avisa a los compradores por un gateway WebSocket. Funciona y es correcta. Estas son las
+diferencias, sin cifras que no he medido:
 
-El README completo llega con el ticket I1.
+| Aspecto                                | Versión anterior                                          | bidstream                                                                                   |
+| -------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Orden de las pujas de un lote          | Bloqueo asesor en PostgreSQL                              | Partición por `lotId` ([ADR-0001](docs/adr/0001-clave-de-particion-lotid.md))               |
+| Dónde escala                           | Verticalmente, en la base: todas las pujas pasan por ella | Horizontalmente: particiones y consumidores                                                 |
+| Qué se guarda                          | El estado actual (filas de pujas)                         | El historial inmutable de eventos                                                           |
+| Corregir o cambiar la vista de lectura | Migrar datos                                              | Reconstruirla desde el log ([ADR-0009](docs/adr/0009-el-log-es-la-fuente-de-verdad.md))     |
+| Tiempo real                            | Gateway WebSocket con estado en cada instancia            | `LISTEN/NOTIFY` + SSE ([ADR-0008](docs/adr/0008-tiempo-real-listen-notify-sse.md))          |
+| Respuesta a una puja                   | El resultado, de inmediato                                | «Aceptada» y el resultado llega después ([ADR-0003](docs/adr/0003-la-puja-devuelve-202.md)) |
+| Piezas que operar                      | Una base y un proceso                                     | Kafka, outbox, relay, tres consumidores y GraphQL                                           |
+| Consistencia de lo que se lee          | Fuerte                                                    | Eventual                                                                                    |
 
-## API
+### Qué ganas
 
-```bash
-npm run dev:api   # http://localhost:3000/v1/health · documentación en /v1/docs
-```
+- **Orden sin bloqueos.** El orden por lote lo impone la partición, no una cerradura en la base.
+- **Auditoría y reproceso reales.** El log es la verdad: puedes reconstruir la proyección y comprobar que
+  queda idéntica (ver [Reproceso](#reproceso-el-log-es-la-fuente-de-verdad)).
+- **Lectores independientes.** Añadir una notificación, un informe o un modelo nuevo es añadir un
+  consumidor, sin tocar el camino de escritura.
+- **Tolerancia a fallos.** Si un consumidor cae, el log espera; si un evento falla, va al DLQ y no
+  detiene al resto.
 
-Crear una subasta (el tenant por cabecera es provisional, solo fuera de producción):
+### Qué pierdes
 
-```bash
-curl -i -X POST localhost:3000/v1/auctions -H 'x-tenant-id: 11111111-1111-4111-8111-111111111111' \
-  -H 'content-type: application/json' \
-  -d '{"title":"Arte","opensAt":"2030-01-01T10:00:00.000Z","closesAt":"2030-01-02T10:00:00.000Z"}'
-```
+- **Simplicidad.** Pasas de una base y un proceso a varios componentes que operar, monitorizar y desplegar.
+- **Consistencia inmediata.** Lo que se lee puede ir por detrás de lo que se escribió; el cliente tiene
+  que esperar el resultado de una puja.
+- **Entrega exacta.** Es _al menos una vez_: todo consumidor debe ser idempotente.
+- **Funciones de producto.** Esta versión es el motor: no tiene (todavía) usuarios, roles, correo,
+  i18n ni marca blanca, que la anterior sí tiene.
 
-El `201` significa «comando aceptado»: el evento queda en el outbox y el estado visible llega cuando el relay y el `projector` lo procesan.
+### Cuándo elegiría cada una
 
-## Pruebas
+- **La anterior**, si el volumen es modesto, el equipo es pequeño y la consistencia inmediata y la
+  simplicidad operativa pesan más que la auditoría o la escala.
+- **bidstream**, si hay mucha concurrencia por lote, hace falta un historial inmutable y poder
+  rehacer las vistas, o varios sistemas necesitan reaccionar a las mismas pujas.
 
-```bash
-npm run check             # build + typecheck + lint + formato + pruebas unitarias
-make up && npm run test:integration   # pruebas contra PostgreSQL y Kafka reales
-```
+## Decisiones de diseño
 
-La CI corre ambos conjuntos: el job `check` y el job `integration` (levanta el entorno con `make up`).
+Cada decisión tiene su ADR, con las alternativas descartadas y las pruebas que la respaldan
+([índice](docs/adr/README.md)).
 
-## Relay del outbox
+| ADR                                                        | Decisión                                                           |
+| ---------------------------------------------------------- | ------------------------------------------------------------------ |
+| [0001](docs/adr/0001-clave-de-particion-lotid.md)          | Clave de partición `lotId`: el orden por lote lo da Kafka          |
+| [0002](docs/adr/0002-patron-outbox.md)                     | Outbox: nunca escritura dual                                       |
+| [0003](docs/adr/0003-la-puja-devuelve-202.md)              | La puja devuelve `202 Accepted` _(decidido; se implementa con C3)_ |
+| [0004](docs/adr/0004-graphql-solo-lecturas.md)             | GraphQL solo para lecturas, REST para comandos                     |
+| [0005](docs/adr/0005-proyeccion-sin-fk-entre-agregados.md) | Proyección sin clave foránea entre agregados                       |
+| [0006](docs/adr/0006-un-unico-relay-activo.md)             | Un único relay activo con bloqueo asesor                           |
+| [0007](docs/adr/0007-consumidores-idempotentes-y-dlq.md)   | Consumidores idempotentes, reintentos y DLQ                        |
+| [0008](docs/adr/0008-tiempo-real-listen-notify-sse.md)     | Tiempo real con `LISTEN/NOTIFY` y SSE                              |
+| [0009](docs/adr/0009-el-log-es-la-fuente-de-verdad.md)     | El log es la fuente de verdad: reproceso desde `earliest`          |
+| [0010](docs/adr/0010-tenant-provisional-por-cabecera.md)   | Tenant provisional por cabecera, prohibido en producción           |
 
-```bash
-npm run dev:relay   # publica en Kafka lo que la API dejó en el outbox
-```
+Otros detalles que conviene mirar:
 
-Solo un relay está activo a la vez (bloqueo asesor de PostgreSQL) para conservar el orden por lote; los demás quedan en espera y toman el relevo si el líder cae. Es al menos una vez: los consumidores son idempotentes.
+- **Dinero siempre en `Decimal(12,2)`** (y como cadena `Money` en GraphQL), nunca en flotantes.
+- **Un índice único parcial** (`bid_one_awarded_per_lot_idx`) impide dos pujas adjudicadas en el mismo lote.
+- **Límites en GraphQL**: profundidad, complejidad, alias, tokens y paginación por cursor; sin ellos una
+  API GraphQL es una denegación de servicio esperando a ocurrir.
+- **Logs con id de correlación** que viaja de la petición HTTP a los consumidores, con redacción de secretos.
+- **El método**: cada ticket tiene su SDD aprobado antes del código ([`docs/sdd/`](docs/sdd/)) y cada
+  decisión queda en [`docs/decisions/LOG.md`](docs/decisions/LOG.md).
 
-## Flujo completo en local
+## Reproceso: el log es la fuente de verdad
 
-```bash
-make up && make migrate
-npm run dev:api        # terminal 1: comandos HTTP
-npm run dev:relay      # terminal 2: outbox → Kafka
-npm run dev:projector  # terminal 3: Kafka → proyección en PostgreSQL
-npm run dev:auditor    # opcional: Kafka → bitácora append-only (audit_log)
-npm run dev:notifier   # opcional: Kafka → NOTIFY para las subscriptions de GraphQL
-```
-
-Los comandos devuelven `201` al aceptarse; el estado aparece en la proyección cuando el relay y el `projector` procesan el evento (un `POST …/lots` inmediato tras crear la subasta puede dar `404` con `Retry-After`).
-
-## Imágenes de contenedor
-
-```bash
-make images                                              # las seis, etiquetadas bidstream-<app>:test
-docker build --build-arg APP=relay -t bidstream-relay .  # o una sola
-docker run --rm -e DATABASE_URL=… -e KAFKA_BROKERS=… bidstream-relay
-```
-
-Toda la configuración llega por variables de entorno en tiempo de ejecución; las imágenes no llevan secretos ni código fuente y corren como usuario no root. `scripts/docker-smoke.sh` (en la CI, un job por proceso) comprueba su contenido y que arrancan contra Kafka y PostgreSQL.
-
-## Reproceso: reconstruir la proyección desde el log
-
-El log de Kafka es la fuente de verdad; la proyección se puede borrar y reconstruir. Es lo que una cola no permite.
-
-```bash
-# detén el projector y ejecuta:
-npm run reprocess -w @bidstream/projector -- --yes
-```
-
-Borra `bid`, `lot` y `auction`, reposiciona el grupo `projector` a `earliest` y reconstruye mostrando el progreso. La prueba `reprocess.int.test.ts` demuestra que el estado final es idéntico, con uno o con varios consumidores en paralelo. Mientras reconstruye, las lecturas devuelven un estado parcial.
-
-### Demostración (con huella del estado)
+Lo que una cola no puede hacer: **borrar la proyección entera, volver al principio del log y
+reconstruirla sola**, con el mismo estado. La demostración lo comprueba con una huella SHA-256 del
+estado antes y después:
 
 ```bash
 make up && make demo-reprocess
 ```
 
-Genera un historial por la API real, borra la proyección, vuelve a `earliest` y comprueba que la proyección reconstruida es **idéntica** (SHA-256 del estado antes y después). Usa su propia base de datos, topic y grupo, y los limpia al terminar. Guion para grabar el vídeo: [`docs/demo/GUION.md`](docs/demo/GUION.md).
+<!-- VIDEO-PENDIENTE -->
 
-## Reproceso del DLQ (administración)
+**Vídeo:** pendiente de grabar (guion en [`docs/demo/GUION.md`](docs/demo/GUION.md)).
 
-Un evento que agota sus 4 intentos va al DLQ. Con `ADMIN_API_KEY` definida (≥ 32 caracteres) la API expone, protegidas por la cabecera `X-Admin-Key`:
+## Stack y puesta en marcha
 
-```bash
-curl -H "X-Admin-Key: $ADMIN_API_KEY" localhost:3000/v1/admin/dlq                      # lista sin consumir
-curl -X POST -H "X-Admin-Key: $ADMIN_API_KEY" -H 'content-type: application/json' \
-     -d '{"limit": 10}' localhost:3000/v1/admin/dlq/reprocess                          # pendientes
-curl -X POST -H "X-Admin-Key: $ADMIN_API_KEY" -H 'content-type: application/json' \
-     -d '{"eventIds": ["<uuid>"]}' localhost:3000/v1/admin/dlq/reprocess               # selectivo
-```
+TypeScript (Node 22) · Fastify + Zod · Apache Kafka (KRaft) · PostgreSQL 16 + Prisma 7 · GraphQL (Yoga) ·
+Vitest · Docker · GitHub Actions. El despliegue previsto es Azure (Event Hubs con el mismo cliente Kafka,
+Container Apps, Bicep).
 
-Solo se republican los `retries-exhausted` (los `poison` se quedan), con un máximo de 3 reprocesos por evento. **Advertencia de orden:** el evento reprocesado llega al final de su partición, después de los posteriores; si la integridad de la proyección importa, usa el reproceso completo de arriba. Sin `ADMIN_API_KEY` las rutas no existen (404).
-
-## API de lectura (GraphQL)
+Requisitos: Docker y Node 22 (`nvm use`).
 
 ```bash
-npm run dev:graphql   # http://localhost:4000/graphql · /health
+npm ci && make demo
 ```
 
-Solo lecturas sobre la proyección (`auction`, `lot`, `lotBids`, `activeLots`), con paginación por cursor sobre el ranking de pujas. El importe va como cadena decimal (`Money`) y las fechas en ISO-8601 UTC. **No expone la identidad de postores ni de ganadores**, solo `hasWinner` y `finalAmount`. El tenant provisional va en la cabecera `X-Tenant-Id` (no arranca en producción hasta F1).
+Levanta Kafka y PostgreSQL, aplica las migraciones y arranca los seis procesos en contenedores. Después:
 
 ```bash
-curl -s localhost:4000/graphql -H 'content-type: application/json' -H 'x-tenant-id: 11111111-1111-4111-8111-111111111111' \
-  -d '{"query":"{ lot(id: \"<id>\") { title currentPrice nextMinimumBid bids(first: 5) { edges { node { amount rank } } } } }"}'
+scripts/demo-smoke.sh   # una subasta entra por REST y aparece por GraphQL
+make demo-down          # detener
 ```
 
-### Límites de la API GraphQL
+- API REST (comandos): <http://localhost:3000/v1/docs>
+- GraphQL (lecturas): <http://localhost:4000/graphql>
 
-Una API GraphQL sin límites es una denegación de servicio esperando a ocurrir: una sola consulta puede pedir listas anidadas que multipliquen el trabajo. Por eso hay tres límites obligatorios, más algunos de apoyo; todo se comprueba **antes de ejecutar ningún resolver** y es configurable por entorno.
+Para desarrollar, probar o depurar proceso a proceso: [`docs/DESARROLLO.md`](docs/DESARROLLO.md).
 
-| Límite                                 |  Valor | Variable             |
-| -------------------------------------- | -----: | -------------------- |
-| Profundidad máxima                     |      7 | `GQL_MAX_DEPTH`      |
-| Complejidad máxima (coste por `first`) |  1 000 | `GQL_MAX_COMPLEXITY` |
-| Paginación por cursor, `first` máximo  |    100 | `GQL_MAX_PAGE_SIZE`  |
-| Alias por documento                    |     15 | `GQL_MAX_ALIASES`    |
-| Tokens por documento                   |  2 000 | `GQL_MAX_TOKENS`     |
-| Tamaño del cuerpo                      | 100 KB | `GQL_MAX_BODY_BYTES` |
+## Estado y límites
 
-El coste de una lista es `first × (1 + coste de sus hijos)`: `activeLots(first: 100) { bids(first: 100) { … } }` cuesta 30 100 y se rechaza; con `first: 10` en ambas, 310, y pasa. Los errores llevan un código estable (`QUERY_TOO_DEEP`, `QUERY_TOO_COMPLEX`, `TOO_MANY_ALIASES`, `QUERY_TOO_LARGE`, `BAD_USER_INPUT`). Los clientes deben enviar `Accept: application/graphql-response+json` para recibir un 400 en los errores de validación.
+Lo que está hecho y probado (más de 360 pruebas unitarias y 230 de integración contra Kafka y
+PostgreSQL reales):
 
-### Subscriptions en tiempo real
+- Comandos REST de subastas y lotes, outbox, relay, los tres consumidores, proyección, GraphQL con
+  límites y subscriptions, DLQ con reproceso administrativo, reproceso completo desde el log, logs con
+  correlación, imágenes de contenedor y CI con auditoría de dependencias.
 
-`Subscription.lotUpdated(lotId)` entrega, por SSE, las actualizaciones públicas de un lote (`LotPublishedUpdate`, `BidPlacedUpdate`, `LotExtendedUpdate`, `LotClosedUpdate`) y un `ResyncRequired` cuando pudieron perderse mensajes (reconexión del canal o cliente lento): en ese caso, vuelve a consultar `lot(id)`. Nunca incluye quién pujó.
+Lo que **no** está todavía:
 
-```bash
-curl -N localhost:4000/graphql -H 'content-type: application/json' -H 'accept: text/event-stream, application/graphql-response+json' \
-  -H 'x-tenant-id: 11111111-1111-4111-8111-111111111111' \
-  -d '{"query":"subscription { lotUpdated(lotId: \"<id>\") { __typename ... on BidPlacedUpdate { amount } ... on LotClosedUpdate { finalAmount } } }"}'
-```
+- **La puja (`POST …/bids`)** y la regla de quién decide el precio ganador: pendiente de una decisión de
+  diseño sobre la autoridad de la puja.
+- **Autenticación y usuarios.** Mientras tanto el tenant llega por cabecera y la API **no arranca con
+  `NODE_ENV=production`** ([ADR-0010](docs/adr/0010-tenant-provisional-por-cabecera.md)).
+- **Firma de eventos, cierre automático de lotes y `SECURITY.md`** con el mapeo OWASP.
+- **Despliegue en Azure** (Bicep, Event Hubs, Container Apps) y métricas de _consumer lag_.
 
-Límites: 500 suscripciones simultáneas por tenant y una cola de 50 por suscriptor (`GQL_MAX_SUBSCRIPTIONS_PER_TENANT`, `GQL_SUBSCRIPTION_QUEUE`). El camino es: el `notifier` hace `NOTIFY` en PostgreSQL → cada réplica GraphQL escucha el canal → su suscripción.
-
-## Seguridad de dependencias
-
-`npm run audit:prod` y `npm run audit:high` aplican en local la misma política que la CI (`.github/workflows/security.yml`): **falla ante cualquier aviso en dependencias de producción y ante uno alto o crítico en cualquiera**; los demás se informan. Se ejecuta en cada PR, en `main` y cada lunes (los avisos aparecen sin que cambie el código). Dependabot propone las actualizaciones cada semana, agrupadas, y todas las acciones de GitHub están fijadas por SHA (una prueba lo exige). `npm audit` no lo ve todo: es una capa, no la única.
+Documentación: [especificación](docs/product/bidstream_spec.md) · [ADR](docs/adr/README.md) ·
+[SDD por ticket](docs/sdd/) · [guía de desarrollo](docs/DESARROLLO.md).

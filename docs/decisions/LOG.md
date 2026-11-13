@@ -226,3 +226,8 @@ Aprobados: (F4) paquete `@bidstream/logging`, correlación por `meta.correlation
 **Fecha:** 2026-11-13 · **Fuente:** Claude · **Estado:** activa
 
 `make demo-reprocess` convierte la demostración en una verificación: huella SHA-256 de la proyección antes y después, entorno aislado (base, topic y grupo propios) y fallo si difieren. Queda pendiente la grabación del vídeo, que depende del usuario (no se puede capturar su pantalla).
+
+## DEC-044 — I1: README de producto y puesta en marcha en un comando
+**Fecha:** 2026-11-13 · **Fuente:** Claude · **Estado:** activa
+
+README según la spec §12 con comparación honesta contra la versión anterior (sin cifras sin medir) y `docs/DESARROLLO.md` para lo técnico; `make demo` levanta infraestructura, migraciones y seis procesos en contenedores y un job de la CI lo comprueba en un entorno limpio. El vídeo sigue marcado como pendiente (H5).
