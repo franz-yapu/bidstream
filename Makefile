@@ -1,4 +1,4 @@
-.PHONY: up down reset ps logs topics psql verify migrate images
+.PHONY: up down reset ps logs topics psql verify migrate images demo-reprocess
 
 COMPOSE := docker compose
 KAFKA_BIN := /opt/kafka/bin
@@ -39,6 +39,9 @@ images: ## Construye las imágenes de los seis procesos (H2)
 	@for app in api relay projector auditor notifier graphql; do \
 	  docker build -q --build-arg APP=$$app -t bidstream-$$app:test . || exit 1; \
 	done
+
+demo-reprocess: ## Demostración del reproceso con entorno propio (H5; requiere `make up`)
+	@scripts/demo-reprocess.sh
 
 migrate: ## Aplica las migraciones de PostgreSQL (requiere `make up`)
 	DATABASE_URL=$(DATABASE_URL) npm run db:migrate -w @bidstream/db

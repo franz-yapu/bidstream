@@ -221,3 +221,8 @@ Aprobados: (F4) paquete `@bidstream/logging`, correlación por `meta.correlation
 **Fecha:** 2026-11-13 · **Fuente:** Claude · **Estado:** activa
 
 `Dockerfile` único con `ARG APP`, base `node:22-bookworm-slim` por digest, no root, sin secretos ni fuentes; la CI construye y arranca las seis imágenes contra Kafka y PostgreSQL reales. Se podan del runtime la CLI de Prisma y TypeScript. Lección: un arranque de prueba contra un clúster con datos consume de verdad; el humo lo prohíbe fuera de la CI. Pendiente: escaneo de imágenes y publicación en ACR (H1).
+
+## DEC-043 — H5: demostración del reproceso reproducible y verificable
+**Fecha:** 2026-11-13 · **Fuente:** Claude · **Estado:** activa
+
+`make demo-reprocess` convierte la demostración en una verificación: huella SHA-256 de la proyección antes y después, entorno aislado (base, topic y grupo propios) y fallo si difieren. Queda pendiente la grabación del vídeo, que depende del usuario (no se puede capturar su pantalla).

@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **H5** (`868mvty20`, https://app.clickup.com/t/868mvty20).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Aprobado (2026-11-13)
+- **Estado:** Implementado (2026-11-13) — falta la grabación del vídeo (§7.1)
 - **Versión:** 0.1 · **Fecha:** 2026-11-13
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §5 («Reproceso (lo que hay que grabar en video)… es la mejor demostración del proyecto») y §12 punto 5
@@ -140,3 +140,14 @@ El MP4 **no se versiona** (pesa y el repo es público); se enlaza.
 2. **Alojamiento del MP4:** ¿YouTube no listado, *release* de GitHub, o prefieres que quede fuera hasta tenerlo?
 3. **`PROJECTOR_GROUP_ID`** para que la demo use un grupo propio sin tocar el entorno dev (propuesta). ¿De acuerdo?
 4. **Huella del estado** impresa en la demo como prueba de identidad (propuesta). ¿Bien?
+
+---
+
+## Changelog de implementación
+
+- `scripts/demo-reprocess.sh` (`make demo-reprocess`): entorno propio (base `bidstream_demo_<n>`, topic y grupo con sufijo), tres fases, limpieza al salir; opciones `--pause`, `--subastas`, `--lotes`, `--pujas`.
+- `apps/projector/src/demo/`: `fingerprint.ts` (huella canónica independiente del orden; 5 pruebas), `load.ts` (historial por la API real y el outbox) y `verify.ts` (sale con código 1 si difiere). Prueba de integración `demo.int.test.ts`: IDÉNTICO tras reprocesar y **falla** si se altera la proyección.
+- `PROJECTOR_GROUP_ID` y `PROJECTOR_TOPIC` (config del projector y del CLI `reprocess`); `KAFKA_LOG_LEVEL` para silenciar el cliente.
+- `docs/demo/GUION.md` y `packages/testing/src/docs/guion.test.ts` (el guion solo cita comandos que existen).
+- Desviación: los importes y postores son deterministas pero los ids de subastas y lotes los genera la API, así que la huella solo se compara dentro de una ejecución. Sin `--slow`: el reproceso de 442 eventos tarda ≈ 2 s; para que se vea, `--pujas 200 --pause 3`.
+- **Pendiente (fuera del código):** grabar el MP4 (lo graba el usuario con el guion) y enlazarlo en el README; y el GIF de terminal de respaldo.
