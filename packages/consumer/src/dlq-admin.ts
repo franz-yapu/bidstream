@@ -116,6 +116,7 @@ async function drain(
   if (count <= 0) return 0;
   const topic = options.dlqTopic ?? TOPICS.eventsLotDlq;
   let handled = 0;
+  let committed = 0;
   const consumer = await createConsumer(options.kafka, {
     groupId,
     topics: [topic],
@@ -126,16 +127,24 @@ async function drain(
       const timer = setTimeout(() => {
         reject(new Error(`timeout leyendo el DLQ (${String(handled)} de ${String(count)})`));
       }, options.timeoutMs ?? DEFAULT_TIMEOUT_MS);
+      // Se espera al commit del último mensaje: desconectar con un commit en vuelo tumba el cliente nativo.
       void consumer
-        .run(async (message) => {
-          if (handled >= count) throw new Error('límite alcanzado: no se trata ni se confirma');
-          await handle(message);
-          handled += 1;
-          if (handled >= count) {
-            clearTimeout(timer);
-            resolve();
-          }
-        })
+        .run(
+          async (message) => {
+            if (handled >= count) throw new Error('límite alcanzado: no se trata ni se confirma');
+            await handle(message);
+            handled += 1;
+          },
+          {
+            onCommitted: () => {
+              committed += 1;
+              if (committed >= count) {
+                clearTimeout(timer);
+                resolve();
+              }
+            },
+          },
+        )
         .catch(reject);
     });
   } finally {
