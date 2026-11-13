@@ -57,8 +57,8 @@ B1 (5 h), B2 (3 h), C1 (5 h), C2 (5 h), D1 (5 h), D2 (3 h), D3 (5 h), D4 (5 h), 
 | B2 | B Datos | Repositorios Prisma de proyección y outbox | 3 | ✅ Listo | 2 | 868mvtxzb | spec §6 | B1, A3 | — |
 | C1 | C API comandos | Servidor REST /v1: Zod en el borde, manejo de errores, OpenAPI en /v1/docs, health básico | 5 | ✅ Listo | 2 | 868mvtxzn | spec §7 | 0.1 | — |
 | C2 | C API comandos | POST /v1/auctions y /v1/auctions/:id/lots (201 + Location) escribiendo outbox | 5 | ✅ Listo | 2 | 868mvtxzv | spec §7 | B2, C1, A2 | — |
-| C3 | C API comandos | POST /v1/lots/:id/bids: 202 Accepted, validación y outbox (BidPlaced/BidRejected) | 8 | ⛔ Bloqueado | 3 | | spec §5, §7 | C2, A1 | Q2: dónde se decide la puja (autoridad) |
-| C4 | C API comandos | Cabecera `Idempotency-Key` obligatoria en la puja | 3 | ⛔ Bloqueado | 3 | | spec §5, §7 | C3 | Cascada de Q2 |
+| C3 | C API comandos | POST /v1/lots/:id/bids: 202 Accepted, validación y outbox (BidPlaced/BidRejected) | 8 | ⬜ Pendiente | 3 | 868mw2q2m | spec §5, §7 | C2, A1 | Q2: dónde se decide la puja (autoridad) |
+| C4 | C API comandos | Cabecera `Idempotency-Key` obligatoria en la puja | 3 | ⬜ Pendiente | 3 | 868mw2q2w | spec §5, §7 | C3 | Cascada de Q2 |
 | D1 | D Kafka | Relay de outbox → Kafka (polling con FOR UPDATE SKIP LOCKED, `publishedAt`) | 5 | ✅ Listo | 2 | 868mvtxzz | spec §5 | B2, D2 | — |
 | D2 | D Kafka | Cliente Kafka compartido: config local y Event Hubs (SASL) sin cambiar código | 3 | ✅ Listo | 2 | 868mvty03 | spec §9 | 0.2 | — |
 | D3 | D Kafka | Consumidor base: idempotencia por `eventId`, 3 reintentos con backoff, DLQ con error | 5 | ✅ Listo | 2 | 868mvty09 | spec §5 | D2, B1 | — |
@@ -66,13 +66,13 @@ B1 (5 h), B2 (3 h), C1 (5 h), C2 (5 h), D1 (5 h), D2 (3 h), D3 (5 h), D4 (5 h), 
 | D5 | D Kafka | Consumidor `notifier`: publica a las subscriptions de GraphQL | 3 | ✅ Listo | 2 | 868mvty0f | spec §4 | D3 | — |
 | D6 | D Kafka | Consumidor `auditor`: bitácora append-only | 3 | ✅ Listo | 2 | 868mvty0k | spec §4 | D3 | — |
 | D7 | D Kafka | Endpoint administrativo para reprocesar el DLQ | 3 | ✅ Listo | 2 | 868mvty0q | spec §5 | D3, C1 | — |
-| D8 | D Kafka | Cierre de lotes: quién emite `LotClosed`/`AuctionClosed` y `LotExtended` al llegar `closesAt` | 5 | ⛔ Bloqueado | 3 | | spec §2, §3 | D1, A1 | Q3: mecanismo de cierre (scheduler) no definido |
+| D8 | D Kafka | Cierre de lotes: quién emite `LotClosed`/`AuctionClosed` y `LotExtended` al llegar `closesAt` | 5 | ⬜ Pendiente | 3 | 868mw2q32 | spec §2, §3 | D1, A1 | Q3: mecanismo de cierre (scheduler) no definido |
 | E1 | E GraphQL | Servidor GraphQL de lectura: auction, lot, lotBids (cursor), activeLots | 5 | ✅ Listo | 2 | 868mvty0w | spec §7 | B1, C1 | — |
 | E2 | E GraphQL | Límites de profundidad y complejidad de consulta | 3 | ✅ Listo | 2 | 868mvty12 | spec §7 | E1 | — |
 | E3 | E GraphQL | Subscription `lotUpdated` alimentada por `notifier` | 5 | ✅ Listo | 2 | 868mvty15 | spec §7 | E1, D5 | — |
-| F1 | F Seguridad | Auth: JWT corto + refresh revocable, Argon2, bloqueo por intentos, RBAC | 8 | ⛔ Bloqueado | 3 | | spec §8 | C1, B1 | Q4: modelo de usuarios/postores no está en el esquema |
-| F2 | F Seguridad | Límite de pujas por postor y minuto, cabeceras de seguridad, CORS con lista blanca | 3 | ⛔ Bloqueado | 3 | | spec §8 | C3 | Cascada de Q2 |
-| F3 | F Seguridad | Firma de eventos y verificación en el consumidor | 5 | ⛔ Bloqueado | 3 | | spec §8 | A2, D3 | Q5: algoritmo y gestión de clave de firma |
+| F1 | F Seguridad | Auth: JWT corto + refresh revocable, Argon2, bloqueo por intentos, RBAC | 8 | ⬜ Pendiente | 3 | 868mw2q3j | spec §8 | C1, B1 | Q4: modelo de usuarios/postores no está en el esquema |
+| F2 | F Seguridad | Límite de pujas por postor y minuto, cabeceras de seguridad, CORS con lista blanca | 3 | ⬜ Pendiente | 3 | 868mw2q3t | spec §8 | C3 | Cascada de Q2 |
+| F3 | F Seguridad | Firma de eventos y verificación en el consumidor | 5 | ⬜ Pendiente | 3 | 868mw2q37 | spec §8 | A2, D3 | Q5: algoritmo y gestión de clave de firma |
 | F4 | F Seguridad | Logs estructurados con id de correlación | 3 | ✅ Listo | 2 | 868mvty18 | spec §8 | C1 | — |
 | F5 | F Seguridad | SECURITY.md con el mapeo OWASP Top 10 | 2 | ⛔ Bloqueado | 3 | | spec §8 | F1, F2, F3, F4, F6 | Cascada de Q2/Q4/Q5 |
 | F6 | F Seguridad | `npm audit` en CI y actualizaciones automáticas de dependencias | 1 | ✅ Listo | 2 | 868mvty1c | spec §8 | 0.3 | — |

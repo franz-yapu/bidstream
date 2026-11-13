@@ -1,8 +1,8 @@
 # SDD — F1 · Autenticación propia: JWT corto, refresh revocable, Argon2, bloqueo y RBAC
 
-- **Ticket:** ClickUp **F1** (se crea al aprobar).
+- **Ticket:** ClickUp **F1** (`868mw2q3j`, https://app.clickup.com/t/868mw2q3j).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Borrador (2026-11-13) — pendiente de aprobación
+- **Estado:** Aprobado (2026-11-13)
 - **Versión:** 0.1 · **Fecha:** 2026-11-13
 - **Decisión que lo desbloquea:** **Q4** = autenticación propia completa (respuesta del usuario, 2026-11-13).
 - **Fuentes de verdad citadas:** spec §8 (A01 RBAC y propiedad, A02 Argon2, A07 JWT corto + refresco revocable + bloqueo por intentos); `docs/adr/0010` (tenant provisional); `apps/api/src/tenant.ts`, `config.ts` (no arranca en producción); `apps/graphql/src/tenant.ts`; `docs/sdd/D7/SDD.md` (`X-Admin-Key`)

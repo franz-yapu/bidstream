@@ -1,0 +1,8 @@
+{
+  "name": "[FEAT] API comandos: Idempotency-Key obligatoria en la puja (3 h)",
+  "markdown_content": "## Explicación\n\nCabecera obligatoria; misma clave y cuerpo = mismo `commandId`; otro cuerpo = 422.\n\n## Referencias\n\n- SDD: docs/sdd/C4/SDD.md (Aprobado 2026-11-13)\n- Decisiones: docs/decisions/LOG.md DEC-045\n- Estimación: 3 h\n",
+  "assignees": [
+    114193632
+  ],
+  "custom_fields": []
+}

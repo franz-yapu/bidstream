@@ -1,8 +1,8 @@
 # SDD — C4 · Cabecera `Idempotency-Key` obligatoria en la puja
 
-- **Ticket:** ClickUp **C4** (se crea al aprobar).
+- **Ticket:** ClickUp **C4** (`868mw2q2w`, https://app.clickup.com/t/868mw2q2w).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Borrador (2026-11-13) — pendiente de aprobación
+- **Estado:** Aprobado (2026-11-13)
 - **Versión:** 0.1 · **Fecha:** 2026-11-13
 - **Depende de:** C3 (Q2 resuelta).
 - **Fuentes de verdad citadas:** spec §5 (claves de idempotencia), §7 («Exige cabecera `Idempotency-Key`»), §8 A04; `docs/sdd/C3/SDD.md`; `apps/api/src/errors.ts` (`problem+json`)

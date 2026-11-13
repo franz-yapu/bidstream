@@ -1,8 +1,8 @@
 # SDD — F3 · Firma de eventos y verificación en el consumidor
 
-- **Ticket:** ClickUp **F3** (se crea al aprobar).
+- **Ticket:** ClickUp **F3** (`868mw2q37`, https://app.clickup.com/t/868mw2q37).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Borrador (2026-11-13) — pendiente de aprobación
+- **Estado:** Aprobado (2026-11-13)
 - **Versión:** 0.1 · **Fecha:** 2026-11-13
 - **Decisión que lo desbloquea:** **Q5** = Ed25519 asimétrica (respuesta del usuario, 2026-11-13).
 - **Fuentes de verdad citadas:** spec §8 (A08: «firma de los eventos y verificación en el consumidor»); `packages/consumer/src/processor.ts` (ya existe el gancho `verify(message, event)` que envía a DLQ como `poison`); `apps/relay/src/relay.ts` (`toRequest`); `packages/consumer/src/dlq-admin.ts` (republica el original intacto)

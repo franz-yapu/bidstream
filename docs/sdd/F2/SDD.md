@@ -1,8 +1,8 @@
 # SDD — F2 · Límite de pujas por postor y minuto, cabeceras de seguridad y CORS
 
-- **Ticket:** ClickUp **F2** (se crea al aprobar).
+- **Ticket:** ClickUp **F2** (`868mw2q3t`, https://app.clickup.com/t/868mw2q3t).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Borrador (2026-11-13) — pendiente de aprobación
+- **Estado:** Aprobado (2026-11-13)
 - **Versión:** 0.1 · **Fecha:** 2026-11-13
 - **Depende de:** C3, C4 y F1.
 - **Fuentes de verdad citadas:** spec §8 (A04 límite por postor y minuto, A05 cabeceras y CORS con lista blanca, sin trazas al cliente); `docs/sdd/C4/SDD.md` (tabla `idempotency_key`); `apps/api/src/app.ts`, `errors.ts`

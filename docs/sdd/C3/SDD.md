@@ -1,8 +1,8 @@
 # SDD — C3 · `POST /v1/lots/:id/bids`: 202 Accepted y consumidor decisor
 
-- **Ticket:** ClickUp **C3** (se crea al aprobar).
+- **Ticket:** ClickUp **C3** (`868mw2q2m`, https://app.clickup.com/t/868mw2q2m).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Borrador (2026-11-13) — pendiente de aprobación
+- **Estado:** Aprobado (2026-11-13)
 - **Versión:** 0.1 · **Fecha:** 2026-11-13
 - **Decisión que lo desbloquea:** **Q2** = consumidor decisor por Kafka (respuesta del usuario, 2026-11-13).
 - **Fuentes de verdad citadas:**

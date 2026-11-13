@@ -1,8 +1,8 @@
 # SDD — D8 · Cierre de lotes y subastas: el `closer`
 
-- **Ticket:** ClickUp **D8** (se crea al aprobar).
+- **Ticket:** ClickUp **D8** (`868mw2q32`, https://app.clickup.com/t/868mw2q32).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Borrador (2026-11-13) — pendiente de aprobación
+- **Estado:** Aprobado (2026-11-13)
 - **Versión:** 0.1 · **Fecha:** 2026-11-13
 - **Decisión que lo desbloquea:** **Q3** = worker `closer` con líder único (respuesta del usuario, 2026-11-13).
 - **Fuentes de verdad citadas:** spec §2 y §3 (reglas 4 y 5: al llegar `closesAt` se adjudica); `packages/domain/src/lot/decide-close.ts` (`decideCloseLot`), `auction/state.ts` (`decideCloseAuction`); `apps/relay/src/leader.ts` (bloqueo asesor); `docs/sdd/C3/SDD.md`; `docs/adr/0006`
