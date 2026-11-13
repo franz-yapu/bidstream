@@ -158,7 +158,6 @@ describe('denegar por defecto', () => {
       ['GET', '/v1/auth/me'],
       ['POST', '/v1/auth/users'],
       ['GET', '/v1/admin/dlq'],
-      ['GET', '/v1/no-existe'],
     ] as const) {
       const res = await call(method, url, undefined, method === 'POST' ? {} : undefined);
       expect(res.statusCode, `${method} ${url}`).toBe(401);
@@ -198,6 +197,7 @@ describe('denegar por defecto', () => {
       commandsTopic: 'bidstream.commands.bid',
       auth: { service, verifier: authConfig.verifier },
     });
+    await strict.after(); // las defensas y los ganchos de acceso ya están cargados
     strict.get('/v1/olvidada', () => ({ secreto: true }));
     for (const role of ['ADMIN', 'SELLER', 'BIDDER'] as const) {
       const res = await strict.inject({

@@ -15,6 +15,23 @@ const envSchema = z
      * producción y `header` fuera de ella.
      */
     AUTH_MODE: z.enum(['header', 'jwt']).optional(),
+    /**
+     * Orígenes que pueden llamar a GraphQL desde un navegador (CORS), separados por comas. Vacío (por
+     * defecto): ninguno. Origen exacto (`https://app.ejemplo.com`); `*` no se admite.
+     */
+    CORS_ALLOWED_ORIGINS: z
+      .string()
+      .default('')
+      .transform((value) =>
+        value
+          .split(',')
+          .map((origin) => origin.trim())
+          .filter((origin) => origin !== ''),
+      )
+      .refine((origins) => origins.every((o) => /^https?:\/\/[^/*\s]+$/.test(o)), {
+        message:
+          'CORS_ALLOWED_ORIGINS solo admite orígenes exactos (https://host[:puerto]); no `*` ni rutas',
+      }),
     /** Tope de `first` en las listas paginadas. */
     GQL_MAX_PAGE_SIZE: z.coerce.number().int().min(1).max(1_000).default(100),
     /** Límites de abuso (docs/sdd/E2/SDD.md §2.2). */

@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **F2** (`868mw2q3t`, https://app.clickup.com/t/868mw2q3t).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Aprobado (2026-11-13)
+- **Estado:** Implementado (2026-11-13)
 - **Versión:** 0.1 · **Fecha:** 2026-11-13
 - **Depende de:** C3, C4 y F1.
 - **Fuentes de verdad citadas:** spec §8 (A04 límite por postor y minuto, A05 cabeceras y CORS con lista blanca, sin trazas al cliente); `docs/sdd/C4/SDD.md` (tabla `idempotency_key`); `apps/api/src/app.ts`, `errors.ts`
@@ -99,3 +99,15 @@
 1. **Cupo:** 30 pujas por postor y minuto (propuesta). ¿Otro valor?
 2. **Recuento en PostgreSQL** (sin Redis) (propuesta).
 3. **CORS:** lista vacía por defecto y definida por entorno (propuesta).
+
+---
+
+## Changelog de implementación
+
+- Límite por postor: `lockBidder` (bloqueo asesor de transacción) + `claim` + `countSince`/`oldestSince`, con `createdAt` tomado del reloj de la aplicación; `429` `problem+json` con `Retry-After` exacto (lo que falta para que caduque la puja más antigua) y `RateLimit-*`; la excepción revierte la clave. Probado: N+1, otro postor intacto, ventana deslizante con reloj inyectado, repetición idempotente sin cupo, y **dos instancias con 20 peticiones simultáneas aceptan exactamente 5**.
+- API: `@fastify/helmet`, CSP `default-src 'none'; frame-ancestors 'none'` (excepto `/v1/docs`), `Cache-Control: no-store` en `/v1/auth/*`, HSTS solo en producción, `@fastify/cors` con lista blanca (preflight sin token también en modo jwt), límite global por IP (la salud no cuenta) y prueba de que un error interno no filtra pila ni mensaje.
+- GraphQL: `securityHeaders` y CORS de Yoga con la misma lista (`CORS_ALLOWED_ORIGINS`).
+- Configuración: `BID_RATE_LIMIT_PER_MINUTE`, `API_RATE_LIMIT_PER_MINUTE`, `CORS_ALLOWED_ORIGINS` (rechaza `*`, rutas y esquemas raros).
+- 14 pruebas de integración en la API y 6 en GraphQL.
+- Cambio de ensamblado: los ganchos de identidad y de acceso se añaden en `app.after(...)`, tras cargar las defensas de borde. Efecto: una URL inexistente responde `404` (antes `401`).
+- Hallazgo: `pg_advisory_xact_lock` devuelve `void` y Prisma no sabe deserializarlo; se envuelve en una columna entera.

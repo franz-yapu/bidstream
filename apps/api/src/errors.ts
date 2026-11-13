@@ -7,6 +7,7 @@ import { STATUS_CODES } from 'node:http';
 import {
   AuctionClosed,
   AuctionNotFound,
+  BidRateLimited,
   IdempotencyKeyReused,
   InvalidCommand,
   LotNotFound,
@@ -40,6 +41,7 @@ const PROBLEM_TYPES: Readonly<Record<number, { type: string; title: string }>> =
     type: 'urn:bidstream:problem:unsupported-media-type',
     title: 'Tipo de contenido no soportado',
   },
+  429: { type: 'urn:bidstream:problem:too-many-requests', title: 'Demasiadas peticiones' },
   422: { type: 'urn:bidstream:problem:business-rule', title: 'Regla de negocio incumplida' },
   500: { type: 'urn:bidstream:problem:internal-error', title: 'Error interno' },
 };
@@ -121,6 +123,17 @@ export function registerErrorHandlers(app: FastifyInstance): void {
     }
     if (error instanceof EmailAlreadyRegistered) {
       return sendProblem(request, reply, 409, { detail: 'No se pudo completar el registro.' });
+    }
+    if (error instanceof BidRateLimited) {
+      return sendProblem(request, reply, 429, {
+        detail: `Superó el límite de ${String(error.limit)} pujas por minuto. Reintente más tarde.`,
+        headers: {
+          'retry-after': String(error.retryAfterSeconds),
+          'ratelimit-limit': String(error.limit),
+          'ratelimit-remaining': '0',
+          'ratelimit-reset': String(error.retryAfterSeconds),
+        },
+      });
     }
     if (error instanceof IdempotencyKeyReused) {
       return sendProblem(request, reply, 422, {

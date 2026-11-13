@@ -270,3 +270,8 @@ Usuarios con Argon2id, JWT de acceso EdDSA de 10 minutos y refresh opaco de un s
 **Fecha:** 2026-11-13 · **Fuente:** Claude · **Estado:** activa
 
 Toda ruta de la API exige token y declara sus roles o se deniega; `X-Admin-Key` se sustituye por el rol `ADMIN`; GraphQL verifica el mismo JWT. La API y GraphQL ya arrancan con `NODE_ENV=production` (ADR-0010 queda reemplazada por el ADR-0013) y `make demo` los ejecuta así, con firma de eventos obligatoria y credenciales generadas. Quedan F2 (límite de pujas, cabeceras y CORS) y F5 (`SECURITY.md`).
+
+## DEC-052 — F2 implementado: límite de pujas, cabeceras de seguridad y CORS
+**Fecha:** 2026-11-13 · **Fuente:** Claude · **Estado:** activa
+
+30 pujas por postor y minuto contadas en PostgreSQL con un bloqueo por postor (exacto entre réplicas, sin Redis); cabeceras de seguridad y CORS con lista blanca vacía por defecto en API y GraphQL; límite global por IP por réplica. Queda `SECURITY.md` (F5).

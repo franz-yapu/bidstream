@@ -27,6 +27,18 @@ export class IdempotencyKeyReused extends Error {
   }
 }
 
+/** El postor superó su cupo de pujas por minuto (F2). */
+export class BidRateLimited extends Error {
+  constructor(
+    readonly limit: number,
+    /** Segundos hasta que vuelve a tener cupo. */
+    readonly retryAfterSeconds: number,
+  ) {
+    super('demasiadas pujas en el último minuto');
+    this.name = 'BidRateLimited';
+  }
+}
+
 export class AuctionClosed extends Error {
   constructor(readonly auctionId: string) {
     super(`la subasta ${auctionId} está cerrada`);

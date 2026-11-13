@@ -10,6 +10,8 @@ export interface CommandDeps {
   readonly eventsTopic: string;
   /** Topic de comandos (`bidstream.commands.bid`). */
   readonly commandsTopic: string;
+  /** Pujas por postor y minuto (F2, A04); por defecto 30. */
+  readonly bidRateLimitPerMinute?: number;
 }
 
 /** Contexto de la petición que origina un comando (F4). */

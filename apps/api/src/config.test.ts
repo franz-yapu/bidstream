@@ -13,6 +13,9 @@ describe('loadConfig', () => {
       DATABASE_URL: DB,
       AUTH_MODE: 'header',
       AUTH_RATE_LIMIT_PER_MINUTE: 20,
+      BID_RATE_LIMIT_PER_MINUTE: 30,
+      API_RATE_LIMIT_PER_MINUTE: 600,
+      CORS_ALLOWED_ORIGINS: [],
     });
   });
   it('lee y convierte valores del entorno', () => {
