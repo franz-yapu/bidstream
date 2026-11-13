@@ -122,3 +122,7 @@ curl -N localhost:4000/graphql -H 'content-type: application/json' -H 'accept: t
 ```
 
 Límites: 500 suscripciones simultáneas por tenant y una cola de 50 por suscriptor (`GQL_MAX_SUBSCRIPTIONS_PER_TENANT`, `GQL_SUBSCRIPTION_QUEUE`). El camino es: el `notifier` hace `NOTIFY` en PostgreSQL → cada réplica GraphQL escucha el canal → su suscripción.
+
+## Seguridad de dependencias
+
+`npm run audit:prod` y `npm run audit:high` aplican en local la misma política que la CI (`.github/workflows/security.yml`): **falla ante cualquier aviso en dependencias de producción y ante uno alto o crítico en cualquiera**; los demás se informan. Se ejecuta en cada PR, en `main` y cada lunes (los avisos aparecen sin que cambie el código). Dependabot propone las actualizaciones cada semana, agrupadas, y todas las acciones de GitHub están fijadas por SHA (una prueba lo exige). `npm audit` no lo ve todo: es una capa, no la única.

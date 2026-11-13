@@ -24,7 +24,9 @@
     "dev:projector": "npm run dev -w @bidstream/projector",
     "dev:auditor": "npm run dev -w @bidstream/auditor",
     "dev:notifier": "npm run dev -w @bidstream/notifier-app",
-    "dev:graphql": "npm run dev -w @bidstream/graphql"
+    "dev:graphql": "npm run dev -w @bidstream/graphql",
+    "audit:prod": "npm audit --omit=dev --audit-level=low",
+    "audit:high": "npm audit --audit-level=high"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.4",
@@ -47,5 +49,8 @@
     "*.{md,yml,yaml}": [
       "prettier --write"
     ]
+  },
+  "overrides": {
+    "minimatch": "^11.0.8"
   }
 }

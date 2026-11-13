@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **I2** (`868mvty26`, https://app.clickup.com/t/868mvty26).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Borrador
+- **Estado:** Aprobado (2026-11-13)
 - **Versión:** 1.0 · **Fecha:** 2026-11-13
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §10 ("ADRs numerados para cada decisión: clave de partición, outbox, 202 en la puja, GraphQL solo para lecturas"), §12 punto 4 ("las decisiones de diseño que vale la pena mirar, con el enlace a cada ADR"), §5, §7
