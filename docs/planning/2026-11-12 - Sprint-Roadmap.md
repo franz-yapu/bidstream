@@ -57,7 +57,7 @@ B1 (5 h), B2 (3 h), C1 (5 h), C2 (5 h), D1 (5 h), D2 (3 h), D3 (5 h), D4 (5 h), 
 | B2 | B Datos | Repositorios Prisma de proyección y outbox | 3 | ✅ Listo | 2 | 868mvtxzb | spec §6 | B1, A3 | — |
 | C1 | C API comandos | Servidor REST /v1: Zod en el borde, manejo de errores, OpenAPI en /v1/docs, health básico | 5 | ✅ Listo | 2 | 868mvtxzn | spec §7 | 0.1 | — |
 | C2 | C API comandos | POST /v1/auctions y /v1/auctions/:id/lots (201 + Location) escribiendo outbox | 5 | ✅ Listo | 2 | 868mvtxzv | spec §7 | B2, C1, A2 | — |
-| C3 | C API comandos | POST /v1/lots/:id/bids: 202 Accepted, validación y outbox (BidPlaced/BidRejected) | 8 | ⬜ Pendiente | 3 | 868mw2q2m | spec §5, §7 | C2, A1 | Q2: dónde se decide la puja (autoridad) |
+| C3 | C API comandos | POST /v1/lots/:id/bids: 202 Accepted, validación y outbox (BidPlaced/BidRejected) | 8 | ✅ Listo | 3 | 868mw2q2m | spec §5, §7 | C2, A1 | Q2: dónde se decide la puja (autoridad) |
 | C4 | C API comandos | Cabecera `Idempotency-Key` obligatoria en la puja | 3 | ⬜ Pendiente | 3 | 868mw2q2w | spec §5, §7 | C3 | Cascada de Q2 |
 | D1 | D Kafka | Relay de outbox → Kafka (polling con FOR UPDATE SKIP LOCKED, `publishedAt`) | 5 | ✅ Listo | 2 | 868mvtxzz | spec §5 | B2, D2 | — |
 | D2 | D Kafka | Cliente Kafka compartido: config local y Event Hubs (SASL) sin cambiar código | 3 | ✅ Listo | 2 | 868mvty03 | spec §9 | 0.2 | — |

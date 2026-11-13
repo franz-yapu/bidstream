@@ -17,9 +17,12 @@ aquí el interés está en **cómo** se resuelve, no en el catálogo de funcione
 
 ```mermaid
 flowchart LR
-  C[Cliente] -->|comando REST · 201 aceptado| API
+  C[Cliente] -->|comando REST · 201 o 202 aceptado| API
   API -->|misma transacción| OUT[(outbox + PostgreSQL)]
   OUT --> RELAY[relay · líder único]
+  RELAY -->|PlaceBid · clave = lotId| KC[(Kafka · bidstream.commands.bid)]
+  KC --> DEC[decider · estado propio]
+  DEC -->|BidPlaced · BidRejected · LotExtended| OUT
   RELAY -->|clave = lotId| K[(Kafka · bidstream.events.lot)]
   K --> PROJ[projector]
   K --> NOT[notifier]
@@ -36,12 +39,16 @@ flowchart LR
    transacción**. Nunca habla con Kafka: así no hay escritura dual ([ADR-0002](docs/adr/0002-patron-outbox.md)).
 2. **Un relay** publica el outbox en Kafka, en orden, con `lotId` como clave de partición
    ([ADR-0001](docs/adr/0001-clave-de-particion-lotid.md), [ADR-0006](docs/adr/0006-un-unico-relay-activo.md)).
-3. **Tres consumidores independientes** leen el mismo topic: `projector` (la vista consultable),
+3. **La puja se acepta, no se resuelve** (`POST /v1/lots/:id/bids` → `202`): la API publica un comando y un
+   **decisor** lo resuelve en el orden de la partición del lote, con su propio estado, y emite
+   `BidPlaced`, `BidRejected` o `LotExtended` por el mismo outbox
+   ([ADR-0003](docs/adr/0003-la-puja-devuelve-202.md), [ADR-0011](docs/adr/0011-decisor-unico-por-lote.md)).
+4. **Tres consumidores independientes** leen el mismo topic: `projector` (la vista consultable),
    `notifier` (tiempo real) y `auditor` (bitácora inmutable). Una cola no permite que tres lectores
    vean el mismo mensaje; un log, sí.
-4. **GraphQL solo lee** de la proyección y empuja cambios por SSE ([ADR-0004](docs/adr/0004-graphql-solo-lecturas.md),
+5. **GraphQL solo lee** de la proyección y empuja cambios por SSE ([ADR-0004](docs/adr/0004-graphql-solo-lecturas.md),
    [ADR-0008](docs/adr/0008-tiempo-real-listen-notify-sse.md)).
-5. **Cada consumidor es idempotente** y los fallos van a un DLQ reprocesable
+6. **Cada consumidor es idempotente** y los fallos van a un DLQ reprocesable
    ([ADR-0007](docs/adr/0007-consumidores-idempotentes-y-dlq.md)).
 
 ## Qué cambió respecto a la versión con WebSockets y bloqueos en base de datos
@@ -93,18 +100,19 @@ diferencias, sin cifras que no he medido:
 Cada decisión tiene su ADR, con las alternativas descartadas y las pruebas que la respaldan
 ([índice](docs/adr/README.md)).
 
-| ADR                                                        | Decisión                                                           |
-| ---------------------------------------------------------- | ------------------------------------------------------------------ |
-| [0001](docs/adr/0001-clave-de-particion-lotid.md)          | Clave de partición `lotId`: el orden por lote lo da Kafka          |
-| [0002](docs/adr/0002-patron-outbox.md)                     | Outbox: nunca escritura dual                                       |
-| [0003](docs/adr/0003-la-puja-devuelve-202.md)              | La puja devuelve `202 Accepted` _(decidido; se implementa con C3)_ |
-| [0004](docs/adr/0004-graphql-solo-lecturas.md)             | GraphQL solo para lecturas, REST para comandos                     |
-| [0005](docs/adr/0005-proyeccion-sin-fk-entre-agregados.md) | Proyección sin clave foránea entre agregados                       |
-| [0006](docs/adr/0006-un-unico-relay-activo.md)             | Un único relay activo con bloqueo asesor                           |
-| [0007](docs/adr/0007-consumidores-idempotentes-y-dlq.md)   | Consumidores idempotentes, reintentos y DLQ                        |
-| [0008](docs/adr/0008-tiempo-real-listen-notify-sse.md)     | Tiempo real con `LISTEN/NOTIFY` y SSE                              |
-| [0009](docs/adr/0009-el-log-es-la-fuente-de-verdad.md)     | El log es la fuente de verdad: reproceso desde `earliest`          |
-| [0010](docs/adr/0010-tenant-provisional-por-cabecera.md)   | Tenant provisional por cabecera, prohibido en producción           |
+| ADR                                                        | Decisión                                                  |
+| ---------------------------------------------------------- | --------------------------------------------------------- |
+| [0001](docs/adr/0001-clave-de-particion-lotid.md)          | Clave de partición `lotId`: el orden por lote lo da Kafka |
+| [0002](docs/adr/0002-patron-outbox.md)                     | Outbox: nunca escritura dual                              |
+| [0003](docs/adr/0003-la-puja-devuelve-202.md)              | La puja devuelve `202 Accepted`                           |
+| [0004](docs/adr/0004-graphql-solo-lecturas.md)             | GraphQL solo para lecturas, REST para comandos            |
+| [0005](docs/adr/0005-proyeccion-sin-fk-entre-agregados.md) | Proyección sin clave foránea entre agregados              |
+| [0006](docs/adr/0006-un-unico-relay-activo.md)             | Un único relay activo con bloqueo asesor                  |
+| [0007](docs/adr/0007-consumidores-idempotentes-y-dlq.md)   | Consumidores idempotentes, reintentos y DLQ               |
+| [0008](docs/adr/0008-tiempo-real-listen-notify-sse.md)     | Tiempo real con `LISTEN/NOTIFY` y SSE                     |
+| [0009](docs/adr/0009-el-log-es-la-fuente-de-verdad.md)     | El log es la fuente de verdad: reproceso desde `earliest` |
+| [0011](docs/adr/0011-decisor-unico-por-lote.md)            | Decisor único por lote con estado propio                  |
+| [0010](docs/adr/0010-tenant-provisional-por-cabecera.md)   | Tenant provisional por cabecera, prohibido en producción  |
 
 Otros detalles que conviene mirar:
 
@@ -142,7 +150,7 @@ Requisitos: Docker y Node 22 (`nvm use`).
 npm ci && make demo
 ```
 
-Levanta Kafka y PostgreSQL, aplica las migraciones y arranca los seis procesos en contenedores. Después:
+Levanta Kafka y PostgreSQL, aplica las migraciones y arranca los siete procesos en contenedores. Después:
 
 ```bash
 scripts/demo-smoke.sh   # una subasta entra por REST y aparece por GraphQL
@@ -159,17 +167,16 @@ Para desarrollar, probar o depurar proceso a proceso: [`docs/DESARROLLO.md`](doc
 Lo que está hecho y probado (más de 360 pruebas unitarias y 230 de integración contra Kafka y
 PostgreSQL reales):
 
-- Comandos REST de subastas y lotes, outbox, relay, los tres consumidores, proyección, GraphQL con
+- Comandos REST de subastas, lotes y pujas (la puja la decide un consumidor en orden por lote), outbox, relay, los tres consumidores, proyección, GraphQL con
   límites y subscriptions, DLQ con reproceso administrativo, reproceso completo desde el log, logs con
   correlación, imágenes de contenedor y CI con auditoría de dependencias.
 
 Lo que **no** está todavía:
 
-- **La puja (`POST …/bids`)** y la regla de quién decide el precio ganador: pendiente de una decisión de
-  diseño sobre la autoridad de la puja.
+- **Idempotencia de la puja** (`Idempotency-Key`) y **límite de pujas por postor** (C4, F2).
 - **Autenticación y usuarios.** Mientras tanto el tenant llega por cabecera y la API **no arranca con
   `NODE_ENV=production`** ([ADR-0010](docs/adr/0010-tenant-provisional-por-cabecera.md)).
-- **Firma de eventos, cierre automático de lotes y `SECURITY.md`** con el mapeo OWASP.
+- **Cierre automático de lotes por tiempo** (D8), **firma de eventos** (F3) y `SECURITY.md` con el mapeo OWASP.
 - **Despliegue en Azure** (Bicep, Event Hubs, Container Apps) y métricas de _consumer lag_.
 
 Documentación: [especificación](docs/product/bidstream_spec.md) · [ADR](docs/adr/README.md) ·

@@ -1,4 +1,4 @@
-import { parseEvent } from '@bidstream/domain';
+import { parseCommand, parseEvent } from '@bidstream/domain';
 import {
   createConsumer,
   createKafkaAdmin,
@@ -93,9 +93,13 @@ function decode(message: IncomingMessage): Decoded {
   const dlq = parsed.data;
   if (dlq.original === null) return { dlq, eventId: null, type: null };
   try {
-    const event = parseEvent(JSON.parse(dlq.original));
-    return event.success
-      ? { dlq, eventId: event.event.eventId, type: event.event.type }
+    const original: unknown = JSON.parse(dlq.original);
+    const event = parseEvent(original);
+    if (event.success) return { dlq, eventId: event.event.eventId, type: event.event.type };
+    // `bidstream.commands.bid` también tiene su DLQ: un comando se identifica por su `commandId`.
+    const command = parseCommand(original);
+    return command.success
+      ? { dlq, eventId: command.command.commandId, type: command.command.type }
       : { dlq, eventId: null, type: null };
   } catch {
     return { dlq, eventId: null, type: null };

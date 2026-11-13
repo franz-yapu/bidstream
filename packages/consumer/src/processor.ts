@@ -1,4 +1,4 @@
-import { parseEvent, type DomainEvent } from '@bidstream/domain';
+import { parseCommand, parseEvent, type DomainCommand, type DomainEvent } from '@bidstream/domain';
 import type { Prisma, PrismaClient } from '@bidstream/db';
 import type { IncomingMessage } from '@bidstream/kafka';
 import { backoffDelay, DEFAULT_RETRY_POLICY, type RetryPolicy } from './backoff.js';
@@ -10,7 +10,69 @@ export interface HandlerContext {
   readonly message: IncomingMessage;
 }
 
-export type EventHandler = (event: DomainEvent, context: HandlerContext) => Promise<void>;
+export type EventHandler<T = DomainEvent> = (item: T, context: HandlerContext) => Promise<void>;
+
+/** Lo que el procesador necesita saber de un mensaje ya validado, sea evento o comando. */
+export interface ParsedMessage<T> {
+  readonly value: T;
+  /** `eventId` o `commandId`: junto al consumidor, la clave de idempotencia. */
+  readonly id: string;
+  readonly type: string;
+  readonly correlationId?: string | undefined;
+}
+
+/** Cómo se valida un tipo de mensaje del log (eventos o comandos). */
+export interface MessageCodec<T> {
+  /** «evento» o «comando»: solo para los mensajes de error. */
+  readonly noun: string;
+  parse(
+    json: unknown,
+  ): { success: true; parsed: ParsedMessage<T> } | { success: false; summary: string };
+}
+
+const summarize = (issues: readonly { path: PropertyKey[]; message: string }[]): string =>
+  issues
+    .slice(0, 5)
+    .map((i) => `${i.path.map(String).join('.') || '(raíz)'}: ${i.message}`)
+    .join('; ');
+
+/** Los eventos de dominio de `bidstream.events.lot`. */
+export const eventCodec: MessageCodec<DomainEvent> = {
+  noun: 'evento',
+  parse: (json) => {
+    const result = parseEvent(json);
+    return result.success
+      ? {
+          success: true,
+          parsed: {
+            value: result.event,
+            id: result.event.eventId,
+            type: result.event.type,
+            correlationId: result.event.meta?.correlationId,
+          },
+        }
+      : { success: false, summary: summarize(result.error.issues) };
+  },
+};
+
+/** Los comandos de `bidstream.commands.bid`. */
+export const commandCodec: MessageCodec<DomainCommand> = {
+  noun: 'comando',
+  parse: (json) => {
+    const result = parseCommand(json);
+    return result.success
+      ? {
+          success: true,
+          parsed: {
+            value: result.command,
+            id: result.command.commandId,
+            type: result.command.type,
+            correlationId: result.command.meta?.correlationId,
+          },
+        }
+      : { success: false, summary: summarize(result.error.issues) };
+  },
+};
 
 /** Id de correlación que el relay copia a la cabecera `correlationId` (F4). */
 function headerCorrelation(message: IncomingMessage): string | undefined {
@@ -41,15 +103,17 @@ export interface DlqPublication {
   readonly headers: Readonly<Record<string, string>>;
 }
 
-export interface ProcessorDeps {
+export interface ProcessorDeps<T = DomainEvent> {
   readonly prisma: Pick<PrismaClient, '$transaction'>;
   /** Nombre del consumidor: junto al `eventId` es la clave de idempotencia (`ProcessedEvent`). */
   readonly consumerName: string;
-  readonly handler: EventHandler;
+  readonly handler: EventHandler<T>;
+  /** Por defecto, los eventos de dominio. */
+  readonly codec?: MessageCodec<T>;
   readonly publishDlq: (publication: DlqPublication) => Promise<void>;
   readonly retry?: Partial<RetryPolicy>;
   /** Punto de enganche para la firma de eventos (F3): `false` trata el mensaje como veneno. */
-  readonly verify?: (message: IncomingMessage, event: DomainEvent) => boolean | Promise<boolean>;
+  readonly verify?: (message: IncomingMessage, value: T) => boolean | Promise<boolean>;
   readonly transactionTimeoutMs?: number;
   readonly logger?: Logger;
   readonly sleep?: (ms: number) => Promise<void>;
@@ -64,9 +128,10 @@ const defaultSleep = (ms: number): Promise<void> => new Promise((r) => setTimeou
  * Resuelve cuando el offset puede confirmarse; **lanza** solo si el DLQ no se pudo escribir (el
  * mensaje no debe confirmarse y se volverá a entregar: nunca se pierde un evento).
  */
-export function createMessageProcessor(
-  deps: ProcessorDeps,
+export function createMessageProcessor<T = DomainEvent>(
+  deps: ProcessorDeps<T>,
 ): (message: IncomingMessage) => Promise<ProcessOutcome> {
+  const codec = (deps.codec ?? eventCodec) as MessageCodec<T>;
   const policy: RetryPolicy = { ...DEFAULT_RETRY_POLICY, ...deps.retry };
   const logger = deps.logger ?? silentLogger;
   const sleep = deps.sleep ?? defaultSleep;
@@ -118,14 +183,15 @@ export function createMessageProcessor(
 
   /** Una transacción: registra el evento (idempotencia) y ejecuta el handler. */
   async function attempt(
-    event: DomainEvent,
+    event: T,
+    id: string,
     message: IncomingMessage,
   ): Promise<'processed' | 'duplicate'> {
     return deps.prisma.$transaction(
       async (tx) => {
         // ON CONFLICT DO NOTHING: un INSERT duplicado abortaría la transacción de PostgreSQL.
         const { count } = await tx.processedEvent.createMany({
-          data: [{ eventId: event.eventId, consumer: deps.consumerName }],
+          data: [{ eventId: id, consumer: deps.consumerName }],
           skipDuplicates: true,
         });
         if (count === 0) return 'duplicate' as const;
@@ -161,30 +227,26 @@ export function createMessageProcessor(
         headerCorrelation(message),
       );
     }
-    const parsed = parseEvent(json);
-    if (!parsed.success) {
-      const summary = parsed.error.issues
-        .slice(0, 5)
-        .map((i) => `${i.path.join('.') || '(raíz)'}: ${i.message}`)
-        .join('; ');
+    const decoded = codec.parse(json);
+    if (!decoded.success) {
       return deadLetter(
         message,
-        new Error(`evento inválido: ${summary}`),
+        new Error(`${codec.noun} inválido: ${decoded.summary}`),
         1,
         'poison',
         undefined,
         headerCorrelation(message),
       );
     }
-    const event = parsed.event;
-    const correlationId = event.meta?.correlationId ?? headerCorrelation(message);
+    const { value: event, id, type } = decoded.parsed;
+    const correlationId = decoded.parsed.correlationId ?? headerCorrelation(message);
     if (deps.verify !== undefined && !(await deps.verify(message, event))) {
       return deadLetter(
         message,
-        new Error('verificación del evento fallida'),
+        new Error(`verificación del ${codec.noun} fallida`),
         1,
         'poison',
-        event.eventId,
+        id,
         correlationId,
       );
     }
@@ -193,10 +255,10 @@ export function createMessageProcessor(
     let lastError: unknown;
     for (let n = 1; n <= policy.maxRetries + 1; n++) {
       try {
-        const result = await attempt(event, message);
+        const result = await attempt(event, id, message);
         if (result === 'duplicate') {
           logger.info(
-            { consumer: deps.consumerName, eventId: event.eventId, correlationId },
+            { consumer: deps.consumerName, eventId: id, correlationId },
             'evento duplicado ignorado',
           );
           return { kind: 'duplicate' };
@@ -204,9 +266,9 @@ export function createMessageProcessor(
         logger.info(
           {
             consumer: deps.consumerName,
-            eventId: event.eventId,
+            eventId: id,
             correlationId,
-            type: event.type,
+            type,
             attempts: n,
           },
           'evento procesado',
@@ -218,7 +280,7 @@ export function createMessageProcessor(
           logger.warn(
             {
               consumer: deps.consumerName,
-              eventId: event.eventId,
+              eventId: id,
               correlationId,
               attempt: n,
               err: error,
@@ -234,7 +296,7 @@ export function createMessageProcessor(
       lastError,
       policy.maxRetries + 1,
       'retries-exhausted',
-      event.eventId,
+      id,
       correlationId,
     );
   };

@@ -15,6 +15,7 @@ const app = buildApp({
   ids: new Uuid7Generator(),
   tenantResolver: new HeaderTenantResolver(),
   eventsTopic: TOPICS.eventsLot,
+  commandsTopic: TOPICS.commandsBid,
   ...(config.ADMIN_API_KEY === undefined
     ? {}
     : { adminDlq: { apiKey: config.ADMIN_API_KEY, port: lazyDlqAdmin({ env: process.env }) } }),

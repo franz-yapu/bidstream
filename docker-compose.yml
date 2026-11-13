@@ -129,6 +129,11 @@ services:
     build: { context: ., args: { APP: projector } }
     image: bidstream-projector:local
 
+  decider:
+    <<: *app
+    build: { context: ., args: { APP: decider } }
+    image: bidstream-decider:local
+
   auditor:
     <<: *app
     build: { context: ., args: { APP: auditor } }

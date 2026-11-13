@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 #
-# Una imagen por proceso: `docker build --build-arg APP=<api|relay|projector|auditor|notifier|graphql> .`
+# Una imagen por proceso: `docker build --build-arg APP=<api|relay|projector|auditor|notifier|graphql|decider> .`
 # Multi-etapa, usuario no root y sin secretos: toda la configuración llega por variables de entorno
 # en tiempo de ejecución (docs/sdd/H2/SDD.md). Base fijada por digest (Dependabot la actualiza).
 # glibc (bookworm), no Alpine: @confluentinc/kafka-javascript es un binario nativo.

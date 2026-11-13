@@ -39,6 +39,9 @@
     },
     {
       "path": "apps/graphql/tsconfig.build.json"
+    },
+    {
+      "path": "apps/decider/tsconfig.build.json"
     }
   ]
 }

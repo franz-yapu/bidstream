@@ -238,3 +238,10 @@ README según la spec §12 con comparación honesta contra la versión anterior 
 Decisiones del usuario: **Q2** consumidor decisor por Kafka (la API acepta con 202 y publica un comando en `bidstream.commands.bid`; el decisor, con estado propio y orden de partición, emite `BidPlaced`/`BidRejected`/`LotExtended`); **Q3** worker `closer` con líder único; **Q4** autenticación propia completa (Argon2id, JWT corto, refresh con rotación, bloqueo, RBAC); **Q5** firma Ed25519 asimétrica. **Q1** (suscripción Azure y presupuesto) sigue abierta: H1, H3 y H4 siguen bloqueados.
 
 Hallazgo de diseño: para que no haya pujas aceptadas tras el cierre, el cierre entra por la misma partición que las pujas como comando `CloseLot` (emitido por el `closer`) y lo decide el decisor, que es el único escritor de cada lote. SDD en borrador: C3, C4, D8, F1, F2 y F3; F5 (`SECURITY.md`) al final.
+
+## DEC-046 — SDD de la Ola 3 aprobados; C3 implementado
+**Fecha:** 2026-11-13 · **Fuente:** usuario («aprobados con tus propuestas»), Claude · **Estado:** activa
+
+Aprobados C3, C4, D8, F1, F2 y F3 con las propuestas (anti-sniping 2 min + 2 min, `X-Bidder-Id` provisional, estado propio del decisor, `LotStateNotReady` → DLQ, 202 con `commandId`; `Idempotency-Key` de 16–128 caracteres; `closer` cada 5 s; firma `enforce` en producción con corte para el historial; registro abierto solo para `BIDDER`, tokens 10 min/7 días, bloqueo 5/15 min, F1 en dos PR; 30 pujas por minuto). Tickets creados en ClickUp (C3 `868mw2q2m`, C4 `868mw2q2w`, D8 `868mw2q32`, F3 `868mw2q37`, F1 `868mw2q3j`, F2 `868mw2q3t`).
+
+C3 implementado: la API acepta (`202`) y publica `PlaceBid`; `apps/decider` decide en orden por partición con `lot_decision` como estado autoritativo (ADR-0011). Lección: el nombre del consumidor de estado debe ser el de su grupo, o los eventos propios se reaplican y el estado retrocede.

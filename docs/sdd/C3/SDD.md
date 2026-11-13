@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **C3** (`868mw2q2m`, https://app.clickup.com/t/868mw2q2m).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Aprobado (2026-11-13)
+- **Estado:** Implementado (2026-11-13)
 - **Versión:** 0.1 · **Fecha:** 2026-11-13
 - **Decisión que lo desbloquea:** **Q2** = consumidor decisor por Kafka (respuesta del usuario, 2026-11-13).
 - **Fuentes de verdad citadas:**
@@ -167,3 +167,18 @@ El decisor lee `lot_decision` dentro de su transacción; las decisiones de un lo
 3. **Estado propio del decisor** (`lot_decision`, write-through) y no la proyección (propuesta). ¿De acuerdo?
 4. **Lote aún no visible para el decisor:** reintentar y, si no, DLQ (propuesta), no rechazar. ¿Bien?
 5. **Respuesta `202`** con `commandId` y consulta por GraphQL/subscription (sin endpoint `GET` de comandos). ¿Bien?
+
+---
+
+## Changelog de implementación
+
+- Dominio: comando `PlaceBid` (`defineCommand`, `buildCommand`, `parseCommand`, `commandPartitionKey`), 11 pruebas.
+- Base de datos: migración `0004_lot_decision` (verificada sin deriva con `prisma migrate diff`), `PrismaLotDecisionRepository` (`findForUpdate`, `save`), `applyEventToDecision`, `PrismaOutbox.enqueueCommand`.
+- Consumidor: `createMessageProcessor<T>` y `createEventConsumer<T>` genéricos con `codec` (`eventCodec` por defecto, `commandCodec`); el reproceso del DLQ (D7) identifica también comandos por su `commandId`.
+- `apps/decider` (nuevo): `decidePlaceBid`, `createDecider` (consumidores `decider` y `decider-state`), imagen Docker, servicio del compose y job de la CI; `LotStateNotReady` reintentable.
+- API: `POST /v1/lots/:id/bids` (`202 { commandId, status: 'ACCEPTED' }`), `HeaderBidderResolver` provisional, `LotNotFound` → `404` + `Retry-After`; `commandsTopic` pasa a ser obligatorio en `AppDeps`.
+- Humo de `make demo` ampliado: lote y puja hasta GraphQL.
+- ADR-0003 (sin la nota de «sin implementar») y ADR-0011 nuevo; README y pruebas de documentación actualizadas.
+- Hallazgo durante las pruebas: si el nombre del consumidor `state` no coincide con su grupo, los eventos propios se vuelven a aplicar y el estado retrocede; ahora el nombre se inyecta (`stateConsumer`).
+- Desviaciones menores: no se añadió cabecera `Location` a la respuesta (no hay `GET` de comandos; el resultado se consulta por GraphQL); el valor por defecto del anti-sniping (2 min / 2 min) vive en la configuración de la aplicación, no en el dominio.
+- 16 pruebas de integración en `decider.int.test.ts` (API, reglas 1–3, mismo monto, anti-sniping, cierre, duplicados, 50 pujas concurrentes, DLQ y reproceso, flujo completo, reconstrucción del estado), repetidas 3 veces en verde.

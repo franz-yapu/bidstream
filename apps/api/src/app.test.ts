@@ -51,6 +51,7 @@ function make(): FastifyInstance {
     ids: new SequentialIdGenerator(),
     tenantResolver: new HeaderTenantResolver(),
     eventsTopic: 'bidstream.events.lot',
+    commandsTopic: 'bidstream.commands.bid',
   });
   void app.register(testRoutes, { prefix: API_PREFIX });
   return app;
