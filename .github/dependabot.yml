@@ -47,3 +47,17 @@ updates:
     groups:
       acciones:
         patterns: ['*']
+
+  # La imagen base de Node va fijada por digest en el Dockerfile (H2).
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 2
+    commit-message:
+      prefix: 'chore(deps)'
+    ignore:
+      # Node 22 es la versión objetivo (.nvmrc, engines y CI).
+      - dependency-name: node
+        update-types: ['version-update:semver-major']

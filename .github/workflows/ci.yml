@@ -45,3 +45,26 @@ jobs:
       - name: Detener el entorno
         if: always()
         run: make down
+
+  # H2: cada proceso tiene su imagen; se construye y se arranca de verdad (no solo se compila).
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [api, relay, projector, auditor, notifier, graphql]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Construir la imagen
+        run: docker build --build-arg APP=${{ matrix.app }} -t bidstream-${{ matrix.app }}:test .
+      - name: Levantar Kafka y PostgreSQL
+        run: make up
+      - name: Prueba de humo
+        run: scripts/docker-smoke.sh ${{ matrix.app }}
+      - name: Logs de los contenedores
+        if: failure()
+        run: docker compose logs --no-color
+      - name: Detener el entorno
+        if: always()
+        run: make down

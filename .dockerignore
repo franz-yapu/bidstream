@@ -1,0 +1,21 @@
+# Contexto de construcción mínimo: nada de secretos, dependencias ni artefactos locales.
+.git
+.github
+.husky
+.claude
+.clickup.json
+.env
+.env.*
+!.env.example
+node_modules
+**/node_modules
+**/dist
+**/*.tsbuildinfo
+coverage
+docs
+scripts
+*.md
+Dockerfile
+.dockerignore
+docker-compose*.yml
+Makefile

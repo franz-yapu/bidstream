@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **H2** (`868mvty1v`, https://app.clickup.com/t/868mvty1v).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Aprobado (2026-11-13)
+- **Estado:** Implementado (2026-11-13)
 - **Versión:** 0.1 · **Fecha:** 2026-11-13
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §9 (Azure Container Apps: API, relay y tres consumidores, cada uno con su escalado; Azure Container Registry)
@@ -136,3 +136,13 @@ flowchart LR
 3. **Job `docker` en la CI** que construye y prueba el arranque de las seis imágenes (suma ≈ 4–6 min). ¿Lo exigimos como check requerido más adelante, junto a `integration` y `security`?
 4. **Escaneo de vulnerabilidades de la imagen** (Trivy): propuesta de dejarlo informativo y fuera de este ticket (cabe en H1). ¿Bien?
 5. **Alcance:** los seis procesos, no solo los cuatro que nombra el ticket (API, relay y consumidores), porque `graphql` y `notifier` también deben desplegarse.
+
+---
+
+## Changelog de implementación
+
+- `Dockerfile` (3 etapas: `build`, `prod-deps`, `runtime`) con `ARG APP`, `.dockerignore`, `make images`, `scripts/docker-smoke.sh`, job `docker` (matriz de 6) y Dependabot `docker`. Imágenes de 418–441 MB (la base slim pesa ≈ 230 MB).
+- Desviación: `@prisma/client` arrastra la CLI de Prisma, su estudio y TypeScript; se eliminan de `node_modules` en la etapa de dependencias (580 → 435 MB). Lo cubre el humo, que arranca los seis procesos.
+- El humo exige CI o `SMOKE_DISPOSABLE=1`: sin esa guarda, un arranque local consumía y confirmaba offsets de los grupos reales del entorno de desarrollo (ocurrió una vez durante la implementación; solo reprocesó eventos ya existentes, de forma idempotente).
+- Pruebas: 15 de política en `docker-policy.test.ts` y el humo de los 6 procesos (no root, sin `.env` ni `src/`, error claro sin `DATABASE_URL`, arranque real, sin cadena de conexión en logs).
+- El escaneo de vulnerabilidades de la imagen queda fuera (H1), como se acordó.
