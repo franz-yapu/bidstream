@@ -12,3 +12,4 @@ packages/db/src/generated
 
 # claves de firma de desarrollo (F3): nunca se versionan
 .env.signing.*
+.env.auth.*

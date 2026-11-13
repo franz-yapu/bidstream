@@ -47,7 +47,8 @@ demo: ## Todo el sistema en un comando: infraestructura, migraciones y los ocho 
 	$(COMPOSE) --profile app up -d --build --wait
 	@echo ""
 	@echo "bidstream en marcha:"
-	@echo "  API REST   http://localhost:$${API_PORT:-3000}/v1/docs   (cabecera X-Tenant-Id obligatoria)"
+	@echo "  API REST   http://localhost:$${API_PORT:-3000}/v1/docs   (POST /v1/auth/login → Authorization: Bearer)"
+	@echo "  Admin      admin@demo.local · contraseña en .env.auth.private · tenant 11111111-1111-4111-8111-111111111111"
 	@echo "  GraphQL    http://localhost:$${GRAPHQL_PORT:-4000}/graphql"
 	@echo "  Prueba     scripts/demo-smoke.sh"
 	@echo "  Detener    make demo-down"

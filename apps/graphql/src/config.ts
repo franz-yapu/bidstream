@@ -10,10 +10,11 @@ const envSchema = z
       .default('info'),
     DATABASE_URL: z.string().min(1),
     /**
-     * Cómo se obtiene el tenant. Hasta que F1 aporte autenticación solo existe `header`
-     * (`X-Tenant-Id`), que cualquiera puede falsificar: por eso está prohibido en producción.
+     * Cómo se identifica al cliente: `jwt` (token de acceso de F1, ADR-0013) o `header` (`X-Tenant-Id`, que
+     * cualquiera puede falsificar y por eso está prohibido en producción). Por defecto, `jwt` en
+     * producción y `header` fuera de ella.
      */
-    TENANT_MODE: z.enum(['header']).default('header'),
+    AUTH_MODE: z.enum(['header', 'jwt']).optional(),
     /** Tope de `first` en las listas paginadas. */
     GQL_MAX_PAGE_SIZE: z.coerce.number().int().min(1).max(1_000).default(100),
     /** Límites de abuso (docs/sdd/E2/SDD.md §2.2). */
@@ -29,18 +30,19 @@ const envSchema = z
     GQL_INTROSPECTION: z.enum(['true', 'false']).optional(),
   })
   .superRefine((env, ctx) => {
-    // Hoy el único modo es `header`; cuando F1 añada otro, la condición pasará a comprobar el modo.
-    if (env.NODE_ENV === 'production') {
+    if (env.NODE_ENV === 'production' && env.AUTH_MODE === 'header') {
       ctx.addIssue({
         code: 'custom',
-        path: ['TENANT_MODE'],
+        path: ['AUTH_MODE'],
         message:
-          'el tenant por cabecera (X-Tenant-Id) no puede usarse en producción: requiere autenticación (F1)',
+          'el tenant por cabecera (X-Tenant-Id) no puede usarse en producción: use AUTH_MODE=jwt (ADR-0013)',
       });
     }
   })
   .transform((env) => ({
     ...env,
+    AUTH_MODE:
+      env.AUTH_MODE ?? (env.NODE_ENV === 'production' ? ('jwt' as const) : ('header' as const)),
     GQL_INTROSPECTION:
       env.GQL_INTROSPECTION === undefined
         ? env.NODE_ENV !== 'production'

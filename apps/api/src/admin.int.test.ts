@@ -1,4 +1,5 @@
-import { randomUUID } from 'node:crypto';
+import { generateKeyPairSync, randomUUID } from 'node:crypto';
+import { AuthService, loadAuthConfig, signAccessToken, type Role } from '@bidstream/auth';
 import { buildDlqMessage } from '@bidstream/consumer';
 import type { PrismaClient } from '@bidstream/db';
 import { buildEvent, FixedClock, SequentialIdGenerator, type DomainEvent } from '@bidstream/domain';
@@ -21,17 +22,41 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { lazyDlqAdmin } from './admin-dlq.js';
 import { buildApp } from './app.js';
 import { loadConfig } from './config.js';
-import { HeaderTenantResolver } from './tenant.js';
+import { JwtTenantResolver } from './auth-context.js';
 
 // Administración del DLQ por HTTP contra Kafka real (la base de datos no interviene).
 const kafka = testKafkaConfig();
-const KEY = 'una-clave-de-servicio-de-al-menos-32-caracteres';
 const TENANT = '11111111-1111-4111-8111-111111111111';
 const config = loadConfig({
   LOG_LEVEL: 'info',
   NODE_ENV: 'test',
+  AUTH_MODE: 'jwt',
   DATABASE_URL: 'postgresql://u:p@localhost:5432/d',
 });
+const headerConfig = loadConfig({
+  LOG_LEVEL: 'info',
+  NODE_ENV: 'test',
+  DATABASE_URL: 'postgresql://u:p@localhost:5432/d',
+});
+const keys = generateKeyPairSync('ed25519');
+const authConfig = loadAuthConfig({
+  AUTH_JWT_PRIVATE_KEY: Buffer.from(
+    keys.privateKey.export({ type: 'pkcs8', format: 'pem' }).toString(),
+  ).toString('base64'),
+  AUTH_JWT_KEY_ID: 'k1',
+});
+const NOW = new Date('2026-11-13T10:00:00.000Z');
+
+/** Token de acceso de un usuario de ese rol (la administración del DLQ no consulta la base de datos). */
+async function tokenFor(role: Role, tenantId = TENANT): Promise<string> {
+  if (authConfig.signer === null) throw new Error('sin clave de firma');
+  return signAccessToken(
+    authConfig.signer,
+    { userId: randomUUID(), tenantId, role },
+    authConfig.accessTtlSeconds,
+    NOW,
+  );
+}
 const noDb = new Proxy(
   {},
   {
@@ -61,24 +86,28 @@ afterEach(async () => {
   await Promise.all([events.drop(), dlq.drop()]);
 });
 
-async function start(options: { withKey?: boolean } = {}): Promise<FastifyInstance> {
+async function start(options: { withAuth?: boolean } = {}): Promise<FastifyInstance> {
   [events, dlq] = await Promise.all([createTestTopic({ partitions: 2 }), createTestTopic()]);
   group = `dlq-reprocessor-http-${randomUUID()}`;
   logs = [];
   app = buildApp({
-    config,
+    // sin autenticación (modo header) las rutas de administración ni se registran
+    config: options.withAuth === false ? headerConfig : config,
     prisma: noDb,
-    clock: new FixedClock(new Date('2026-11-13T10:00:00.000Z')),
+    clock: new FixedClock(NOW),
     ids: new SequentialIdGenerator(),
-    tenantResolver: new HeaderTenantResolver(),
+    tenantResolver: new JwtTenantResolver(),
     eventsTopic: events.name,
     commandsTopic: 'bidstream.commands.bid',
     logStream: { write: (chunk) => void logs.push(chunk) },
-    ...(options.withKey === false
+    ...(options.withAuth === false
       ? {}
       : {
+          auth: {
+            service: new AuthService({ db: noDb, config: authConfig, now: () => NOW }),
+            verifier: authConfig.verifier,
+          },
           adminDlq: {
-            apiKey: KEY,
             port: lazyDlqAdmin({
               env: { KAFKA_BROKERS: kafka.brokers.join(',') },
               overrides: { dlqTopic: dlq.name, reprocessorGroup: group, timeoutMs: 20_000 },
@@ -124,11 +153,15 @@ async function seed(count: number, extra: { poison?: boolean } = {}): Promise<Do
   return created;
 }
 
-const headers = { 'x-admin-key': KEY };
+let headers: { authorization: string };
 
-describe('protección', () => {
-  it('sin ADMIN_API_KEY las rutas de administración no existen (404)', async () => {
-    const server = await start({ withKey: false });
+beforeAll(async () => {
+  headers = { authorization: `Bearer ${await tokenFor('ADMIN')}` };
+});
+
+describe('protección (rol ADMIN)', () => {
+  it('sin autenticación configurada las rutas de administración no existen (404)', async () => {
+    const server = await start({ withAuth: false });
     expect((await server.inject({ method: 'GET', url: '/v1/admin/dlq', headers })).statusCode).toBe(
       404,
     );
@@ -145,14 +178,12 @@ describe('protección', () => {
   });
 
   it.each([
-    ['sin cabecera', undefined],
-    ['clave incorrecta', 'x'.repeat(KEY.length)],
-    ['clave más corta', 'x'],
-    ['clave más larga', `${KEY}${KEY}`],
-    ['clave vacía', ''],
-  ])('%s → 401 problem+json sin pistas, en las dos rutas', async (_name, key) => {
+    ['sin token', undefined],
+    ['sin Bearer', 'Basic abc'],
+    ['token mal formado', 'Bearer no-es-un-jwt'],
+  ])('%s → 401 problem+json, en las dos rutas', async (_name, authorization) => {
     const server = await start();
-    const h = key === undefined ? {} : { 'x-admin-key': key };
+    const h = authorization === undefined ? {} : { authorization };
     for (const reply of [
       await server.inject({ method: 'GET', url: '/v1/admin/dlq', headers: h }),
       await server.inject({
@@ -164,7 +195,6 @@ describe('protección', () => {
     ]) {
       expect(reply.statusCode).toBe(401);
       expect(reply.headers['content-type']).toContain('application/problem+json');
-      expect(reply.body).not.toContain(KEY);
       expect(reply.json()).toMatchObject({
         type: 'urn:bidstream:problem:unauthorized',
         status: 401,
@@ -172,7 +202,24 @@ describe('protección', () => {
     }
   });
 
-  it('la clave correcta da acceso', async () => {
+  it.each(['SELLER', 'BIDDER'] as const)('un %s no puede administrar el DLQ: 403', async (role) => {
+    const server = await start();
+    const h = { authorization: `Bearer ${await tokenFor(role)}` };
+    for (const reply of [
+      await server.inject({ method: 'GET', url: '/v1/admin/dlq', headers: h }),
+      await server.inject({
+        method: 'POST',
+        url: '/v1/admin/dlq/reprocess',
+        headers: h,
+        payload: {},
+      }),
+    ]) {
+      expect(reply.statusCode).toBe(403);
+      expect(reply.json()).toMatchObject({ type: 'urn:bidstream:problem:forbidden' });
+    }
+  });
+
+  it('el rol ADMIN da acceso', async () => {
     const server = await start();
     expect((await server.inject({ method: 'GET', url: '/v1/admin/dlq', headers })).statusCode).toBe(
       200,
@@ -317,8 +364,8 @@ describe('POST /v1/admin/dlq/reprocess', () => {
       .find((l) => l['msg'] === 'reproceso del DLQ');
     expect(line).toMatchObject({ requestId: 'op-reproceso-1', mode: 'pending', republished: 2 });
     expect(line?.['eventIds']).toEqual(created.map((e) => e.eventId));
+    expect(line?.['actor']).toMatch(/^[0-9a-f-]{36}$/); // quién pidió la operación (el admin del token)
     const text = logs.join('');
-    expect(text).not.toContain(KEY);
     expect(text).not.toContain('LotClosed'); // el contenido de los eventos no se registra
     expect(text).not.toContain('winnerId');
   });
@@ -339,8 +386,8 @@ describe('documentación', () => {
     );
   });
 
-  it('sin clave configurada, las rutas tampoco aparecen en la documentación', async () => {
-    const server = await start({ withKey: false });
+  it('sin autenticación configurada, las rutas tampoco aparecen en la documentación', async () => {
+    const server = await start({ withAuth: false });
     const doc = (await server.inject({ method: 'GET', url: '/v1/docs/json' })).json<{
       paths: Record<string, unknown>;
     }>();

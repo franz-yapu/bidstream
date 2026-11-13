@@ -21,11 +21,6 @@ const envSchema = z
     BOOTSTRAP_ADMIN_TENANT_ID: z.uuid().optional(),
     BOOTSTRAP_ADMIN_EMAIL: z.email().optional(),
     BOOTSTRAP_ADMIN_PASSWORD: z.string().min(12).max(128).optional(),
-    /**
-     * Clave de servicio del administrador del DLQ (D7). Opcional: sin ella las rutas de administración no
-     * existen. Provisional hasta que F1 aporte roles.
-     */
-    ADMIN_API_KEY: z.string().min(32, 'ADMIN_API_KEY debe tener al menos 32 caracteres').optional(),
   })
   .superRefine((env, ctx) => {
     if (env.NODE_ENV === 'production' && env.AUTH_MODE === 'header') {

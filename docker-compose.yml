@@ -1,8 +1,9 @@
 # Entorno local: Kafka (KRaft, sin Zookeeper) + PostgreSQL. Uso: `make up`.
 name: bidstream
 
-# Configuración común de los procesos de la aplicación (perfil `app`, `make demo`). NODE_ENV=development
-# porque la API y GraphQL no arrancan en producción hasta F1 (autenticación, Q4): es una demostración local.
+# Configuración común de los procesos de la aplicación (perfil `app`, `make demo`). Corren con
+# NODE_ENV=production: identidad por JWT (F1) y firma de eventos obligatoria (F3). Las claves y el
+# administrador de la demo los genera `scripts/generate-keys.mjs` (no se versionan).
 x-app: &app
   profiles: [app]
   restart: unless-stopped
@@ -14,7 +15,7 @@ x-app: &app
     kafka: { condition: service_healthy }
     postgres: { condition: service_healthy }
   environment:
-    NODE_ENV: development
+    NODE_ENV: production
     DATABASE_URL: postgresql://${POSTGRES_USER:-bidstream}:${POSTGRES_PASSWORD:-bidstream}@postgres:5432/${POSTGRES_DB:-bidstream}
     KAFKA_BROKERS: kafka:19092
     KAFKA_LOG_LEVEL: error
@@ -111,6 +112,12 @@ services:
   # --- Aplicación: una imagen por proceso, construida con el Dockerfile (H2) ---
   api:
     <<: *app
+    # la clave PRIVADA de emisión de JWT y el administrador inicial solo los tiene la API
+    env_file:
+      - path: .env.signing.public
+        required: false
+      - path: .env.auth.private
+        required: false
     build: { context: ., args: { APP: api } }
     image: bidstream-api:local
     ports: ['${API_PORT:-3000}:3000']
@@ -118,6 +125,12 @@ services:
 
   graphql:
     <<: *app
+    # GraphQL solo verifica tokens: recibe claves públicas
+    env_file:
+      - path: .env.signing.public
+        required: false
+      - path: .env.auth.public
+        required: false
     build: { context: ., args: { APP: graphql } }
     image: bidstream-graphql:local
     ports: ['${GRAPHQL_PORT:-4000}:4000']

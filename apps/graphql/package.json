@@ -12,6 +12,7 @@
     }
   },
   "dependencies": {
+    "@bidstream/auth": "^0.0.0",
     "@bidstream/db": "^0.0.0",
     "@bidstream/domain": "^0.0.0",
     "@bidstream/notifier": "^0.0.0",

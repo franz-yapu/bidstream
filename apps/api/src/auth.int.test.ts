@@ -84,6 +84,14 @@ async function registerAndLogin(tenantId = TENANT) {
   return { address, userId: registered.json<{ userId: string }>().userId, ...tokens };
 }
 
+/** Crea un usuario del rol indicado (lo hace el servicio: el registro público solo crea postores) y entra. */
+async function userWithRole(role: 'ADMIN' | 'SELLER' | 'BIDDER', tenantId = TENANT) {
+  const address = email();
+  const user = await service.createUser({ tenantId, email: address, password: PASSWORD, role });
+  const login = await post('/v1/auth/login', { tenantId, email: address, password: PASSWORD });
+  return { ...user, accessToken: login.json<{ accessToken: string }>().accessToken };
+}
+
 const bearer = (token: string) => ({ authorization: `Bearer ${token}` });
 
 describe('flujo', () => {
@@ -251,7 +259,7 @@ describe('la identidad sale del token, no de cabeceras', () => {
 
   it('sin token los comandos dan 401; las cabeceras X-Tenant-Id y X-Bidder-Id se ignoran', async () => {
     expect((await post('/v1/auctions', auction, { 'x-tenant-id': TENANT })).statusCode).toBe(401);
-    const { accessToken } = await registerAndLogin();
+    const { accessToken } = await userWithRole('SELLER');
     const before = await db.prisma.outboxMessage.count();
     const res = await post('/v1/auctions', auction, {
       ...bearer(accessToken),

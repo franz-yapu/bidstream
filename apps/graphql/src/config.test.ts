@@ -11,7 +11,7 @@ describe('loadConfig', () => {
       NODE_ENV: 'development',
       LOG_LEVEL: 'info',
       DATABASE_URL: DB,
-      TENANT_MODE: 'header',
+      AUTH_MODE: 'header',
       GQL_MAX_PAGE_SIZE: 100,
     });
   });
@@ -36,7 +36,11 @@ describe('loadConfig', () => {
   it('exige DATABASE_URL', () => {
     expect(() => loadConfig({})).toThrow();
   });
-  it('el tenant por cabecera no puede usarse en producción (hasta F1)', () => {
-    expect(() => loadConfig({ DATABASE_URL: DB, NODE_ENV: 'production' })).toThrow(/producción/);
+  it('AUTH_MODE: header fuera de producción, jwt en producción, y header prohibido allí (F1)', () => {
+    expect(loadConfig({ DATABASE_URL: DB }).AUTH_MODE).toBe('header');
+    expect(loadConfig({ DATABASE_URL: DB, NODE_ENV: 'production' }).AUTH_MODE).toBe('jwt');
+    expect(() =>
+      loadConfig({ DATABASE_URL: DB, NODE_ENV: 'production', AUTH_MODE: 'header' }),
+    ).toThrow(/producción/);
   });
 });

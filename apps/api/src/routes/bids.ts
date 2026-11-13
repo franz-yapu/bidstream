@@ -46,6 +46,7 @@ export const bidRoutes =
     app.post(
       '/lots/:id/bids',
       {
+        config: { roles: ['BIDDER'] },
         schema: {
           tags: ['comandos'],
           summary: 'Solicita una puja',
@@ -58,6 +59,7 @@ export const bidRoutes =
             202: z.object({ commandId: z.uuid(), status: z.literal('ACCEPTED') }),
             400: problem,
             401: problem,
+            403: problem,
             404: problem,
             422: problem,
           },

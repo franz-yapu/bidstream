@@ -265,3 +265,8 @@ El relay firma los bytes exactos del valor y los cinco consumidores verifican (`
 **Fecha:** 2026-11-13 · **Fuente:** Claude · **Estado:** activa
 
 Usuarios con Argon2id, JWT de acceso EdDSA de 10 minutos y refresh opaco de un solo uso con rotación y revocación de familia; bloqueo 5/15 min y un único error de credenciales. En modo `jwt` el tenant y el postor salen del token y las cabeceras de identidad se ignoran. Se conserva el modo `header` solo fuera de producción. Falta la parte 2 (roles, deny-by-default, GraphQL, `X-Admin-Key` → `ADMIN`), con el ADR-0013.
+
+## DEC-051 — F1 completa: roles, denegar por defecto, GraphQL autenticado y demo en producción
+**Fecha:** 2026-11-13 · **Fuente:** Claude · **Estado:** activa
+
+Toda ruta de la API exige token y declara sus roles o se deniega; `X-Admin-Key` se sustituye por el rol `ADMIN`; GraphQL verifica el mismo JWT. La API y GraphQL ya arrancan con `NODE_ENV=production` (ADR-0010 queda reemplazada por el ADR-0013) y `make demo` los ejecuta así, con firma de eventos obligatoria y credenciales generadas. Quedan F2 (límite de pujas, cabeceras y CORS) y F5 (`SECURITY.md`).

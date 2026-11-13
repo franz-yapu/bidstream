@@ -39,6 +39,14 @@ for app in "${APPS[@]}"; do
       ;;
   esac
 
+  # F1: en producción la API y GraphQL exigen claves de autenticación (nunca arrancan en modo cabecera)
+  case "$app" in
+    api|graphql)
+      out="$(docker run --rm -e DATABASE_URL="$DB" "$image" 2>&1 || true)"
+      [[ "$out" == *AUTH_JWT* ]] || fail "$app en producción sin claves debería exigir AUTH_JWT_*"
+      ;;
+  esac
+
   # con configuración debe arrancar (la firma se prueba en las pruebas de integración y en `make demo`)
   name="smoke-$app-$$"
   port=$((13000 + RANDOM % 1000))

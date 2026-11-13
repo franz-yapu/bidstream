@@ -1,3 +1,4 @@
+import { loadAuthConfig } from '@bidstream/auth';
 import { createPrismaClient } from '@bidstream/db';
 import { createLogger, levelFromEnv } from '@bidstream/logging';
 import { InMemoryNotificationBus, startNotificationListener } from '@bidstream/notifier';
@@ -19,7 +20,14 @@ const listener = startNotificationListener({
   logger,
 });
 
-const server = buildHttpServer({ config, db: prisma, bus });
+// F1: en modo jwt las claves públicas son obligatorias (AUTH_JWT_PUBLIC_KEYS); este proceso solo verifica
+const verifier = config.AUTH_MODE === 'jwt' ? loadAuthConfig(process.env).verifier : undefined;
+const server = buildHttpServer({
+  config,
+  db: prisma,
+  bus,
+  ...(verifier === undefined ? {} : { verifier }),
+});
 
 function shutdown(signal: string): void {
   logger.info({ signal }, 'apagando');
