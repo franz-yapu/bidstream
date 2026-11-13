@@ -42,7 +42,7 @@ wait_for "el lote no apareció en GraphQL" "{ lot(id: \\\"$lot_id\\\") { id stat
 
 bidder="22222222-2222-4222-8222-222222222222"
 bid="$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$API/v1/lots/$lot_id/bids" \
-  -H 'content-type: application/json' -H "x-tenant-id: $TENANT" -H "x-bidder-id: $bidder" \
+  -H 'content-type: application/json' -H "x-tenant-id: $TENANT" -H "x-bidder-id: $bidder" -H "idempotency-key: demo-$(date +%s)-$RANDOM" \
   -d '{"amount":"100.00"}')"
 [ "$bid" = 202 ] || { echo "✗ la puja no devolvió 202 sino $bid" >&2; exit 1; }
 echo "API: puja aceptada (202)"

@@ -2,12 +2,13 @@ import type { PrismaClient } from '../generated/client.js';
 import { PrismaAuctionRepository } from './auction-repository.js';
 import { PrismaLotRepository } from './lot-repository.js';
 import { PrismaOutbox } from './outbox.js';
+import { PrismaIdempotencyStore } from '../idempotency/idempotency-store.js';
 import { PrismaLotDecisionRepository } from '../decision/lot-decision-repository.js';
 
 /** Lo que necesitan los repositorios: sirve igual un `PrismaClient` que el cliente de una transacción. */
 export type DbClient = Pick<
   PrismaClient,
-  'lot' | 'auction' | 'outboxMessage' | 'lotDecision' | '$queryRaw'
+  'lot' | 'auction' | 'outboxMessage' | 'lotDecision' | 'idempotencyKey' | '$queryRaw'
 >;
 
 export interface TransactionScope {
@@ -16,6 +17,8 @@ export interface TransactionScope {
   readonly outbox: PrismaOutbox;
   /** Estado autoritativo del decisor de pujas (ADR-0011). */
   readonly decisions: PrismaLotDecisionRepository;
+  /** Claves de idempotencia de la puja (C4). */
+  readonly idempotency: PrismaIdempotencyStore;
 }
 
 export interface TransactionOptions {
@@ -39,6 +42,7 @@ export function withTransaction<T>(
         auctions: new PrismaAuctionRepository(tx),
         outbox: new PrismaOutbox(tx),
         decisions: new PrismaLotDecisionRepository(tx),
+        idempotency: new PrismaIdempotencyStore(tx),
       }),
     { timeout: options.timeoutMs ?? 5_000 },
   );

@@ -80,6 +80,7 @@ describe('migración inicial', () => {
       'auction',
       'audit_log',
       'bid',
+      'idempotency_key',
       'lot',
       'lot_decision',
       'outbox_message',

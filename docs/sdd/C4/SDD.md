@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **C4** (`868mw2q2w`, https://app.clickup.com/t/868mw2q2w).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Aprobado (2026-11-13)
+- **Estado:** Implementado (2026-11-13)
 - **Versión:** 0.1 · **Fecha:** 2026-11-13
 - **Depende de:** C3 (Q2 resuelta).
 - **Fuentes de verdad citadas:** spec §5 (claves de idempotencia), §7 («Exige cabecera `Idempotency-Key`»), §8 A04; `docs/sdd/C3/SDD.md`; `apps/api/src/errors.ts` (`problem+json`)
@@ -97,3 +97,12 @@
 1. **Formato y obligatoriedad** (16–128 caracteres seguros; `400` si falta). ¿Bien?
 2. **Limpieza de claves viejas:** propuesta de borrarlas dentro del `closer` (D8) cada hora, para no crear otro proceso. ¿O prefieres una tarea propia?
 3. **Ámbito `(tenant, bidder, key)`** (propuesta).
+
+---
+
+## Changelog de implementación
+
+- Migración `0005_idempotency_key` (sin deriva respecto al esquema), `PrismaIdempotencyStore` (`claim`, `countSince`, `deleteOlderThan`) y `requestHash` (SHA-256 canónico, 4 pruebas unitarias).
+- `placeBid` reclama la clave dentro de la transacción del comando; `POST /v1/lots/:id/bids` exige `Idempotency-Key` (`400` sin ella o con formato inválido), responde con el `commandId` original y `Idempotency-Replayed: true` en repeticiones, y `422` ante reutilización.
+- 10 pruebas de integración (`idempotency.int.test.ts`): cabecera, límites 16/128, repetición, 422 por monto o lote, **20 peticiones simultáneas → 1 comando**, aislamiento entre postores, clave no consumida por un 404, rollback conjunto, `countSince`/`deleteOlderThan` y OpenAPI.
+- Pendiente de D8: ejecutar `deleteOlderThan` (24 h) desde el `closer`.

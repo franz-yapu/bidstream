@@ -167,13 +167,13 @@ Para desarrollar, probar o depurar proceso a proceso: [`docs/DESARROLLO.md`](doc
 Lo que está hecho y probado (más de 360 pruebas unitarias y 230 de integración contra Kafka y
 PostgreSQL reales):
 
-- Comandos REST de subastas, lotes y pujas (la puja la decide un consumidor en orden por lote), outbox, relay, los tres consumidores, proyección, GraphQL con
+- Comandos REST de subastas, lotes y pujas (con `Idempotency-Key`; la puja la decide un consumidor en orden por lote), outbox, relay, los tres consumidores, proyección, GraphQL con
   límites y subscriptions, DLQ con reproceso administrativo, reproceso completo desde el log, logs con
   correlación, imágenes de contenedor y CI con auditoría de dependencias.
 
 Lo que **no** está todavía:
 
-- **Idempotencia de la puja** (`Idempotency-Key`) y **límite de pujas por postor** (C4, F2).
+- **Límite de pujas por postor** y cabeceras de seguridad (F2).
 - **Autenticación y usuarios.** Mientras tanto el tenant llega por cabecera y la API **no arranca con
   `NODE_ENV=production`** ([ADR-0010](docs/adr/0010-tenant-provisional-por-cabecera.md)).
 - **Cierre automático de lotes por tiempo** (D8), **firma de eventos** (F3) y `SECURITY.md` con el mapeo OWASP.
