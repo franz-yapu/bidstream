@@ -33,8 +33,10 @@ jobs:
         run: npm audit --omit=dev --audit-level=low
       - name: Todas las dependencias, aviso alto o crítico
         run: npm audit --audit-level=high
+      # npm 10 (el de Node 22) no verifica las atestaciones de algunos paquetes recientes
+      # (EMISSINGSIGNATUREKEY, raíz de confianza de Sigstore antigua): se usa un npm 11 fijado.
       - name: Firmas del registro
-        run: npm audit signatures
+        run: npx --yes npm@11.21.2 audit signatures
       - name: Resumen informativo
         if: always()
         run: npm audit || true

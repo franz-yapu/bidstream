@@ -50,8 +50,8 @@ describe('auditoría de dependencias (security.yml)', () => {
     expect(text).toContain('npm audit --audit-level=high');
   });
 
-  it('verifica las firmas del registro', () => {
-    expect(text).toContain('npm audit signatures');
+  it('verifica las firmas del registro con un npm fijado (no flotante)', () => {
+    expect(text).toMatch(/npx --yes npm@\d+\.\d+\.\d+ audit signatures/);
   });
 
   it('se ejecuta en PR, en main y cada semana (los avisos aparecen sin cambiar el código)', () => {
