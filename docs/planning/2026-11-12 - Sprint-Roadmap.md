@@ -74,7 +74,7 @@ B1 (5 h), B2 (3 h), C1 (5 h), C2 (5 h), D1 (5 h), D2 (3 h), D3 (5 h), D4 (5 h), 
 | F2 | F Seguridad | Límite de pujas por postor y minuto, cabeceras de seguridad, CORS con lista blanca | 3 | ✅ Listo | 3 | 868mw2q3t | spec §8 | C3 | Cascada de Q2 |
 | F3 | F Seguridad | Firma de eventos y verificación en el consumidor | 5 | ✅ Listo | 3 | 868mw2q37 | spec §8 | A2, D3 | Q5: algoritmo y gestión de clave de firma |
 | F4 | F Seguridad | Logs estructurados con id de correlación | 3 | ✅ Listo | 2 | 868mvty18 | spec §8 | C1 | — |
-| F5 | F Seguridad | SECURITY.md con el mapeo OWASP Top 10 | 2 | ⛔ Bloqueado | 3 | | spec §8 | F1, F2, F3, F4, F6 | Cascada de Q2/Q4/Q5 |
+| F5 | F Seguridad | SECURITY.md con el mapeo OWASP Top 10 | 2 | 🟡 En curso | 3 | 868mw4qtv | spec §8 | F1, F2, F3, F4, F6 | Cascada de Q2/Q4/Q5 |
 | F6 | F Seguridad | `npm audit` en CI y actualizaciones automáticas de dependencias | 1 | ✅ Listo | 2 | 868mvty1c | spec §8 | 0.3 | — |
 | G1 | G Calidad | Pruebas de integración con PostgreSQL y Kafka reales (testcontainers) | 5 | ✅ Listo | 2 | 868mvty1g | spec §10 | 0.2, B1 | — |
 | G2 | G Calidad | Prueba de reproceso: N eventos, borrar proyección, reconstruir, estado idéntico | 3 | ✅ Listo | 2 | 868mvty1q | spec §5, §10 | D4, G1 | — |

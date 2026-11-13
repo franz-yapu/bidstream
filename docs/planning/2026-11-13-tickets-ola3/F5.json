@@ -1,0 +1,8 @@
+{
+  "name": "[DOCS] Seguridad: SECURITY.md con el mapeo OWASP Top 10 (2 h)",
+  "markdown_content": "## Explicación\n\nEl mapeo OWASP Top 10 que pide la spec §8: qué se hizo para cada punto, con su evidencia verificable.\n\n## Referencias\n\n- SDD: docs/sdd/F5/SDD.md\n- Spec: docs/product/bidstream_spec.md §8\n- Estimación: 2 h\n",
+  "assignees": [
+    114193632
+  ],
+  "custom_fields": []
+}
