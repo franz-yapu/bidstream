@@ -2,15 +2,19 @@ import { createServer, type Server } from 'node:http';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import { createYoga } from 'graphql-yoga';
 import type { Config } from './config.js';
+import { InMemoryNotificationBus, type NotificationBus } from '@bidstream/notifier';
 import { createLoaders, type GraphQLContext, type ReadDb } from './context.js';
 import { useLimits } from './limits/index.js';
 import { resolvers } from './resolvers.js';
+import { SubscriptionRegistry } from './subscriptions/registry.js';
 import { typeDefs } from './schema.js';
 import { resolveTenant } from './tenant.js';
 
 export interface ServerDeps {
   readonly config: Config;
   readonly db: ReadDb;
+  /** Bus del que se alimentan las subscriptions; por defecto uno vacío (solo lecturas). */
+  readonly bus?: NotificationBus;
 }
 
 /** Esquema ejecutable: el SDL de `schema.ts` y sus resolvers. */
@@ -26,6 +30,8 @@ export const schema = makeExecutableSchema({
  */
 export function buildYoga(deps: ServerDeps) {
   const { config } = deps;
+  const bus = deps.bus ?? new InMemoryNotificationBus();
+  const subscriptions = new SubscriptionRegistry();
   return createYoga<Record<string, never>, GraphQLContext>({
     schema,
     graphqlEndpoint: '/graphql',
@@ -57,6 +63,10 @@ export function buildYoga(deps: ServerDeps) {
         db: deps.db,
         loaders: createLoaders(deps.db, tenantId),
         maxPageSize: config.GQL_MAX_PAGE_SIZE,
+        bus,
+        subscriptions,
+        maxSubscriptionsPerTenant: config.GQL_MAX_SUBSCRIPTIONS_PER_TENANT,
+        subscriptionQueue: config.GQL_SUBSCRIPTION_QUEUE,
       };
     },
   });

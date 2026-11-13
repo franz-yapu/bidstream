@@ -181,3 +181,8 @@ Aprobados con las propuestas de Claude: (E1) Yoga schema-first sin identidad de 
 **Fecha:** 2026-11-12 · **Fuente:** Claude · **Estado:** activa
 
 E2 implementado: límites de profundidad (7), complejidad (1 000, con coste por `first`), alias (15), tokens (2 000) y cuerpo (100 KB), *batching* desactivado e introspección configurable. Los rechazos ocurren antes de ejecutar resolvers. **Nota para clientes:** para recibir 400 en errores de validación hay que enviar `Accept: application/graphql-response+json`; con `application/json` Yoga responde 200 con los errores en el cuerpo. **Mejora pendiente:** cortar en streaming los cuerpos sin `content-length`.
+
+## DEC-035 — E3 implementado: el núcleo funciona de punta a punta
+**Fecha:** 2026-11-12 · **Fuente:** Claude · **Estado:** activa
+
+E3 implementado: `Subscription.lotUpdated` por SSE con cola acotada, cupo por tenant, comprobación de existencia y aviso `ResyncRequired`. **Con E3 los seis procesos del núcleo funcionan juntos**, demostrado con una prueba de flujo completo con todo real (API → relay → Kafka → projector y notifier → PostgreSQL → GraphQL consulta y subscription). `npm run dev:graphql` arranca consultas y subscriptions (puerto 4000). Para recibir errores previos al flujo con su código HTTP, los clientes deben aceptar `application/graphql-response+json`. **Pendiente para H1:** `LISTEN` y SSE de larga duración en Azure.

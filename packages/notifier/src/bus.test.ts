@@ -74,4 +74,16 @@ describe('InMemoryNotificationBus', () => {
     bus.publishResync();
     expect(n).toBe(1);
   });
+
+  it('subscriptionCount cuenta las suscripciones activas y baja al cancelarlas', () => {
+    const bus = new InMemoryNotificationBus();
+    expect(bus.subscriptionCount()).toBe(0);
+    const off1 = bus.subscribe(A, LOT1, () => undefined);
+    const off2 = bus.subscribe(A, LOT1, () => undefined);
+    bus.subscribe(B, LOT2, () => undefined);
+    expect(bus.subscriptionCount()).toBe(3);
+    off1();
+    off2();
+    expect(bus.subscriptionCount()).toBe(1);
+  });
 });

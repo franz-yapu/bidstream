@@ -79,4 +79,60 @@ export const typeDefs = /* GraphQL */ `
     hasNextPage: Boolean!
     endCursor: String
   }
+
+  type Subscription {
+    "Actualizaciones públicas de un lote en tiempo real. Entrega best-effort: ante un ResyncRequired, vuelva a consultar el lote."
+    lotUpdated(lotId: ID!): LotUpdate!
+  }
+
+  union LotUpdate =
+    | LotPublishedUpdate
+    | BidPlacedUpdate
+    | LotExtendedUpdate
+    | LotClosedUpdate
+    | ResyncRequired
+
+  interface LotUpdateBase {
+    eventId: ID!
+    occurredAt: DateTime!
+    lotId: ID!
+  }
+
+  type LotPublishedUpdate implements LotUpdateBase {
+    eventId: ID!
+    occurredAt: DateTime!
+    lotId: ID!
+    auctionId: ID!
+    startingPrice: Money!
+    closesAt: DateTime!
+  }
+
+  type BidPlacedUpdate implements LotUpdateBase {
+    eventId: ID!
+    occurredAt: DateTime!
+    lotId: ID!
+    "Nuevo precio vigente. No incluye quién pujó."
+    amount: Money!
+    placedAt: DateTime!
+  }
+
+  type LotExtendedUpdate implements LotUpdateBase {
+    eventId: ID!
+    occurredAt: DateTime!
+    lotId: ID!
+    newClosesAt: DateTime!
+  }
+
+  type LotClosedUpdate implements LotUpdateBase {
+    eventId: ID!
+    occurredAt: DateTime!
+    lotId: ID!
+    finalAmount: Money
+    hasWinner: Boolean!
+  }
+
+  "Se pudieron perder actualizaciones (reconexión del canal o cliente lento)."
+  type ResyncRequired {
+    message: String!
+  }
 `;

@@ -4,8 +4,10 @@ import { GraphQLScalarType } from 'graphql';
 import type { GraphQLContext } from './context.js';
 import { checkPageSize, findActiveLots, findLot, findLotBids, type RankedBid } from './data.js';
 import { badInput } from './errors.js';
+import { subscriptionResolvers } from './subscriptions/lot-updated.js';
 
 const MONEY = /^\d+\.\d{2}$/;
+const ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
 
 const Money = new GraphQLScalarType<string, string>({
   name: 'Money',
@@ -16,10 +18,12 @@ const Money = new GraphQLScalarType<string, string>({
   },
 });
 
-const DateTime = new GraphQLScalarType<Date, string>({
+const DateTime = new GraphQLScalarType<Date | string, string>({
   name: 'DateTime',
   serialize(value) {
     if (value instanceof Date) return value.toISOString();
+    // Las notificaciones ya traen la fecha como texto ISO-8601 UTC.
+    if (typeof value === 'string' && ISO.test(value)) return value;
     throw new TypeError('DateTime debe ser una fecha');
   },
 });
@@ -72,4 +76,5 @@ export const resolvers = {
   Bid: {
     amount: (bid: RankedBid) => money(bid.amount),
   },
+  ...subscriptionResolvers,
 };

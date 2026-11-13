@@ -10,6 +10,8 @@ export interface NotificationBus {
   /** Aviso de que se perdió el canal y pudieron perderse notificaciones: los clientes deben recargar. */
   publishResync(): void;
   onResync(handler: () => void): () => void;
+  /** Suscripciones de lote activas: permite comprobar que no quedan fugas al desconectar. */
+  subscriptionCount(): number;
 }
 
 const keyOf = (tenantId: string, lotId: string): string => `${tenantId}/${lotId}`;
@@ -45,6 +47,12 @@ export class InMemoryNotificationBus implements NotificationBus {
       set.delete(handler);
       if (set.size === 0) this.handlers.delete(key);
     };
+  }
+
+  subscriptionCount(): number {
+    let total = 0;
+    for (const set of this.handlers.values()) total += set.size;
+    return total;
   }
 
   publishResync(): void {

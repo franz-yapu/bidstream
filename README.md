@@ -110,3 +110,15 @@ Una API GraphQL sin límites es una denegación de servicio esperando a ocurrir:
 | Tamaño del cuerpo                      | 100 KB | `GQL_MAX_BODY_BYTES` |
 
 El coste de una lista es `first × (1 + coste de sus hijos)`: `activeLots(first: 100) { bids(first: 100) { … } }` cuesta 30 100 y se rechaza; con `first: 10` en ambas, 310, y pasa. Los errores llevan un código estable (`QUERY_TOO_DEEP`, `QUERY_TOO_COMPLEX`, `TOO_MANY_ALIASES`, `QUERY_TOO_LARGE`, `BAD_USER_INPUT`). Los clientes deben enviar `Accept: application/graphql-response+json` para recibir un 400 en los errores de validación.
+
+### Subscriptions en tiempo real
+
+`Subscription.lotUpdated(lotId)` entrega, por SSE, las actualizaciones públicas de un lote (`LotPublishedUpdate`, `BidPlacedUpdate`, `LotExtendedUpdate`, `LotClosedUpdate`) y un `ResyncRequired` cuando pudieron perderse mensajes (reconexión del canal o cliente lento): en ese caso, vuelve a consultar `lot(id)`. Nunca incluye quién pujó.
+
+```bash
+curl -N localhost:4000/graphql -H 'content-type: application/json' -H 'accept: text/event-stream, application/graphql-response+json' \
+  -H 'x-tenant-id: 11111111-1111-4111-8111-111111111111' \
+  -d '{"query":"subscription { lotUpdated(lotId: \"<id>\") { __typename ... on BidPlacedUpdate { amount } ... on LotClosedUpdate { finalAmount } } }"}'
+```
+
+Límites: 500 suscripciones simultáneas por tenant y una cola de 50 por suscriptor (`GQL_MAX_SUBSCRIPTIONS_PER_TENANT`, `GQL_SUBSCRIPTION_QUEUE`). El camino es: el `notifier` hace `NOTIFY` en PostgreSQL → cada réplica GraphQL escucha el canal → su suscripción.
