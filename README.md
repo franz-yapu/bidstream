@@ -183,8 +183,7 @@ PostgreSQL reales):
 
 Lo que **no** está todavía:
 
-- **`SECURITY.md`** con el mapeo OWASP.
 - **Despliegue en Azure** (Bicep, Event Hubs, Container Apps) y métricas de _consumer lag_.
 
-Documentación: [especificación](docs/product/bidstream_spec.md) · [ADR](docs/adr/README.md) ·
+Documentación: [especificación](docs/product/bidstream_spec.md) · [seguridad (OWASP)](SECURITY.md) · [ADR](docs/adr/README.md) ·
 [SDD por ticket](docs/sdd/) · [guía de desarrollo](docs/DESARROLLO.md).
