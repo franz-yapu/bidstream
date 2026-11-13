@@ -17,6 +17,7 @@
     "@bidstream/domain": "^0.0.0",
     "@bidstream/kafka": "^0.0.0",
     "@bidstream/logging": "^0.0.0",
+    "@bidstream/signing": "^0.0.0",
     "@bidstream/notifier": "^0.0.0",
     "zod": "^4.6.7"
   },

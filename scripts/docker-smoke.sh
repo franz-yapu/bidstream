@@ -31,7 +31,15 @@ for app in "${APPS[@]}"; do
   out="$(docker run --rm "$image" 2>&1 || true)"
   [[ "$out" == *DATABASE_URL* ]] || fail "$app sin DATABASE_URL no dio un error claro"
 
-  # con configuración debe arrancar
+  # F3: un consumidor en producción sin claves de verificación se niega a arrancar (nunca acepta sin firma)
+  case "$app" in
+    projector|auditor|notifier|decider)
+      out="$(docker run --rm -e DATABASE_URL="$DB" "$image" 2>&1 || true)"
+      [[ "$out" == *EVENT_VERIFICATION_KEYS* ]] || fail "$app en producción sin claves debería exigir EVENT_VERIFICATION_KEYS"
+      ;;
+  esac
+
+  # con configuración debe arrancar (la firma se prueba en las pruebas de integración y en `make demo`)
   name="smoke-$app-$$"
   port=$((13000 + RANDOM % 1000))
   case "$app" in
@@ -40,7 +48,7 @@ for app in "${APPS[@]}"; do
     *) extra=() ;;
   esac
   docker run -d --rm --name "$name" --network host \
-    -e DATABASE_URL="$DB" -e KAFKA_BROKERS="$BROKERS" "${extra[@]}" "$image" >/dev/null
+    -e DATABASE_URL="$DB" -e KAFKA_BROKERS="$BROKERS" -e EVENT_SIGNATURE_MODE=off "${extra[@]}" "$image" >/dev/null
   ok=0
   for _ in $(seq 1 40); do
     if [ "$app" = api ] || [ "$app" = graphql ]; then

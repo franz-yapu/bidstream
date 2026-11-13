@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "noEmit": false, "composite": true, "rootDir": "src", "outDir": "dist" },
+  "exclude": ["src/**/*.test.ts", "src/**/*.int.test.ts"]
+}

@@ -255,3 +255,8 @@ La clave se reclama en la misma transacción que el comando (`(tenant, postor, c
 **Fecha:** 2026-11-13 · **Fuente:** Claude · **Estado:** activa
 
 `apps/closer` emite `CloseLot` por la partición del lote y `AuctionClosed` con ids deterministas (el outbox deduplica); `LotClosed` lo escribe solo el decisor. Cada hora borra las claves de idempotencia caducadas. Lección: la señal de cierre que se adelanta a una extensión por anti-sniping no cierra el lote; hace falta una señal posterior (el `closer` la emite sola cuando la proyección refleja la nueva hora).
+
+## DEC-049 — F3 implementado: mensajes firmados con Ed25519
+**Fecha:** 2026-11-13 · **Fuente:** Claude · **Estado:** activa
+
+El relay firma los bytes exactos del valor y los cinco consumidores verifican (`enforce` en producción); un mensaje manipulado o sin firma va al DLQ como veneno sin aplicarse. Rotación por `kid`, historial anterior aceptado con un corte, y D7 conserva la firma. Claves de desarrollo generadas por `make demo` y nunca versionadas; la privada solo para el relay. Pendiente: Key Vault (H1) y sellar el historial para quitar el corte.
