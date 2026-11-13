@@ -3,6 +3,7 @@ import { makeExecutableSchema } from '@graphql-tools/schema';
 import { createYoga } from 'graphql-yoga';
 import type { Config } from './config.js';
 import { createLoaders, type GraphQLContext, type ReadDb } from './context.js';
+import { useLimits } from './limits/index.js';
 import { resolvers } from './resolvers.js';
 import { typeDefs } from './schema.js';
 import { resolveTenant } from './tenant.js';
@@ -32,6 +33,21 @@ export function buildYoga(deps: ServerDeps) {
     // GraphiQL solo en desarrollo.
     graphiql: config.NODE_ENV === 'development',
     maskedErrors: { isDev: false },
+    plugins: [
+      useLimits(
+        {
+          maxDepth: config.GQL_MAX_DEPTH,
+          maxComplexity: config.GQL_MAX_COMPLEXITY,
+          maxAliases: config.GQL_MAX_ALIASES,
+          maxTokens: config.GQL_MAX_TOKENS,
+          maxBodyBytes: config.GQL_MAX_BODY_BYTES,
+          introspection: config.GQL_INTROSPECTION,
+        },
+        schema,
+      ),
+    ],
+    // Los lotes de consultas multiplican el coste y esquivarían el cálculo por petición.
+    batching: false,
     logging:
       config.LOG_LEVEL === 'silent' ? false : config.LOG_LEVEL === 'error' ? 'error' : 'warn',
     context: ({ request }): GraphQLContext => {

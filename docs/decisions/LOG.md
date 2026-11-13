@@ -176,3 +176,8 @@ SDD en borrador: `docs/sdd/E1`, `E2` y `E3`. Hallazgos: (1) la spec solo da las 
 **Fecha:** 2026-11-12 · **Fuente:** usuario («probados con tus propuestas», entendido como aprobados) · **Estado:** activa
 
 Aprobados con las propuestas de Claude: (E1) Yoga schema-first sin identidad de postores, listas acotadas, `nextMinimumBid`, `graphql` 16.x y tenant provisional prohibido en producción; (E2) reglas propias de profundidad y alias más `graphql-query-complexity` con estimador por `first`, valores 7/1 000/15/2 000/100 KB/100, introspección desactivada en producción, `first` fuera de rango rechazado y consultas persistidas como evolución; (E3) SSE de Yoga, `LotUpdate` como unión con `ResyncRequired`, comprobación de existencia del lote, cola de 50 y 500 suscripciones por tenant, y la prueba de flujo completo dentro del ticket. E1 implementado: `apps/graphql` (`npm run dev:graphql`, puerto 4000). Nota: `Lot.auction` es nulo-able por la consistencia eventual.
+
+## DEC-034 — E2 implementado
+**Fecha:** 2026-11-12 · **Fuente:** Claude · **Estado:** activa
+
+E2 implementado: límites de profundidad (7), complejidad (1 000, con coste por `first`), alias (15), tokens (2 000) y cuerpo (100 KB), *batching* desactivado e introspección configurable. Los rechazos ocurren antes de ejecutar resolvers. **Nota para clientes:** para recibir 400 en errores de validación hay que enviar `Accept: application/graphql-response+json`; con `application/json` Yoga responde 200 con los errores en el cuerpo. **Mejora pendiente:** cortar en streaming los cuerpos sin `content-length`.
