@@ -69,7 +69,9 @@ export const auctionRoutes =
       },
       async (request, reply) => {
         const tenantId = deps.tenantResolver.resolve(request);
-        const { auctionId } = await openAuction(deps, tenantId, request.body);
+        const { auctionId } = await openAuction(deps, tenantId, request.body, {
+          correlationId: request.id,
+        });
         return reply
           .code(201)
           .header('location', `/v1/auctions/${auctionId}`)
@@ -103,6 +105,7 @@ export const auctionRoutes =
           tenantId,
           request.params.id,
           request.body,
+          { correlationId: request.id },
         );
         return reply
           .code(201)

@@ -1,28 +1,13 @@
 import { createPrismaClient } from '@bidstream/db';
+import { createLogger, levelFromEnv } from '@bidstream/logging';
 import { createProducer, loadKafkaConfig } from '@bidstream/kafka';
 import { loadRelayConfig } from './config.js';
-import { OutboxRelay, type Logger } from './relay.js';
+import { OutboxRelay } from './relay.js';
 
 const config = loadRelayConfig(process.env);
 const kafka = loadKafkaConfig({ KAFKA_CLIENT_ID: 'bidstream-relay', ...process.env });
 
-const log =
-  (level: string): Logger['info'] =>
-  (fields, message) => {
-    const { err, ...rest } = fields;
-    console.log(
-      JSON.stringify({
-        level,
-        time: new Date().toISOString(),
-        msg: message,
-        ...rest,
-        ...(err === undefined
-          ? {}
-          : { error: err instanceof Error ? err.message : JSON.stringify(err) }),
-      }),
-    );
-  };
-const logger: Logger = { info: log('info'), warn: log('warn'), error: log('error') };
+const logger = createLogger({ service: 'relay', level: levelFromEnv(process.env['LOG_LEVEL']) });
 
 const prisma = createPrismaClient(config.DATABASE_URL);
 const producer = await createProducer(kafka);

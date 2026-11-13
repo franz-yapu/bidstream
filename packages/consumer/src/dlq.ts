@@ -1,4 +1,5 @@
 import { primitives } from '@bidstream/domain';
+import { maskUrlPasswords } from '@bidstream/logging';
 import type { IncomingMessage } from '@bidstream/kafka';
 import { z } from 'zod';
 
@@ -25,6 +26,8 @@ export const dlqMessageSchema = z.strictObject({
    * Opcional para que los mensajes anteriores sigan siendo válidos; sirve de guardia contra bucles.
    */
   reprocessCount: z.number().int().min(0).optional(),
+  /** Id de correlación de la petición que originó el evento (F4); opcional por compatibilidad. */
+  correlationId: z.string().min(1).max(128).optional(),
 });
 export type DlqMessage = z.infer<typeof dlqMessageSchema>;
 
@@ -32,9 +35,12 @@ const MAX_ERROR_MESSAGE = 1_000;
 
 export function describeError(error: unknown): { name: string; message: string } {
   if (error instanceof Error) {
-    return { name: error.name, message: error.message.slice(0, MAX_ERROR_MESSAGE) };
+    return {
+      name: error.name,
+      message: maskUrlPasswords(error.message).slice(0, MAX_ERROR_MESSAGE),
+    };
   }
-  return { name: 'Error', message: String(error).slice(0, MAX_ERROR_MESSAGE) };
+  return { name: 'Error', message: maskUrlPasswords(String(error)).slice(0, MAX_ERROR_MESSAGE) };
 }
 
 /** Reprocesos previos del mensaje, leídos de su cabecera; cualquier valor inválido cuenta como 0. */
@@ -50,6 +56,7 @@ export function buildDlqMessage(input: {
   readonly attempts: number;
   readonly reason: DlqReason;
   readonly now: Date;
+  readonly correlationId?: string | undefined;
 }): DlqMessage {
   const { message } = input;
   return {
@@ -62,5 +69,6 @@ export function buildDlqMessage(input: {
     source: { topic: message.topic, partition: message.partition, offset: message.offset },
     failedAt: input.now.toISOString(),
     reprocessCount: reprocessCountOf(message),
+    ...(input.correlationId === undefined ? {} : { correlationId: input.correlationId }),
   };
 }

@@ -211,3 +211,8 @@ Aprobados con las propuestas de Claude: (D7) clave de servicio `X-Admin-Key` con
 **Fecha:** 2026-11-13 · **Fuente:** Claude · **Estado:** activa
 
 ADR 0002–0010 (outbox, `202` en la puja, GraphQL solo lecturas, proyección sin FK, un relay, idempotencia y DLQ, `LISTEN/NOTIFY`, reproceso desde el log, tenant provisional), con alternativas y «Verificación» comprobada por pruebas. ADR-0003 está aceptado pero sin implementar (C3, Q2).
+
+## DEC-041 — SDD de F4, H2, H5 e I1 aprobados con las propuestas; F4 implementado
+**Fecha:** 2026-11-13 · **Fuente:** usuario («aprobados con tus propuestas»), Claude · **Estado:** activa
+
+Aprobados: (F4) paquete `@bidstream/logging`, correlación por `meta.correlationId` y cabecera Kafka sin cambiar `version`, redacción por clave y URL; (H2) un `Dockerfile` con `ARG APP`, `bookworm-slim` por digest y job `docker`; (H5) script reproducible con huella del estado, `PROJECTOR_GROUP_ID`, grabación opción C; (I1) README de producto y `docs/DESARROLLO.md`, `make demo`, comparación sin cifras. F4 implementado.

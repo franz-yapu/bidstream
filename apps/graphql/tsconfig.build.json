@@ -11,6 +11,7 @@
     "src/**/*.int.test.ts"
   ],
   "references": [
+    { "path": "../../packages/logging/tsconfig.build.json" },
     {
       "path": "../../packages/domain/tsconfig.build.json"
     },

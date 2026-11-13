@@ -5,6 +5,7 @@
   "references": [
     { "path": "../domain/tsconfig.build.json" },
     { "path": "../kafka/tsconfig.build.json" },
-    { "path": "../db/tsconfig.build.json" }
+    { "path": "../db/tsconfig.build.json" },
+    { "path": "../logging/tsconfig.build.json" }
   ]
 }
