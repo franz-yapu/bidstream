@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { KafkaJS } from '@confluentinc/kafka-javascript';
 import {
   createConsumer,
+  createProducer,
   loadKafkaConfig,
   type IncomingMessage,
   type KafkaConfig,
@@ -81,4 +82,21 @@ export async function collectMessages(options: CollectOptions): Promise<Incoming
     await consumer.disconnect();
   }
   return received.slice(0, count);
+}
+
+/**
+ * Calienta el coordinador de grupos: en un clúster recién creado el primer uso de un grupo (aunque
+ * sea solo consultar su lag) puede tardar o colgarse hasta que existe `__consumer_offsets`. Una
+ * suite que consulta grupos antes de unirse a uno lo llama en `beforeAll`.
+ */
+export async function warmUpGroupCoordinator(): Promise<void> {
+  const topic = await createTestTopic();
+  const producer = await createProducer(testKafkaConfig());
+  try {
+    await producer.publish(topic.name, { key: 'calentamiento', value: '{}' });
+    await collectMessages({ topic: topic.name, count: 1, timeoutMs: 90_000 });
+  } finally {
+    await producer.disconnect();
+    await topic.drop();
+  }
 }

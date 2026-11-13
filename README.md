@@ -83,6 +83,20 @@ npm run reprocess -w @bidstream/projector -- --yes
 
 Borra `bid`, `lot` y `auction`, reposiciona el grupo `projector` a `earliest` y reconstruye mostrando el progreso. La prueba `reprocess.int.test.ts` demuestra que el estado final es idéntico, con uno o con varios consumidores en paralelo. Mientras reconstruye, las lecturas devuelven un estado parcial.
 
+## Reproceso del DLQ (administración)
+
+Un evento que agota sus 4 intentos va al DLQ. Con `ADMIN_API_KEY` definida (≥ 32 caracteres) la API expone, protegidas por la cabecera `X-Admin-Key`:
+
+```bash
+curl -H "X-Admin-Key: $ADMIN_API_KEY" localhost:3000/v1/admin/dlq                      # lista sin consumir
+curl -X POST -H "X-Admin-Key: $ADMIN_API_KEY" -H 'content-type: application/json' \
+     -d '{"limit": 10}' localhost:3000/v1/admin/dlq/reprocess                          # pendientes
+curl -X POST -H "X-Admin-Key: $ADMIN_API_KEY" -H 'content-type: application/json' \
+     -d '{"eventIds": ["<uuid>"]}' localhost:3000/v1/admin/dlq/reprocess               # selectivo
+```
+
+Solo se republican los `retries-exhausted` (los `poison` se quedan), con un máximo de 3 reprocesos por evento. **Advertencia de orden:** el evento reprocesado llega al final de su partición, después de los posteriores; si la integridad de la proyección importa, usa el reproceso completo de arriba. Sin `ADMIN_API_KEY` las rutas no existen (404).
+
 ## API de lectura (GraphQL)
 
 ```bash

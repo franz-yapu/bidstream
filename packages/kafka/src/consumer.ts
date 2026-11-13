@@ -12,12 +12,17 @@ export interface IncomingMessage {
 
 export type MessageHandler = (message: IncomingMessage) => Promise<void>;
 
+export interface RunHooks {
+  /** Se llama cuando el offset del mensaje ya está confirmado (desconectar antes cortaría el commit). */
+  readonly onCommitted?: (message: IncomingMessage) => void;
+}
+
 export interface KafkaConsumer {
   /**
    * Procesa mensajes en orden por partición. El offset se confirma **solo** cuando el handler
    * resuelve: si lanza, el mensaje no se confirma y volverá a entregarse (al menos una vez).
    */
-  run(handler: MessageHandler): Promise<void>;
+  run(handler: MessageHandler, hooks?: RunHooks): Promise<void>;
   disconnect(): Promise<void>;
 }
 
@@ -55,20 +60,22 @@ export async function createConsumer(
   await consumer.subscribe({ topics: [...options.topics] });
 
   return {
-    run: (handler) =>
+    run: (handler, hooks) =>
       consumer.run({
         eachMessage: async ({ topic, partition, message }) => {
-          await handler({
+          const incoming: IncomingMessage = {
             topic,
             partition,
             offset: message.offset,
             key: message.key?.toString('utf8') ?? null,
             value: message.value?.toString('utf8') ?? null,
             headers: headersToRecord(message.headers),
-          });
+          };
+          await handler(incoming);
           await consumer.commitOffsets([
             { topic, partition, offset: (BigInt(message.offset) + 1n).toString() },
           ]);
+          hooks?.onCommitted?.(incoming);
         },
       }),
     // `stop()` no está implementado en @confluentinc/kafka-javascript: `disconnect()` detiene el

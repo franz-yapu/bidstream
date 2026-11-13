@@ -65,3 +65,59 @@ describe('describeError', () => {
     expect(describeError(new Error('x'.repeat(5000))).message).toHaveLength(1000);
   });
 });
+
+describe('reprocessCount', () => {
+  const at = new Date('2026-11-13T10:00:00.000Z');
+  const base = (headers: Record<string, string>) => ({
+    ...message,
+    headers,
+  });
+
+  it('un mensaje DLQ anterior, sin reprocessCount, sigue siendo válido', () => {
+    const old = buildDlqMessage({
+      message,
+      consumer: 'projector',
+      error: 'x',
+      attempts: 4,
+      reason: 'retries-exhausted',
+      now: at,
+    });
+    const withoutField = Object.fromEntries(
+      Object.entries(old).filter(([key]) => key !== 'reprocessCount'),
+    );
+    expect(dlqMessageSchema.safeParse(withoutField).success).toBe(true);
+  });
+
+  it.each([
+    [{}, 0],
+    [{ 'x-reprocess-count': '2' }, 2],
+    [{ 'x-reprocess-count': '0' }, 0],
+    [{ 'x-reprocess-count': 'abc' }, 0],
+    [{ 'x-reprocess-count': '-1' }, 0],
+    [{ 'x-reprocess-count': '1.5' }, 0],
+  ])('se lee de la cabecera x-reprocess-count: %j → %i', (headers, expected) => {
+    const dlq = buildDlqMessage({
+      message: base(headers),
+      consumer: 'projector',
+      error: 'x',
+      attempts: 4,
+      reason: 'retries-exhausted',
+      now: at,
+    });
+    expect(dlq.reprocessCount).toBe(expected);
+    expect(dlqMessageSchema.safeParse(dlq).success).toBe(true);
+  });
+
+  it('un reprocessCount negativo o no entero no es válido', () => {
+    const ok = buildDlqMessage({
+      message,
+      consumer: 'c',
+      error: 'x',
+      attempts: 1,
+      reason: 'poison',
+      now: at,
+    });
+    expect(dlqMessageSchema.safeParse({ ...ok, reprocessCount: -1 }).success).toBe(false);
+    expect(dlqMessageSchema.safeParse({ ...ok, reprocessCount: 1.5 }).success).toBe(false);
+  });
+});
