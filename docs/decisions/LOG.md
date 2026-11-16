@@ -275,3 +275,18 @@ Toda ruta de la API exige token y declara sus roles o se deniega; `X-Admin-Key` 
 **Fecha:** 2026-11-13 · **Fuente:** Claude · **Estado:** activa
 
 30 pujas por postor y minuto contadas en PostgreSQL con un bloqueo por postor (exacto entre réplicas, sin Redis); cabeceras de seguridad y CORS con lista blanca vacía por defecto en API y GraphQL; límite global por IP por réplica. Queda `SECURITY.md` (F5).
+
+## DEC-053 — F5 implementado: `SECURITY.md` con el mapeo OWASP
+**Fecha:** 2026-11-13 · **Fuente:** Claude · **Estado:** activa
+
+`SECURITY.md` recorre A01–A10 con la evidencia en el repo y estados honestos: ✅ lo implementado y probado, 🟡 TLS/Key Vault (H1/H3) y alertas (H4) pendientes con su bloqueo y la mitigación vigente. Una prueba de documentación impide filas faltantes, enlaces rotos, estados sin bloqueo y secretos en el archivo; el README ya no lo lista como pendiente. Canal de reporte: aviso privado de GitHub (sin inventar un correo). Queda abierto Q1 para cerrar los puntos ⛔.
+
+## DEC-054 — H1 parcial: Bicep de Azure sin desplegar
+**Fecha:** 2026-11-13 · **Fuente:** usuario (eligió H1 sin suscripción) · **Estado:** activa
+
+`infra/` modela Event Hubs (3 hubs con las particiones de la spec y los 6 grupos reales), PostgreSQL Flexible 16 con TLS, Key Vault con RBAC, ACR sin admin, Log Analytics y Container Apps para los 8 procesos; solo API y GraphQL tienen ingress externo y los secretos se resuelven por Key Vault con identidad administrada. Los secretos entran como parámetros `@secure()` y las claves Ed25519 se generan fuera del repo. **No se ha ejecutado `az bicep build` ni ningún despliegue** (no hay Azure CLI ni Q1): H3/H4 siguen bloqueados. Límite documentado: Event Hubs no compacta y retiene como máximo 7 días en Standard (90 en Premium), así que el «log ilimitado» de la spec es deuda de H1.
+
+## DEC-055 — H5 descartada: no se graba el vídeo del reproceso
+**Fecha:** 2026-11-13 · **Fuente:** usuario · **Estado:** activa
+
+El usuario decide no grabar el vídeo (H5). El README deja de presentarlo como pendiente y lo declara no incluido; la prueba de documentación acepta las tres variantes honestas (enlace, pendiente marcado o no incluido explícito) y exige que no se mezclen. El guion y `make demo-reprocess` se conservan para que la demostración siga siendo reproducible.

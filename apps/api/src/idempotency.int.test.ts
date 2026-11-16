@@ -228,12 +228,12 @@ describe('atomicidad y mantenimiento', () => {
         requestHash: 'x',
         commandId: randomUUID(),
         lotId,
-        createdAt: new Date(Date.now() - 48 * 3_600_000),
+        createdAt: new Date(NOW.getTime() - 48 * 3_600_000),
       },
     });
-    expect(await store.countSince(TENANT, who, new Date(Date.now() - 60_000))).toBe(2);
-    expect(await store.countSince(TENANT, who, new Date(Date.now() - 72 * 3_600_000))).toBe(3);
-    const deleted = await store.deleteOlderThan(new Date(Date.now() - 24 * 3_600_000));
+    expect(await store.countSince(TENANT, who, new Date(NOW.getTime() - 60_000))).toBe(2);
+    expect(await store.countSince(TENANT, who, new Date(NOW.getTime() - 72 * 3_600_000))).toBe(3);
+    const deleted = await store.deleteOlderThan(new Date(NOW.getTime() - 24 * 3_600_000));
     expect(deleted).toBeGreaterThanOrEqual(1);
     expect(await db.prisma.idempotencyKey.count({ where: { bidderId: who } })).toBe(2);
   });
