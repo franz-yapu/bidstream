@@ -1,5 +1,6 @@
 import js from '@eslint/js';
 import { defineConfig } from 'eslint/config';
+import reactHooks from 'eslint-plugin-react-hooks';
 import tseslint from 'typescript-eslint';
 
 const infraImports = [
@@ -31,6 +32,7 @@ export default defineConfig(
       '**/coverage/**',
       'node_modules/**',
       'docs/**',
+      'apps/web/public/**',
       'scripts/**',
     ],
   },
@@ -78,6 +80,29 @@ export default defineConfig(
             },
           ],
         },
+      ],
+    },
+  },
+  {
+    // El front (J1) es código de navegador: hooks de React y sin acceso a paquetes de servidor.
+    files: ['apps/web/src/**/*.{ts,tsx}'],
+    extends: [reactHooks.configs.flat.recommended],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@bidstream/*', 'node:*', 'pg', 'kafkajs', '@confluentinc/*', 'fastify'],
+              message: 'apps/web es código de navegador: no importa paquetes de servidor.',
+            },
+          ],
+        },
+      ],
+      // los componentes de React no devuelven promesas en los manejadores de eventos
+      '@typescript-eslint/no-misused-promises': [
+        'error',
+        { checksVoidReturn: { attributes: false } },
       ],
     },
   },

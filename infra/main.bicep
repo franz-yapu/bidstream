@@ -58,6 +58,12 @@ param eventSigningRequiredFrom string = '2026-11-13T00:00:00.000Z'
 @description('Orígenes CORS permitidos (vacío = ninguno).')
 param corsAllowedOrigins string = ''
 
+@description('URL pública de la API REST (la ve el navegador; https://…, sin barra final).')
+param webApiUrl string
+
+@description('URL pública de GraphQL (la ve el navegador; https://…/graphql).')
+param webGraphqlUrl string
+
 @description('Tag de las imágenes publicadas por H3.')
 param imageTag string = 'latest'
 
@@ -218,6 +224,8 @@ module containerApps 'modules/containerapps.bicep' = {
     keyVaultUri: keyVault.outputs.vaultUri
     eventHubsNamespaceName: eventHubsName
     corsAllowedOrigins: corsAllowedOrigins
+    webApiUrl: webApiUrl
+    webGraphqlUrl: webGraphqlUrl
     eventSigningRequiredFrom: eventSigningRequiredFrom
     authJwtKeyId: authJwtKeyId
     eventSigningKeyId: eventSigningKeyId

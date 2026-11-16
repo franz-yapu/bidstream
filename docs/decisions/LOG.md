@@ -295,3 +295,9 @@ El usuario decide no grabar el vídeo (H5). El README deja de presentarlo como p
 **Fecha:** 2026-11-16 · **Fuente:** usuario (eligió React + Vite) · **Estado:** activa
 
 Se abre J1 (ClickUp `868mwftc2`): SPA en `apps/web` con React 19, TypeScript y Vite, sin SSR (todo está tras login). Requiere `Query.auctions` en GraphQL, que hoy no existe. SDD en borrador (`docs/sdd/J1/SDD.md`); no se escribe código hasta su aprobación. Preguntas abiertas en §7 (refresh token en `sessionStorage`, motivo del rechazo de puja, lista de subastas, tenant en el login, diseño).
+
+## DEC-057 — J1 aprobado e implementado: front en React + Vite
+**Fecha:** 2026-11-16 · **Fuente:** usuario («aprobados con tus propuestas») · **Estado:** activa
+
+Se aprueba el SDD de J1 con las cinco propuestas de §7: refresco en `sessionStorage` y acceso en memoria, rechazo de puja sin motivo (mensaje genérico), `Query.auctions` en GraphQL, tenant precargado en el login y diseño sobrio en español. Se implementa en dos PR (`Query.auctions` y `apps/web`): SPA con imagen nginx sin privilegios en `make demo` (:8080), e2e con Playwright en el job `demo` de la CI y política de código en `web-policy.test.ts` ([ADR-0014](../adr/0014-front-spa-react-vite.md)). El usuario pidió además instalar los skills de diseño `emil-design-eng` e `impeccable` (globales, no versionados) y Playwright para revisar.
+

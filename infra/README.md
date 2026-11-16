@@ -1,7 +1,7 @@
 # Infraestructura Azure (H1)
 
 Bicep de la spec §9: **Event Hubs** (Kafka), **PostgreSQL Flexible**, **Key Vault**, **ACR**,
-**Log Analytics** y **Container Apps** con los ocho procesos de `apps/`. Es infraestructura como
+**Log Analytics** y **Container Apps** con los ocho procesos de `apps/` y el front (`web`, con entrada externa). Es infraestructura como
 código, **no** un despliegue hecho: H3 (publicar imágenes) y H4 (métricas) siguen pendientes y Q1
 (suscripción y presupuesto) sigue abierto.
 

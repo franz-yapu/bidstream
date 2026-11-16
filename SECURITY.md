@@ -117,6 +117,12 @@ GraphQL. Los errores salen como `problem+json` sin pila ni mensajes de la base. 
 a `jwt` en producción. El contenedor corre como usuario `node`, sobre una imagen fijada por digest y
 sin secretos.
 
+**Front.** La imagen del front es nginx sin privilegios, fijada por digest, con una CSP que solo
+permite la API y GraphQL configuradas (`script-src 'self'`, sin `unsafe-inline`), `frame-ancestors 'none'` y
+cabeceras de seguridad; la configuración se valida al arrancar. Política vigilada en
+[web-policy.test.ts](packages/testing/src/policy/web-policy.test.ts) y
+[server.conf.template](apps/web/docker/server.conf.template).
+
 **Evidencia.** [app.ts](apps/api/src/app.ts),
 [security-headers.ts](apps/graphql/src/security-headers.ts), [problem.ts](apps/api/src/problem.ts),
 [config.ts](apps/api/src/config.ts), [Dockerfile](Dockerfile).
@@ -147,6 +153,13 @@ de GitHub van fijadas por SHA; `minimatch` está forzado a una versión corregid
 revoca la familia. Tras **5 fallos** la cuenta se bloquea **15 minutos**. Todos los fallos de
 credenciales devuelven el mismo error. El registro público solo crea `BIDDER`; un `ADMIN` crea los
 demás roles en su tenant. El login tiene límite por IP.
+
+**Front.** El token de acceso vive solo en memoria y el de refresco en `sessionStorage` (nunca
+`localStorage`); varios 401 simultáneos hacen un único refresco y, si falla, la sesión se cierra. La
+interfaz solo oculta lo que el backend ya deniega. Cubierto por
+[session.test.ts](apps/web/src/api/session.test.ts) y [session.ts](apps/web/src/api/session.ts).
+**Límite:** un XSS podría leer el refresco de la pestaña; mitigado con CSP estricta y sin HTML crudo,
+y a futuro con una cookie `HttpOnly` ([ADR-0014](docs/adr/0014-front-spa-react-vite.md)).
 
 **Evidencia.** [service.ts](packages/auth/src/service.ts), [tokens.ts](packages/auth/src/tokens.ts),
 [password.ts](packages/auth/src/password.ts), [config.ts](packages/auth/src/config.ts),

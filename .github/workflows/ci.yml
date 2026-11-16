@@ -84,6 +84,18 @@ jobs:
         run: make demo
       - name: Flujo completo (API → Kafka → PostgreSQL → GraphQL)
         run: scripts/demo-smoke.sh
+      # J1: el front de verdad, con un navegador (login → subasta → puja → precio en vivo)
+      - name: Instalar el navegador de Playwright
+        run: npx playwright install --with-deps chromium
+      - name: E2E del front
+        run: npm run e2e -w @bidstream/web
+      - name: Informe de Playwright
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: playwright-results
+          path: apps/web/test-results
+          retention-days: 7
       - name: Logs de los contenedores
         if: failure()
         run: docker compose --profile app logs --no-color

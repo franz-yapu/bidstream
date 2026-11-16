@@ -7,6 +7,7 @@ export default defineConfig({
     // `graphql` existe como paquete ESM y CJS: se procesan juntos para tener una sola copia.
     server: { deps: { inline: [/graphql/, /@graphql-tools/, /@whatwg-node/, /@envelop/] } },
     include: ['packages/*/src/**/*.test.ts', 'apps/*/src/**/*.test.ts'],
-    exclude: ['**/node_modules/**', '**/dist/**', '**/*.int.test.ts'],
+    // `apps/web` se prueba con jsdom y su propia configuración (`npm run test -w @bidstream/web`)
+    exclude: ['**/node_modules/**', '**/dist/**', '**/*.int.test.ts', 'apps/web/**'],
   },
 });
