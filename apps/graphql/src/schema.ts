@@ -65,6 +65,10 @@ export const typeDefs = /* GraphQL */ `
     finalAmount: Money
     "Importe mínimo de la siguiente puja (regla del dominio)."
     nextMinimumBid: Money!
+    "Quién va ganando ahora (la puja más alta); nulo si no hay pujas o el lote ya cerró."
+    leader: Bidder
+    "Quién ganó; nulo mientras el lote está abierto o si se cerró desierto."
+    winner: Bidder
     bids(first: Int = 20, after: String): BidConnection!
   }
 
@@ -74,7 +78,14 @@ export const typeDefs = /* GraphQL */ `
     placedAt: DateTime!
     "Posición en el ranking del lote: 1 es la mejor puja."
     rank: Int!
+    "Quién pujó. Solo el nombre público que eligió (ADR-0015)."
+    bidder: Bidder
     awarded: Boolean!
+  }
+
+  "Postor tal como lo ve el público: únicamente su nombre público, nunca correo ni identificador."
+  type Bidder {
+    displayName: String!
   }
 
   type BidConnection {

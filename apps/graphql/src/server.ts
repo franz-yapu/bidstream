@@ -10,7 +10,7 @@ import { SubscriptionRegistry } from './subscriptions/registry.js';
 import { typeDefs } from './schema.js';
 import type { TokenVerifier } from '@bidstream/auth';
 import { securityHeaders } from './security-headers.js';
-import { resolveTenant, resolveTenantFromToken } from './tenant.js';
+import { anonymousTenant, resolveTenant, resolveTenantFromToken } from './tenant.js';
 
 export interface ServerDeps {
   readonly config: Config;
@@ -75,7 +75,10 @@ export function buildYoga(deps: ServerDeps) {
       config.LOG_LEVEL === 'silent' ? false : config.LOG_LEVEL === 'error' ? 'error' : 'warn',
     context: async ({ request }): Promise<GraphQLContext> => {
       let tenantId: string;
-      if (config.AUTH_MODE === 'jwt') {
+      const anonymous = anonymousTenant(request.headers, config.PUBLIC_TENANT_ID);
+      if (anonymous !== null) {
+        tenantId = anonymous;
+      } else if (config.AUTH_MODE === 'jwt') {
         if (deps.verifier === undefined)
           throw new Error('AUTH_MODE=jwt exige un verificador de tokens');
         tenantId = await resolveTenantFromToken(request.headers, deps.verifier, deps.now?.());

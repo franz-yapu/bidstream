@@ -134,6 +134,9 @@ model AppUser {
   id             String         @id @db.Uuid
   tenantId       String         @map("tenant_id") @db.Uuid
   email          String
+  /// Nombre público (J2, ADR-0015): lo único del postor que se muestra en las pujas. Único por tenant
+  /// sin distinguir mayúsculas (índice sobre `lower(display_name)` creado a mano en la migración 0008).
+  displayName    String         @map("display_name")
   passwordHash   String         @map("password_hash")
   role           UserRole
   status         UserStatus     @default(ACTIVE)

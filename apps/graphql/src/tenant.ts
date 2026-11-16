@@ -40,3 +40,18 @@ export async function resolveTenantFromToken(
     throw error;
   }
 }
+
+/**
+ * Tenant de un visitante anónimo (J2): el configurado en `PUBLIC_TENANT_ID`, solo si la petición **no
+ * trae ninguna credencial**. Si trae una (aunque sea inválida) no se degrada a anónimo: así un token
+ * caducado se nota en lugar de verse como un visitante.
+ */
+export function anonymousTenant(
+  headers: Headers,
+  publicTenantId: string | undefined,
+): string | null {
+  if (publicTenantId === undefined) return null;
+  const hasCredentials =
+    (headers.get('authorization') ?? '') !== '' || (headers.get('x-tenant-id') ?? '') !== '';
+  return hasCredentials ? null : publicTenantId;
+}

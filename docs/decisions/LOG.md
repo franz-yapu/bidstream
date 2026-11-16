@@ -301,3 +301,8 @@ Se abre J1 (ClickUp `868mwftc2`): SPA en `apps/web` con React 19, TypeScript y V
 
 Se aprueba el SDD de J1 con las cinco propuestas de §7: refresco en `sessionStorage` y acceso en memoria, rechazo de puja sin motivo (mensaje genérico), `Query.auctions` en GraphQL, tenant precargado en el login y diseño sobrio en español. Se implementa en dos PR (`Query.auctions` y `apps/web`): SPA con imagen nginx sin privilegios en `make demo` (:8080), e2e con Playwright en el job `demo` de la CI y política de código en `web-policy.test.ts` ([ADR-0014](../adr/0014-front-spa-react-vite.md)). El usuario pidió además instalar los skills de diseño `emil-design-eng` e `impeccable` (globales, no versionados) y Playwright para revisar.
 
+
+## DEC-058 — J2 aprobado: sitio público, vista de espectador y rediseño
+**Fecha:** 2026-11-16 · **Fuente:** usuario («aprobado», tras elegir nombre público de cada postor, estilo claro y editorial, home con en vivo, próximas, cómo funciona y finalizadas) · **Estado:** activa
+
+Se aprueba el SDD de J2 con las propuestas de §7 (acento verde bosque, nombre único por tenant, renombrado por administrador, portadas generadas, tres PR, fuentes propias). El nombre público de cada postor sustituye la regla «sin identidad de postores» ([ADR-0015](../adr/0015-nombre-publico-y-lectura-anonima.md)) y GraphQL admite lectura anónima del tenant público (`PUBLIC_TENANT_ID`). El diseño usa las skills `design-taste-frontend`, `impeccable` y `emil-design-eng`.

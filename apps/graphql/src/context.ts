@@ -4,12 +4,14 @@ import DataLoader from 'dataloader';
 import type { SubscriptionRegistry } from './subscriptions/registry.js';
 
 /** Solo lecturas sobre la proyección. */
-export type ReadDb = Pick<PrismaClient, 'auction' | 'lot' | 'bid'>;
+export type ReadDb = Pick<PrismaClient, 'auction' | 'lot' | 'bid' | 'appUser'>;
 
 export interface Loaders {
   readonly auctionById: DataLoader<string, Auction | null>;
   /** Lotes de una subasta por orden de cierre; el resolver aplica `first`. */
   readonly lotsByAuction: DataLoader<string, Lot[]>;
+  /** Nombre público de un usuario del tenant (J2, ADR-0015); nunca el correo ni otro dato. */
+  readonly displayNameById: DataLoader<string, string | null>;
 }
 
 export interface GraphQLContext {
@@ -43,6 +45,14 @@ export function createLoaders(db: ReadDb, tenantId: string): Loaders {
       for (const row of rows)
         byAuction.set(row.auctionId, [...(byAuction.get(row.auctionId) ?? []), row]);
       return ids.map((id) => byAuction.get(id) ?? []);
+    }),
+    displayNameById: new DataLoader<string, string | null>(async (ids) => {
+      const rows = await db.appUser.findMany({
+        where: { id: { in: [...ids] }, tenantId },
+        select: { id: true, displayName: true },
+      });
+      const byId = new Map(rows.map((r) => [r.id, r.displayName]));
+      return ids.map((id) => byId.get(id) ?? null);
     }),
   };
 }

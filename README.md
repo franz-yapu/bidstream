@@ -173,6 +173,7 @@ make demo-down          # detener
 El administrador de la demo es `admin@demo.local` (contraseña en `.env.auth.private`, tenant
 `11111111-1111-4111-8111-111111111111`); cualquiera puede registrarse como postor desde la web.
 El front es una SPA de React + Vite ([ADR-0014](docs/adr/0014-front-spa-react-vite.md)).
+Desde J2 los postores se muestran con su nombre público y GraphQL admite lectura anónima del tenant público ([ADR-0015](docs/adr/0015-nombre-publico-y-lectura-anonima.md)).
 
 Para desarrollar, probar o depurar proceso a proceso: [`docs/DESARROLLO.md`](docs/DESARROLLO.md).
 

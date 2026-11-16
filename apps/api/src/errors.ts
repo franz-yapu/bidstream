@@ -13,7 +13,9 @@ import {
   LotNotFound,
 } from './commands/index.js';
 import {
+  DisplayNameTaken,
   EmailAlreadyRegistered,
+  InvalidDisplayName,
   InvalidAccessToken,
   InvalidCredentials,
   InvalidRefreshToken,
@@ -119,6 +121,19 @@ export function registerErrorHandlers(app: FastifyInstance): void {
         type: 'urn:bidstream:problem:validation-error',
         title: 'Contraseña no aceptable',
         errors: error.problems.map((message) => ({ path: 'password', message })),
+      });
+    }
+    if (error instanceof InvalidDisplayName) {
+      return sendProblem(request, reply, 400, {
+        type: 'urn:bidstream:problem:validation-error',
+        title: 'Nombre público no aceptable',
+        errors: error.problems.map((message) => ({ path: 'displayName', message })),
+      });
+    }
+    if (error instanceof DisplayNameTaken) {
+      return sendProblem(request, reply, 409, {
+        type: 'urn:bidstream:problem:display-name-taken',
+        detail: 'Ese nombre público ya está en uso. Elija otro.',
       });
     }
     if (error instanceof EmailAlreadyRegistered) {

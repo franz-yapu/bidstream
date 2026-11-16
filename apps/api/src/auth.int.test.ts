@@ -67,6 +67,7 @@ afterAll(async () => {
 });
 
 const email = (): string => `usuario-${randomUUID().slice(0, 8)}@ejemplo.com`;
+const name = (): string => `Postor ${randomUUID().slice(0, 8)}`;
 const post = (url: string, payload: unknown, headers: Record<string, string> = {}) =>
   app.inject({ method: 'POST', url, payload: payload as never, headers });
 
@@ -76,6 +77,7 @@ async function registerAndLogin(tenantId = TENANT) {
     tenantId,
     email: address,
     password: PASSWORD,
+    displayName: name(),
   });
   expect(registered.statusCode).toBe(201);
   const login = await post('/v1/auth/login', { tenantId, email: address, password: PASSWORD });
@@ -102,7 +104,13 @@ describe('flujo', () => {
       url: '/v1/auth/me',
       headers: bearer(accessToken),
     });
-    expect(me.json()).toEqual({ userId, tenantId: TENANT, role: 'BIDDER', email: address });
+    expect(me.json()).toEqual({
+      userId,
+      tenantId: TENANT,
+      role: 'BIDDER',
+      email: address,
+      displayName: expect.stringMatching(/^Postor /) as unknown,
+    });
 
     const refreshed = await post('/v1/auth/refresh', { refreshToken });
     expect(refreshed.statusCode).toBe(200);
@@ -126,6 +134,7 @@ describe('flujo', () => {
       tenantId: TENANT,
       email: email(),
       password: PASSWORD,
+      displayName: name(),
       role: 'ADMIN',
     });
     expect(res.statusCode).toBe(400);
@@ -133,6 +142,7 @@ describe('flujo', () => {
       tenantId: TENANT,
       email: email(),
       password: PASSWORD,
+      displayName: name(),
     });
     expect(ok.json<{ role: string }>().role).toBe('BIDDER');
   });
@@ -142,6 +152,7 @@ describe('flujo', () => {
       tenantId: TENANT,
       email: email(),
       password: 'corta',
+      displayName: name(),
     });
     expect(weak.statusCode).toBe(400);
     expect(weak.json<{ errors: { message: string }[] }>().errors[0]?.message).toContain(
@@ -152,6 +163,7 @@ describe('flujo', () => {
       tenantId: TENANT,
       email: address,
       password: PASSWORD,
+      displayName: name(),
     });
     expect(dup.statusCode).toBe(409);
     expect(dup.body).not.toContain(address);
@@ -315,11 +327,83 @@ describe('la identidad sale del token, no de cabeceras', () => {
   });
 });
 
+describe('nombre público (J2, ADR-0015)', () => {
+  const register = (displayName: unknown, tenantId = TENANT) =>
+    post('/v1/auth/register', {
+      tenantId,
+      email: email(),
+      password: PASSWORD,
+      displayName,
+    });
+
+  it('es obligatorio y se devuelve en el registro y en /me', async () => {
+    expect(
+      (await post('/v1/auth/register', { tenantId: TENANT, email: email(), password: PASSWORD }))
+        .statusCode,
+    ).toBe(400);
+    const display = name();
+    const ok = await register(display);
+    expect(ok.statusCode).toBe(201);
+    expect(ok.json<{ displayName: string }>().displayName).toBe(display);
+  });
+
+  it('rechaza formatos no válidos con el motivo (HTML, demasiado corto o largo)', async () => {
+    for (const bad of ['a', 'x'.repeat(31), '<b>hola</b>', '  ', '!!nombre']) {
+      const res = await register(bad);
+      expect(res.statusCode, bad).toBe(400);
+      expect(res.json<{ errors: { path: string }[] }>().errors[0]?.path).toBe('displayName');
+    }
+  });
+
+  it('es único por tenant sin distinguir mayúsculas, con un 409 propio', async () => {
+    const base = `Unico ${randomUUID().slice(0, 6)}`;
+    expect((await register(base)).statusCode).toBe(201);
+    const dup = await register(base.toUpperCase());
+    expect(dup.statusCode).toBe(409);
+    expect(dup.json<{ type: string }>().type).toBe('urn:bidstream:problem:display-name-taken');
+    expect((await register(base, '99999999-9999-4999-8999-999999999999')).statusCode).toBe(201);
+  });
+
+  it('PATCH /me lo cambia, respeta la unicidad y exige sesión', async () => {
+    const { accessToken } = await registerAndLogin();
+    const bearer = { authorization: `Bearer ${accessToken}` };
+    const next = name();
+    const ok = await app.inject({
+      method: 'PATCH',
+      url: '/v1/auth/me',
+      payload: { displayName: next },
+      headers: bearer,
+    });
+    expect(ok.statusCode).toBe(200);
+    const me = await app.inject({ method: 'GET', url: '/v1/auth/me', headers: bearer });
+    expect(me.json<{ displayName: string }>().displayName).toBe(next);
+    const other = await registerAndLogin();
+    const clash = await app.inject({
+      method: 'PATCH',
+      url: '/v1/auth/me',
+      payload: { displayName: next },
+      headers: { authorization: `Bearer ${other.accessToken}` },
+    });
+    expect(clash.statusCode).toBe(409);
+    const anon = await app.inject({
+      method: 'PATCH',
+      url: '/v1/auth/me',
+      payload: { displayName: next },
+    });
+    expect(anon.statusCode).toBe(401);
+  });
+});
+
 describe('secretos y límites', () => {
   it('contraseñas, hashes y tokens nunca salen en los logs ni en las respuestas de error', async () => {
     const address = email();
     const secret = 'esta-es-una-contraseña-única-9876';
-    await post('/v1/auth/register', { tenantId: TENANT, email: address, password: secret });
+    await post('/v1/auth/register', {
+      tenantId: TENANT,
+      email: address,
+      password: secret,
+      displayName: name(),
+    });
     const bad = await post('/v1/auth/login', {
       tenantId: TENANT,
       email: address,

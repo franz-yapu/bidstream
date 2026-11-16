@@ -42,7 +42,7 @@ echo "API: subasta $auction_id aceptada (201)"
 bidder_email="postor-$RANDOM@demo.local"
 bidder_password="contraseña-del-postor-$RANDOM"
 reg="$(status -X POST "$API/v1/auth/register" -H 'content-type: application/json' \
-  -d "{\"tenantId\":\"$TENANT\",\"email\":\"$bidder_email\",\"password\":\"$bidder_password\"}")"
+  -d "{\"tenantId\":\"$TENANT\",\"email\":\"$bidder_email\",\"password\":\"$bidder_password\",\"displayName\":\"Postor $RANDOM\"}")"
 [ "$reg" = 201 ] || fail "el registro del postor devolvió $reg"
 bidder_login="$(curl -fsS -X POST "$API/v1/auth/login" -H 'content-type: application/json' \
   -d "{\"tenantId\":\"$TENANT\",\"email\":\"$bidder_email\",\"password\":\"$bidder_password\"}")"

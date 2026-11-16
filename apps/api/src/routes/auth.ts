@@ -16,6 +16,8 @@ const problem = z.object({
 
 const email = z.email().max(254);
 const password = z.string().min(1).max(PASSWORD_MAX_LENGTH);
+// Longitud holgada: el formato exacto lo valida el servicio (y devuelve 400 con motivos legibles).
+const displayName = z.string().min(1).max(100);
 const refreshToken = z.string().min(20).max(200);
 
 const tokenPair = z.object({
@@ -60,9 +62,14 @@ export const authRoutes =
         schema: {
           tags: ['autenticación'],
           summary: 'Registra un postor (rol BIDDER)',
-          body: z.strictObject({ tenantId: primitives.uuid, email, password }),
+          body: z.strictObject({ tenantId: primitives.uuid, email, password, displayName }),
           response: {
-            201: z.object({ userId: z.uuid(), email: z.string(), role: z.literal('BIDDER') }),
+            201: z.object({
+              userId: z.uuid(),
+              email: z.string(),
+              displayName: z.string(),
+              role: z.literal('BIDDER'),
+            }),
             400: problem,
             409: problem,
             429: problem,
@@ -71,9 +78,12 @@ export const authRoutes =
       },
       async (request, reply) => {
         const user = await deps.service.createUser({ ...request.body, role: 'BIDDER' });
-        return reply
-          .code(201)
-          .send({ userId: user.id, email: user.email, role: 'BIDDER' as const });
+        return reply.code(201).send({
+          userId: user.id,
+          email: user.email,
+          displayName: user.displayName,
+          role: 'BIDDER' as const,
+        });
       },
     );
 
@@ -135,6 +145,7 @@ export const authRoutes =
               tenantId: z.uuid(),
               role: z.enum(['ADMIN', 'SELLER', 'BIDDER']),
               email: z.string(),
+              displayName: z.string(),
             }),
             401: problem,
             403: problem,
@@ -146,7 +157,32 @@ export const authRoutes =
         const profile = await deps.service.profile(identity);
         // el usuario del token ya no existe, está deshabilitado o es de otro tenant
         if (profile === null) throw new InvalidAccessToken();
-        return { ...identity, email: profile.email };
+        return { ...identity, email: profile.email, displayName: profile.displayName };
+      },
+    );
+
+    app.patch(
+      '/me',
+      {
+        config: { roles: ['ADMIN', 'SELLER', 'BIDDER'] },
+        schema: {
+          tags: ['autenticación'],
+          summary: 'Cambia el nombre público del usuario autenticado',
+          body: z.strictObject({ displayName }),
+          response: {
+            200: z.object({ displayName: z.string() }),
+            400: problem,
+            401: problem,
+            403: problem,
+            409: problem,
+          },
+        },
+      },
+      async (request) => {
+        const identity = requireIdentity(request);
+        return {
+          displayName: await deps.service.updateDisplayName(identity, request.body.displayName),
+        };
       },
     );
 
@@ -157,9 +193,19 @@ export const authRoutes =
         schema: {
           tags: ['autenticación'],
           summary: 'Crea un usuario en el tenant del administrador (ADMIN, SELLER o BIDDER)',
-          body: z.strictObject({ email, password, role: z.enum(ROLES) }),
+          body: z.strictObject({
+            email,
+            password,
+            role: z.enum(ROLES),
+            displayName: displayName.optional(),
+          }),
           response: {
-            201: z.object({ userId: z.uuid(), email: z.string(), role: z.enum(ROLES) }),
+            201: z.object({
+              userId: z.uuid(),
+              email: z.string(),
+              displayName: z.string(),
+              role: z.enum(ROLES),
+            }),
             400: problem,
             401: problem,
             403: problem,
@@ -170,7 +216,12 @@ export const authRoutes =
       async (request, reply) => {
         const admin = requireIdentity(request);
         const user = await deps.service.createUser({ ...request.body, tenantId: admin.tenantId });
-        return reply.code(201).send({ userId: user.id, email: user.email, role: user.role });
+        return reply.code(201).send({
+          userId: user.id,
+          email: user.email,
+          displayName: user.displayName,
+          role: user.role,
+        });
       },
     );
 

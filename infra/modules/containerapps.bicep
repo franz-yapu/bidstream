@@ -164,6 +164,7 @@ var apps = [
         { name: 'AUTH_JWT_PUBLIC_KEYS', secretRef: 'auth-jwt-public-keys' }
         { name: 'CORS_ALLOWED_ORIGINS', value: corsAllowedOrigins }
         { name: 'GQL_INTROSPECTION', value: 'false' }
+        { name: 'PUBLIC_TENANT_ID', value: bootstrapAdminTenantId }
         { name: 'HOST', value: '0.0.0.0' }
         { name: 'GRAPHQL_PORT', value: '4000' }
       ]
