@@ -40,8 +40,8 @@ export function NewAuctionPage() {
   });
 
   return (
-    <section className="card mx-auto mt-4 max-w-lg">
-      <h1 className="mb-4 text-xl font-semibold">Nueva subasta</h1>
+    <section className="card mx-auto mt-6 max-w-xl sm:p-8">
+      <h1 className="mb-6 text-4xl">Nueva subasta</h1>
       <form
         noValidate
         className="space-y-4"

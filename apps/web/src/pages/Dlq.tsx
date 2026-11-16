@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApi } from '../auth/context';
+import { EmptyState } from '../components/EmptyState';
 import { ErrorNote } from '../components/ErrorNote';
 import { formatDateTime } from '../lib/time';
 
@@ -13,9 +14,9 @@ export function DlqPage() {
   });
 
   return (
-    <section>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold">Cola de mensajes fallidos (DLQ)</h1>
+    <section className="pt-4">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-4xl">Cola de mensajes fallidos (DLQ)</h1>
         <button
           type="button"
           className="btn"
@@ -37,11 +38,11 @@ export function DlqPage() {
       {query.isPending && <p role="status">Cargando…</p>}
       {query.data !== undefined && (
         <>
-          <p className="mb-3 text-sm opacity-80">
+          <p className="mb-3 text-sm text-ink-soft">
             {String(query.data.pending)} pendientes · {String(query.data.total)} en total
           </p>
           {query.data.entries.length === 0 ? (
-            <p className="card text-center opacity-80">El DLQ está vacío.</p>
+            <EmptyState title="El DLQ está vacío">No hay mensajes fallidos que revisar.</EmptyState>
           ) : (
             <ul className="space-y-2">
               {query.data.entries.map((entry) => (
@@ -52,7 +53,7 @@ export function DlqPage() {
                   <p className="font-medium">
                     {entry.error.name}: {entry.error.message}
                   </p>
-                  <p className="opacity-70">
+                  <p className="text-ink-soft">
                     {entry.reason} · {String(entry.attempts)} intentos · reprocesos{' '}
                     {String(entry.reprocessCount)} · {entry.source.topic}[
                     {String(entry.source.partition)}]@{entry.source.offset} ·{' '}

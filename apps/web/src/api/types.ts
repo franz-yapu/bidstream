@@ -1,5 +1,6 @@
 // Formas de lo que devuelven la API y GraphQL (apps/graphql/src/schema.ts). Los importes son `Money`
-// (cadena "105.50") y las fechas, instantes ISO-8601 en UTC. Ninguna incluye identidades de postores.
+// (cadena "105.50") y las fechas, instantes ISO-8601 en UTC. De un postor solo se conoce su nombre
+// público (ADR-0015): nunca un identificador ni el correo.
 export type AuctionStatus = 'OPEN' | 'CLOSED';
 export type LotStatus = 'OPEN' | 'CLOSED';
 
@@ -9,6 +10,11 @@ export interface Auction {
   readonly opensAt: string;
   readonly closesAt: string;
   readonly status: AuctionStatus;
+}
+
+/** Postor tal como lo ve el público. */
+export interface Bidder {
+  readonly displayName: string;
 }
 
 export interface Lot {
@@ -23,10 +29,19 @@ export interface Lot {
   readonly hasWinner: boolean;
   readonly finalAmount: string | null;
   readonly nextMinimumBid: string;
+  /** Quién va ganando (lote abierto con pujas). Solo en las consultas que lo piden. */
+  readonly leader?: Bidder | null;
+  /** Quién ganó (lote cerrado con ganador). Solo en las consultas que lo piden. */
+  readonly winner?: Bidder | null;
 }
 
 export interface LotWithAuction extends Lot {
   readonly auction: { readonly id: string; readonly title: string } | null;
+}
+
+/** Una subasta abierta con sus lotes, para el inicio. */
+export interface AuctionWithLiveLots extends Auction {
+  readonly lots: readonly Lot[];
 }
 
 export interface AuctionWithLots extends Auction {
@@ -39,6 +54,7 @@ export interface Bid {
   readonly placedAt: string;
   readonly rank: number;
   readonly awarded: boolean;
+  readonly bidder: Bidder | null;
 }
 
 export interface Page<T> {

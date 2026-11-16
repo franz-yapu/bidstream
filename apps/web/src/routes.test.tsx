@@ -26,13 +26,15 @@ const user = (role: Me['role']): Me => ({
   tenantId: 't',
   role,
   email: `${role}@demo.local`,
+  displayName: role,
 });
 
 describe('rutas protegidas por rol', () => {
   it('sin sesión se va al login', async () => {
     const router = renderAt('/subastas/nueva', null);
     expect(await screen.findByRole('heading', { name: 'Entrar' })).toBeInTheDocument();
-    expect(router.state.location.pathname).toBe('/login');
+    expect(router.state.location.pathname).toBe('/entrar');
+    expect(router.state.location.search).toBe('?volver=%2Fsubastas%2Fnueva');
   });
 
   it('un postor no ve crear subasta ni el DLQ, y su menú no los ofrece', async () => {

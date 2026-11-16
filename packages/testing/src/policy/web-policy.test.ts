@@ -22,6 +22,31 @@ const app = sources('apps/web/src')
   .filter((f) => !/(\.test\.tsx?|test-setup\.ts)$/.test(f.path))
   .map((f) => ({ ...f, text: stripComments(f.text) }));
 
+describe('tipografías y pública (J2)', () => {
+  it('las tipografías salen del propio sitio: sin CDN ni fuentes externas', () => {
+    const html = read('apps/web/index.html');
+    const css = read('apps/web/src/styles.css');
+    expect(html + css).not.toMatch(/fonts\.googleapis|fonts\.gstatic|https?:\/\/.*\.(woff2?|ttf)/);
+    expect(css).toMatch(/@fontsource-variable\//);
+    // la CSP no admite `data:` en font-src: Vite no debe inlinar las fuentes
+    expect(read('apps/web/vite.config.ts')).toMatch(/assetsInlineLimit:\s*0/);
+  });
+
+  it('las rutas públicas no exigen sesión y las de gestión sí', () => {
+    const routes = read('apps/web/src/routes.tsx');
+    for (const path of ["'/'", "'/subastas'", "'/lotes/:lotId'", "'/entrar'"]) {
+      expect(routes, path).toMatch(
+        new RegExp(`path: ${path.replace(/[/:]/g, '\\$&')}, element: <\\w+ />`),
+      );
+    }
+    for (const path of ['/subastas/nueva', '/cuenta', '/admin/dlq']) {
+      const at = routes.indexOf(`path: '${path}'`);
+      expect(at, path).toBeGreaterThan(-1);
+      expect(routes.slice(at, at + 120), path).toMatch(/RequireRole/);
+    }
+  });
+});
+
 describe('código del front', () => {
   it('los tokens no van a localStorage y el de acceso nunca se persiste', () => {
     for (const file of app) {

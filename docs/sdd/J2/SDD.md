@@ -1,8 +1,8 @@
 # SDD — J2 · Sitio público, vista de espectador y rediseño
 
-- **Ticket:** ClickUp **J2** (por crear al aprobar este SDD).
+- **Ticket:** ClickUp **J2** (`868mwj8aq`, https://app.clickup.com/t/868mwj8aq).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Borrador (2026-11-16) — a la espera de aprobación; preguntas en §7
+- **Estado:** Implementado (2026-11-16) — aprobado con las propuestas de §7; ver la revisión 0.2 al pie
 - **Versión:** 0.1 · **Fecha:** 2026-11-16
 - **Fuentes de verdad citadas:**
   1. Petición del usuario (2026-11-16): home público, página de subastas en curso, entrar como
@@ -165,3 +165,19 @@ mismo flujo; no se añaden canales.
 5. **Entrega en PRs**: propuesta 3 PRs — (a) backend: `displayName`, anónimo, `Bidder`; (b) sistema de
    diseño + login + home/listados; (c) lote espectador/puja + admin + e2e. Cada uno con CI verde.
 6. **Fuentes**: propuesta servirlas desde el propio sitio (sin CDN) para respetar la CSP.
+
+## Revisión 0.2 (2026-11-16) — desviaciones del diseño aprobado, ya implementadas
+
+- **Entrega:** el backend fue el PR #55; el sistema de diseño, el sitio público, el lote como espectador, el
+  login unificado y la administración se entregaron juntos en un solo PR de front (no en dos), para no
+  dejar `main` con medio rediseño.
+- **Dirección de arte** (skills `design-taste-frontend`, `impeccable`, `emil-design-eng`): «la página es el
+  objeto». El lote es un **billete de catálogo** (perforación punteada y muescas) y el pie de cada billete
+  dice quién va ganando. Marfil, tinta y verde bosque; Fraunces para titulares y Hanken Grotesk para el
+  texto, ambas autoalojadas. Sin degradados, sin sombras en reposo y sin iconos Unicode: iconos en SVG.
+- **Home:** hero con el lote que cierra antes, en vivo ahora, próximas, cómo funciona y finalizadas con el
+  ganador y el precio final. Para no superar el límite de coste de GraphQL, el inicio pide pocas subastas
+  (6) y pocos lotes (6) por consulta.
+- **Líder del lote:** sale de la puja mejor clasificada (la misma lista que se ve), no de una consulta aparte.
+- **Datos de ejemplo:** `make demo-seed` (`scripts/demo-seed.mjs`) usa solo la API pública.
+- El renombrado por administrador (§7.3) queda como ticket aparte: no hay UI de moderación todavía.

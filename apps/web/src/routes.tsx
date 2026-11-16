@@ -1,28 +1,26 @@
 import { createBrowserRouter, Navigate, type RouteObject } from 'react-router';
 import { CREATOR_ROLES, RequireRole } from './auth/context';
 import { Layout } from './components/Layout';
+import { AccountPage } from './pages/Account';
 import { AuctionDetailPage } from './pages/AuctionDetail';
 import { AuctionsPage } from './pages/Auctions';
 import { DlqPage } from './pages/Dlq';
-import { LoginPage } from './pages/Login';
+import { EntrarPage } from './pages/Entrar';
+import { HomePage } from './pages/Home';
 import { LotPage } from './pages/LotPage';
 import { NewAuctionPage } from './pages/NewAuction';
-import { RegisterPage } from './pages/Register';
 
+// Públicas (sin cuenta, solo lectura): inicio, subastas, subasta, lote y entrar. El resto exige sesión;
+// la interfaz solo oculta lo que el backend ya deniega.
 export const routes: RouteObject[] = [
   {
     element: <Layout />,
     children: [
-      { path: '/login', element: <LoginPage /> },
-      { path: '/registro', element: <RegisterPage /> },
-      {
-        path: '/',
-        element: (
-          <RequireRole>
-            <AuctionsPage />
-          </RequireRole>
-        ),
-      },
+      { path: '/', element: <HomePage /> },
+      { path: '/entrar', element: <EntrarPage /> },
+      { path: '/login', element: <Navigate to="/entrar" replace /> },
+      { path: '/registro', element: <Navigate to="/entrar?modo=registro" replace /> },
+      { path: '/subastas', element: <AuctionsPage /> },
       {
         path: '/subastas/nueva',
         element: (
@@ -31,19 +29,13 @@ export const routes: RouteObject[] = [
           </RequireRole>
         ),
       },
+      { path: '/subastas/:auctionId', element: <AuctionDetailPage /> },
+      { path: '/lotes/:lotId', element: <LotPage /> },
       {
-        path: '/subastas/:auctionId',
+        path: '/cuenta',
         element: (
           <RequireRole>
-            <AuctionDetailPage />
-          </RequireRole>
-        ),
-      },
-      {
-        path: '/lotes/:lotId',
-        element: (
-          <RequireRole>
-            <LotPage />
+            <AccountPage />
           </RequireRole>
         ),
       },

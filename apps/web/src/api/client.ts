@@ -6,6 +6,7 @@ import { SessionStore, type Me, type TokenPair } from './session';
 import type {
   Auction,
   AuctionStatus,
+  AuctionWithLiveLots,
   AuctionWithLots,
   Bid,
   DlqSnapshot,
@@ -19,6 +20,7 @@ import type {
 
 const LOT_FIELDS = `id title currency startingPrice minIncrement currentPrice closesAt status
   hasWinner finalAmount nextMinimumBid`;
+const LOT_FIELDS_BOARD = `${LOT_FIELDS} leader { displayName } winner { displayName }`;
 
 const Q = {
   auctions: `query($first: Int!, $after: String, $status: AuctionStatus) {
@@ -27,10 +29,15 @@ const Q = {
       pageInfo { hasNextPage endCursor } } }`,
   auction: `query($id: ID!) { auction(id: $id) { id title opensAt closesAt status
     lots(first: 50) { ${LOT_FIELDS} } } }`,
-  lot: `query($id: ID!) { lot(id: $id) { ${LOT_FIELDS} auction { id title } } }`,
+  lot: `query($id: ID!) { lot(id: $id) { ${LOT_FIELDS} leader { displayName } winner { displayName }
+    auction { id title } } }`,
+  // Inicio: pocas subastas y pocos lotes, para quedar dentro del límite de coste de GraphQL
+  board: `query($status: AuctionStatus!, $auctions: Int!, $lots: Int!) {
+    auctions(first: $auctions, status: $status) { edges { node { id title opensAt closesAt status
+      lots(first: $lots) { ${LOT_FIELDS_BOARD} } } } } }`,
   bids: `query($lotId: ID!, $first: Int!, $after: String) {
     lotBids(lotId: $lotId, first: $first, after: $after) {
-      edges { node { id amount placedAt rank awarded } }
+      edges { node { id amount placedAt rank awarded bidder { displayName } } }
       pageInfo { hasNextPage endCursor } } }`,
   lotUpdated: `subscription($lotId: ID!) { lotUpdated(lotId: $lotId) {
     __typename
@@ -53,10 +60,14 @@ export interface Api {
   login(tenantId: string, email: string, password: string): Promise<Me>;
   register(tenantId: string, email: string, password: string, displayName: string): Promise<void>;
   logout(): Promise<void>;
+  /** Cambia el nombre público del usuario con sesión. */
+  updateDisplayName(displayName: string): Promise<string>;
   listAuctions(options?: {
     after?: string | null;
     status?: AuctionStatus | null;
   }): Promise<Page<Auction>>;
+  /** Subastas con sus lotes (con líder o ganador), para el inicio. */
+  board(status: AuctionStatus): Promise<readonly AuctionWithLiveLots[]>;
   getAuction(id: string): Promise<AuctionWithLots | null>;
   getLot(id: string): Promise<LotWithAuction | null>;
   getBids(lotId: string, after?: string | null): Promise<Page<Bid>>;
@@ -92,7 +103,7 @@ export function createApi(
   const authed = createAuthedFetch(session, observed);
 
   async function rest<T>(
-    method: 'GET' | 'POST',
+    method: 'GET' | 'POST' | 'PATCH',
     path: string,
     body?: unknown,
     headers: Record<string, string> = {},
@@ -188,6 +199,11 @@ export function createApi(
         body: JSON.stringify({ refreshToken }),
       }).catch(() => undefined);
     },
+    async updateDisplayName(displayName) {
+      const reply = await rest<{ displayName: string }>('PATCH', '/v1/auth/me', { displayName });
+      if (session.me !== null) session.setMe({ ...session.me, displayName: reply.displayName });
+      return reply.displayName;
+    },
     async listAuctions({ after = null, status = null } = {}) {
       const data = await gql<{
         auctions: {
@@ -200,6 +216,14 @@ export function createApi(
         hasNextPage: data.auctions.pageInfo.hasNextPage,
         endCursor: data.auctions.pageInfo.endCursor,
       };
+    },
+    async board(status) {
+      const data = await gql<{ auctions: { edges: { node: AuctionWithLiveLots }[] } }>(Q.board, {
+        status,
+        auctions: 6,
+        lots: 6,
+      });
+      return data.auctions.edges.map((e) => e.node);
     },
     async getAuction(id) {
       return (await gql<{ auction: AuctionWithLots | null }>(Q.auction, { id })).auction;
