@@ -42,7 +42,13 @@ export function SessionBootstrap({ children }: { children: ReactNode }) {
       active = false;
     };
   }, [api]);
-  return ready ? children : <p className="p-8 text-center text-sm opacity-70">Cargando…</p>;
+  return ready ? (
+    children
+  ) : (
+    <p role="status" className="p-10 text-center text-ink-soft">
+      Cargando…
+    </p>
+  );
 }
 
 /**
@@ -52,10 +58,13 @@ export function SessionBootstrap({ children }: { children: ReactNode }) {
 export function RequireRole({ roles, children }: { roles?: readonly Role[]; children: ReactNode }) {
   const me = useMe();
   const location = useLocation();
-  if (me === null) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  if (me === null) {
+    const back = encodeURIComponent(location.pathname + location.search);
+    return <Navigate to={`/entrar?volver=${back}`} replace />;
+  }
   if (roles !== undefined && !roles.includes(me.role)) {
     return (
-      <p role="alert" className="p-8 text-center">
+      <p role="alert" className="py-16 text-center text-lg">
         No tienes permiso para ver esta página.
       </p>
     );

@@ -11,6 +11,7 @@ export interface Me {
   readonly tenantId: string;
   readonly role: Role;
   readonly email: string;
+  readonly displayName: string;
 }
 
 export interface TokenPair {

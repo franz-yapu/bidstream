@@ -17,9 +17,9 @@ export function LivePrice({ value }: { value: string }) {
       data-testid="price"
       aria-live="polite"
       aria-atomic="true"
-      className="text-4xl font-bold tabular-nums"
+      className="display num mt-1 text-[clamp(3rem,8vw,5.5rem)] leading-none"
     >
-      <span key={changes} className={changes > 0 ? 'price-flash px-1 -mx-1' : ''}>
+      <span key={changes} className={changes > 0 ? 'price-flash -mx-2 px-2' : ''}>
         {value}
       </span>
     </p>

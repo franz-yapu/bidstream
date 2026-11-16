@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { LotWithAuction } from '../api/types';
 import { useApi } from '../auth/context';
 import { compareMoney, formatMoney, parseMoneyInput } from '../lib/money';
+import { Check } from './icons';
 import { ErrorNote } from './ErrorNote';
 
 /** Tiempo que se espera la confirmación de una puja aceptada antes de avisar de que no es la vigente. */
@@ -104,7 +105,9 @@ export function BidForm({ lot, closed }: { lot: LotWithAuction; closed: boolean 
             setText(e.target.value);
           }}
         />
-        <p className="mt-1 text-xs opacity-70">Mínimo: {formatMoney(minimum, lot.currency)}</p>
+        <p className="mt-1.5 text-[14px] text-ink-soft">
+          Mínimo: {formatMoney(minimum, lot.currency)}
+        </p>
       </div>
       {invalid !== null && (
         <p role="alert" className="error">
@@ -116,17 +119,17 @@ export function BidForm({ lot, closed }: { lot: LotWithAuction; closed: boolean 
         {bid.isPending ? 'Enviando…' : closed ? 'Lote cerrado' : 'Pujar'}
       </button>
       {outcome === 'waiting' && pending !== null && (
-        <p role="status" className="text-sm">
+        <p role="status" className="text-[15px]">
           Puja de {formatMoney(pending.amount, lot.currency)} enviada. Esperando confirmación…
         </p>
       )}
       {outcome === 'won' && (
-        <p role="status" className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
-          Tu puja es la vigente ✔
+        <p role="status" className="flex items-center gap-1.5 text-[15px] font-medium text-forest">
+          <Check /> Tu puja es la vigente
         </p>
       )}
       {outcome === 'lost' && (
-        <p role="status" className="text-sm font-medium text-amber-600 dark:text-amber-400">
+        <p role="status" className="text-[15px] font-medium text-crimson">
           Tu puja no quedó como vigente: otra fue mayor o no cumplió las reglas del lote.
         </p>
       )}

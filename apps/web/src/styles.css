@@ -1,23 +1,106 @@
 @import 'tailwindcss';
+@import '@fontsource-variable/hanken-grotesk';
+@import '@fontsource-variable/fraunces/wght.css';
+
+/*
+ * Sistema de diseño de bidstream (J2): una casa de subastas moderna. Marfil de fondo, tinta casi
+ * negra y un solo acento (verde bosque). Los niveles se separan con un cambio de tono, no con líneas
+ * ni sombras; solo lo que flota (menús) lleva sombra.
+ */
+@theme {
+  --font-display: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
+  --font-sans: 'Hanken Grotesk Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --color-ground: #f1ece1;
+  --color-paper: #fbf8f2;
+  --color-sand: #e4dccb;
+  --color-sand-deep: #d7ccb5;
+  --color-ink: #17211b;
+  --color-ink-soft: #4e5a53;
+  --color-forest: #1e4a38;
+  --color-forest-deep: #143527;
+  --color-forest-tint: #dce7df;
+  --color-crimson: #a3162f;
+
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --radius-card: 16px;
+}
 
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
+}
+
+html {
+  scrollbar-color: var(--color-sand-deep) var(--color-ground);
+  scroll-padding-top: 5rem;
 }
 
 body {
-  @apply bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100;
-  font-family:
-    system-ui,
-    -apple-system,
-    'Segoe UI',
-    Roboto,
-    sans-serif;
+  background: var(--color-ground);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 1.0625rem;
+  line-height: 1.5;
+  letter-spacing: -0.005em;
+  caret-color: var(--color-forest);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-/* Un cambio de precio se nota sin gritar: resalte corto con salida suave (ease-out fuerte). */
+::selection {
+  background: var(--color-forest);
+  color: var(--color-paper);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-forest);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* Titulares con carácter: serif de contraste, interlineado cerrado, sin negrita pesada */
+h1,
+h2,
+h3,
+.display {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+.num {
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+/* ---------- Movimiento ---------- */
+
+/* Entrada de las partes de una sección: sube un poco y aparece; el retraso escalonado sale de --i. */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.rise {
+  animation: rise 560ms var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 70ms);
+}
+
+/* Un cambio de precio se nota sin gritar: resalte corto con salida suave. */
 @keyframes price-flash {
   from {
-    background-color: rgb(99 102 241 / 0.28);
+    background-color: color-mix(in srgb, var(--color-forest) 22%, transparent);
   }
   to {
     background-color: transparent;
@@ -25,41 +108,150 @@ body {
 }
 
 .price-flash {
-  animation: price-flash 600ms cubic-bezier(0.23, 1, 0.32, 1);
-  border-radius: 0.375rem;
+  animation: price-flash 700ms var(--ease-out);
+  border-radius: 8px;
 }
 
-/* Sin movimiento para quien lo pide: los estados siguen cambiando, solo sin animación. */
+@keyframes live-dot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.8);
+  }
+}
+
+.live-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: currentColor;
+  animation: live-dot 1.6s var(--ease-in-out) infinite;
+}
+
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.skeleton {
+  border-radius: 16px;
+  background: var(--color-sand);
+  animation: skeleton-pulse 1.4s var(--ease-in-out) infinite;
+}
+
+/* Sin movimiento para quien lo pide: los estados siguen cambiando, solo sin viaje ni parpadeo. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
+/* ---------- Componentes ---------- */
+
 @layer components {
   .card {
-    @apply rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900;
+    @apply rounded-[16px] bg-paper p-6;
   }
+
   .btn {
-    @apply inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition duration-150 ease-out hover:bg-indigo-500 active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-forest px-5 py-2.5 text-[15px] font-medium text-paper;
+    @apply cursor-pointer transition-[transform,background-color] duration-150 ease-out;
+    @apply active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50;
   }
+  @media (hover: hover) and (pointer: fine) {
+    .btn:hover:not(:disabled) {
+      @apply bg-forest-deep;
+    }
+  }
+
   .btn-secondary {
-    @apply inline-flex items-center justify-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium transition duration-150 ease-out hover:bg-slate-100 active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 disabled:opacity-50 dark:border-slate-700 dark:hover:bg-slate-800;
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-sand px-5 py-2.5 text-[15px] font-medium text-ink;
+    @apply cursor-pointer transition-[transform,background-color] duration-150 ease-out;
+    @apply active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50;
   }
+  @media (hover: hover) and (pointer: fine) {
+    .btn-secondary:hover:not(:disabled) {
+      @apply bg-sand-deep;
+    }
+  }
+
+  .link {
+    @apply font-medium text-forest underline decoration-forest/30 underline-offset-4 transition-colors duration-150;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .link:hover {
+      @apply decoration-forest;
+    }
+  }
+
   .card-link {
-    @apply block rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition dark:border-slate-800 dark:bg-slate-900 duration-150 ease-out hover:-translate-y-0.5 hover:border-indigo-400 hover:shadow-md active:translate-y-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500;
+    @apply block rounded-[16px] bg-paper p-6 transition-[transform,background-color] duration-200 ease-out;
+    @apply active:scale-[0.99];
   }
+  @media (hover: hover) and (pointer: fine) {
+    .card-link:hover {
+      @apply -translate-y-0.5 bg-white;
+    }
+  }
+
+  /* Los campos de formulario sí llevan borde: es lo que el usuario espera para saber dónde escribir. */
   .field {
-    @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-indigo-500 dark:border-slate-700 dark:bg-slate-900;
+    @apply w-full rounded-[12px] border-[1.5px] border-sand-deep bg-paper px-3.5 py-2.5 text-base text-ink;
+    @apply transition-colors duration-150 placeholder:text-ink-soft/70;
+    @apply focus:border-forest focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest;
+    @apply disabled:opacity-60;
   }
+
   .label {
-    @apply mb-1 block text-sm font-medium;
+    @apply mb-1.5 block text-[15px] font-medium text-ink;
   }
+
   .error {
-    @apply mt-1 text-sm text-red-600 dark:text-red-400;
+    @apply mt-1.5 text-[15px] text-crimson;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[13px] font-medium whitespace-nowrap;
+  }
+
+  /* Entrada de lote: un billete de catálogo, con la línea de perforación y las muescas laterales. */
+  .ticket {
+    @apply relative flex flex-col overflow-hidden rounded-[16px] bg-paper text-ink;
+  }
+  .ticket-stub {
+    @apply relative flex items-center justify-between gap-3 px-6 py-4 text-[15px];
+    border-top: 4px dotted var(--color-sand-deep);
+  }
+  .ticket-stub::before,
+  .ticket-stub::after {
+    content: '';
+    position: absolute;
+    top: -10px;
+    width: 18px;
+    height: 18px;
+    border-radius: 999px;
+    background: var(--color-ground);
+  }
+  .ticket-stub::before {
+    left: -9px;
+  }
+  .ticket-stub::after {
+    right: -9px;
   }
 }

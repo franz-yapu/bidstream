@@ -162,6 +162,7 @@ Límites: 500 suscripciones simultáneas por tenant y una cola de 50 por suscrip
 
 ```bash
 make demo                          # todo en contenedores, front en http://localhost:8080
+make demo-seed                     # subastas, lotes, postores y pujas de ejemplo para verlo con contenido
 npm run dev:web                    # Vite con recarga en caliente (http://localhost:5173), contra la demo
 npm run test -w @bidstream/web     # pruebas de componentes (jsdom)
 npx playwright install chromium    # una sola vez

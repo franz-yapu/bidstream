@@ -1,4 +1,4 @@
-.PHONY: up down reset ps logs topics psql verify migrate images demo demo-down demo-reprocess
+.PHONY: up down reset ps logs topics psql verify migrate images demo demo-seed demo-down demo-reprocess
 
 COMPOSE := docker compose
 KAFKA_BIN := /opt/kafka/bin
@@ -53,6 +53,9 @@ demo: ## Todo el sistema en un comando: infraestructura, migraciones y los ocho 
 	@echo "  GraphQL    http://localhost:$${GRAPHQL_PORT:-4000}/graphql"
 	@echo "  Prueba     scripts/demo-smoke.sh"
 	@echo "  Detener    make demo-down"
+
+demo-seed: ## Siembra subastas, lotes, postores y pujas de ejemplo en un `make demo` en marcha
+	@node scripts/demo-seed.mjs
 
 demo-down: ## Detiene el sistema de `make demo` (conserva los datos)
 	$(COMPOSE) --profile app down

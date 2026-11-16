@@ -36,3 +36,17 @@ export function useCountdown(closesAt: string, offsetMs: number): number {
   }, []);
   return remainingMs(closesAt, now, offsetMs);
 }
+
+/** Hora del servidor (ms), que se renueva cada 15 s: sirve para decidir si algo ya empezó. */
+export function useServerNow(offsetMs: number): number {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNow(Date.now());
+    }, 15_000);
+    return () => {
+      clearInterval(timer);
+    };
+  }, []);
+  return now + offsetMs;
+}

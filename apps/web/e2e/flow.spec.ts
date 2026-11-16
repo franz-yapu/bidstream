@@ -21,11 +21,11 @@ const local = (offsetHours: number): string => {
 };
 
 async function login(page: Page, email: string, password: string): Promise<void> {
-  await page.goto('/login');
+  await page.goto('/entrar');
   await page.getByLabel('Correo').fill(email);
   await page.getByLabel('Contraseña').fill(password);
   await page.getByRole('button', { name: 'Entrar' }).click();
-  await expect(page.getByRole('heading', { name: 'Subastas' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Salir' })).toBeVisible();
 }
 
 test('administrador publica, postor puja y otra pestaña ve el precio en vivo', async ({
@@ -56,12 +56,12 @@ test('administrador publica, postor puja y otra pestaña ve el precio en vivo', 
   // 2. un postor se registra, entra al lote y puja
   const bidderCtx = await browser.newContext();
   const bidder = await bidderCtx.newPage();
-  await bidder.goto('/registro');
+  await bidder.goto('/entrar?modo=registro');
   await bidder.getByLabel('Correo').fill(`postor-${stamp}@demo.local`);
   await bidder.getByLabel('Nombre público').fill(`Postor ${stamp}`);
   await bidder.getByLabel('Contraseña').fill(`clave-segura-${stamp}`);
   await bidder.getByRole('button', { name: 'Crear cuenta' }).click();
-  await expect(bidder.getByRole('heading', { name: 'Subastas' })).toBeVisible();
+  await expect(bidder.getByRole('button', { name: 'Salir' })).toBeVisible();
   await bidder.goto(auctionUrl);
   await bidder.getByRole('link', { name: /Reloj de bolsillo/ }).click();
   await expect(bidder.getByTestId('price')).toHaveText('100.00 USD');
@@ -83,8 +83,30 @@ test('administrador publica, postor puja y otra pestaña ve el precio en vivo', 
   await bidder.getByRole('button', { name: 'Pujar' }).click();
   await expect(bidder.getByRole('alert')).toContainText('La puja mínima es 110.00 USD');
 
+  // 5. un espectador sin cuenta ve el lote: quién va ganando y el historial con nombre público
+  const guestCtx = await browser.newContext();
+  const guest = await guestCtx.newPage();
+  await guest.goto(bidder.url());
+  await expect(guest.getByTestId('price')).toHaveText('105.00 USD');
+  await expect(guest.getByTestId('countdown')).toBeVisible();
+  await expect(guest.getByText(`Postor ${stamp}`).first()).toBeVisible();
+  await expect(guest.getByText('Va ganando')).toBeVisible();
+  await expect(guest.getByRole('heading', { name: 'Entra para pujar' })).toBeVisible();
+  // desde el lote se entra y se vuelve al mismo lote
+  await guest.getByRole('complementary').getByRole('link', { name: 'Entrar' }).click();
+  await expect(guest).toHaveURL(/volver=%2Flotes%2F/);
+
   await adminCtx.close();
   await bidderCtx.close();
+  await guestCtx.close();
+});
+
+test('el inicio y las subastas se ven sin cuenta', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByRole('heading', { level: 1, name: /Subastas en vivo/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Cómo funciona' })).toBeVisible();
+  await page.getByRole('link', { name: 'Ver subastas en curso' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Subastas' })).toBeVisible();
 });
 
 test('sin sesión se redirige al login y un postor no ve la administración', async ({ page }) => {
