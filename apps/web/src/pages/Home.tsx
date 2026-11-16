@@ -125,7 +125,7 @@ export function HomePage() {
           <ul className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {live.slice(1, 7).map(({ lot, auctionTitle }, i) => (
               <li key={lot.id} className="rise flex" style={{ '--i': i } as React.CSSProperties}>
-                <div className="flex w-full flex-col [&>a]:flex-1">
+                <div className="flex w-full flex-col [&>div]:flex-1">
                   <LotTicket lot={lot} auctionTitle={auctionTitle} />
                 </div>
               </li>

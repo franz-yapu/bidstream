@@ -197,3 +197,15 @@ mismo flujo; no se añaden canales.
 - **Subastas con datos:** cada tarjeta muestra lotes, precio más alto y cuenta atrás hasta el próximo cierre (`Auction.lots`, 10 por subasta).
 - **404 real:** `*` ya no redirige al inicio; ofrece inicio, subastas y lotes.
 - **Títulos y enlaces:** `usePageTitle` pone «Página · bidstream» en cada vista; «Copiar enlace» en subasta y lote; `description` y Open Graph genéricos en `index.html`. Una vista previa distinta por lote exigiría renderizar en servidor: queda fuera.
+
+## Revisión 0.5 (2026-11-16) — estado a la vista y pujas sin entrar («puntos 10 a 13»)
+
+Reclamo del usuario: no se distingue bien lo que está en proceso de lo que terminó y ver las pujas obliga a entrar en cada tarjeta.
+
+- **Estado:** insignias «En proceso» (verde, con punto vivo) y «Terminado/a» (gris). Lotes y subastas se agrupan en bloques con título y cuenta (En proceso, Próximas, Terminadas); lo terminado va en tono arena y con la portada apagada, lo vivo con filete verde.
+- **Pujas sin entrar:** cada billete tiene «Ver pujas» (las 5 mejores, carga bajo demanda y se refresca mientras el lote está abierto) y las páginas de lotes y de subasta un interruptor «Mostrar pujas» que las abre todas. El título es el enlace del billete (enlace extendido), así que el botón no queda dentro de otro enlace.
+- **10, administración:** la cola de errores con tarjetas de pendientes y total, motivo con insignia y aviso del resultado.
+- **11, carga:** las páginas de cuenta, nueva subasta y administración se descargan al visitarlas; librerías en trozos aparte. El mayor trozo pasa de 533 kB a 314 kB (sin aviso de tamaño).
+- **12, accesibilidad:** `e2e/a11y.spec.ts` ejecuta axe (WCAG 2.2 AA, con contraste, movimiento reducido) sobre inicio, subastas, lotes, entrar, registro, 404 y un lote con pujas abiertas.
+- **13, renombrado por el administrador:** va en un PR aparte (backend + front).
+

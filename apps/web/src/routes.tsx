@@ -1,16 +1,18 @@
 import { createBrowserRouter, Navigate, type RouteObject } from 'react-router';
 import { CREATOR_ROLES, RequireRole } from './auth/context';
+import { lazyPage } from './components/Lazy';
 import { Layout } from './components/Layout';
-import { AccountPage } from './pages/Account';
 import { AuctionDetailPage } from './pages/AuctionDetail';
 import { AuctionsPage } from './pages/Auctions';
-import { DlqPage } from './pages/Dlq';
 import { EntrarPage } from './pages/Entrar';
 import { HomePage } from './pages/Home';
 import { LotPage } from './pages/LotPage';
 import { LotsPage } from './pages/Lots';
 import { NotFoundPage } from './pages/NotFound';
-import { NewAuctionPage } from './pages/NewAuction';
+
+const NewAuctionPage = lazyPage(() => import('./pages/NewAuction').then((m) => m.NewAuctionPage));
+const AccountPage = lazyPage(() => import('./pages/Account').then((m) => m.AccountPage));
+const DlqPage = lazyPage(() => import('./pages/Dlq').then((m) => m.DlqPage));
 
 // Públicas (sin cuenta, solo lectura): inicio, subastas, subasta, lotes, lote y entrar. El resto exige sesión;
 // la interfaz solo oculta lo que el backend ya deniega.
