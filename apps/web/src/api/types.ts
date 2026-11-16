@@ -4,12 +4,25 @@
 export type AuctionStatus = 'OPEN' | 'CLOSED';
 export type LotStatus = 'OPEN' | 'CLOSED';
 
+/** Lo mínimo de un lote para resumir una subasta en un listado. */
+export interface LotBrief {
+  readonly id: string;
+  readonly status: LotStatus;
+  readonly currency: string;
+  readonly startingPrice: string;
+  readonly currentPrice: string | null;
+  readonly finalAmount: string | null;
+  readonly closesAt: string;
+}
+
 export interface Auction {
   readonly id: string;
   readonly title: string;
   readonly opensAt: string;
   readonly closesAt: string;
   readonly status: AuctionStatus;
+  /** Primeros lotes, solo en el listado de subastas. */
+  readonly lots?: readonly LotBrief[];
 }
 
 /** Postor tal como lo ve el público. */

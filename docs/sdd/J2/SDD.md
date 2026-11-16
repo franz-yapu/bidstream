@@ -85,6 +85,7 @@ Hasta J1 «GraphQL sin identidad de postores/ganadores». El usuario decide **mo
 | `/` | público | Home |
 | `/subastas` | público | Listado con filtros |
 | `/subastas/:id` | público | Subasta y sus lotes |
+| `/lotes` | público | Todos los lotes (abiertos o cerrados) con orden por cierre o precio |
 | `/lotes/:id` | público | Espectador; si hay sesión de postor, añade el formulario de puja |
 | `/entrar` | público | Entrar / Crear cuenta (con `?volver=`) |
 | `/cuenta` | sesión | Nombre público, cerrar sesión |
@@ -189,3 +190,10 @@ mismo flujo; no se añaden canales.
 - **Estado del postor** («Vas ganando», «Te han superado», con el mínimo para volver a ganar), marca «Tú» en el historial y animación de las pujas nuevas. Se reconoce al postor por su nombre público, único por tenant.
 - **Inicio en vivo:** el inicio y la columna de «Entrar» consultan cada 8 s y resaltan los cambios de precio y de líder.
 - **Menú móvil** con botón y panel accesibles (`aria-expanded`, `aria-controls`).
+
+## Revisión 0.4 (2026-11-16) — navegación («sigue con el 6 al 9»)
+
+- **`/lotes`, «Todos los lotes»:** abiertos/cerrados y orden (cierran antes, precio ↑/↓) sobre las 12 subastas más recientes con 12 lotes cada una (dentro del límite de coste de GraphQL). El mismo selector ordena los lotes dentro de una subasta (`lib/lots.ts`).
+- **Subastas con datos:** cada tarjeta muestra lotes, precio más alto y cuenta atrás hasta el próximo cierre (`Auction.lots`, 10 por subasta).
+- **404 real:** `*` ya no redirige al inicio; ofrece inicio, subastas y lotes.
+- **Títulos y enlaces:** `usePageTitle` pone «Página · bidstream» en cada vista; «Copiar enlace» en subasta y lote; `description` y Open Graph genéricos en `index.html`. Una vista previa distinta por lote exigiría renderizar en servidor: queda fuera.

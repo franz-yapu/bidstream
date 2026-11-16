@@ -8,6 +8,7 @@ import { ArrowRight } from '../components/icons';
 import { LotTicket } from '../components/LotTicket';
 import { TicketSkeletons } from '../components/Skeleton';
 import { formatMoney } from '../lib/money';
+import { usePageTitle } from '../lib/page-title';
 import { formatDateTime, useServerNow } from '../lib/time';
 
 interface BoardLot {
@@ -36,6 +37,7 @@ const STEPS = [
 ] as const;
 
 export function HomePage() {
+  usePageTitle(null);
   const api = useApi();
   const me = useMe();
   // el inicio se mantiene al día solo: precios, líderes y cierres

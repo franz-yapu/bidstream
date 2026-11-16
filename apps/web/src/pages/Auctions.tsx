@@ -8,7 +8,10 @@ import { ErrorNote } from '../components/ErrorNote';
 import { ArrowRight } from '../components/icons';
 import { Skeleton } from '../components/Skeleton';
 import { StatusBadge } from '../components/StatusBadge';
+import { summarizeLots } from '../lib/lots';
+import { usePageTitle } from '../lib/page-title';
 import { formatDateTime, useServerNow } from '../lib/time';
+import { Countdown } from '../components/Countdown';
 
 type Tab = 'live' | 'soon' | 'closed' | 'all';
 
@@ -27,6 +30,7 @@ const EMPTY: Record<Tab, string> = {
 };
 
 export function AuctionsPage() {
+  usePageTitle('Subastas');
   const api = useApi();
   const [tab, setTab] = useState<Tab>('live');
   const status = TABS.find((t) => t.id === tab)?.status ?? null;
@@ -94,6 +98,7 @@ export function AuctionsPage() {
                 <h2 className="text-3xl leading-tight">{auction.title}</h2>
                 <StatusBadge status={auction.status} upcoming={!started(auction)} />
               </div>
+              <AuctionFacts auction={auction} live={started(auction)} />
               <p className="mt-auto flex items-center justify-between gap-3 text-[15px] text-ink-soft">
                 <span>
                   {formatDateTime(auction.opensAt)} → {formatDateTime(auction.closesAt)}
@@ -120,5 +125,47 @@ export function AuctionsPage() {
         </div>
       )}
     </section>
+  );
+}
+
+/** Qué hay dentro de la subasta: cuántos lotes, el precio más alto y cuándo cierra el próximo. */
+function AuctionFacts({ auction, live }: { auction: Auction; live: boolean }) {
+  if (auction.lots === undefined) return null;
+  const s = summarizeLots(auction.lots);
+  if (s.total === 0) return <p className="text-[15px] text-ink-soft">Aún sin lotes</p>;
+  const more = s.total >= 10 ? '+' : '';
+  return (
+    <dl className="grid grid-cols-3 gap-3 text-[15px]">
+      <div>
+        <dt className="text-ink-soft">Lotes</dt>
+        <dd className="num font-medium">
+          {s.total}
+          {more}
+          {auction.status === 'OPEN' && s.open > 0 && s.open < s.total
+            ? ` (${String(s.open)} abiertos)`
+            : ''}
+        </dd>
+      </div>
+      <div>
+        <dt className="text-ink-soft">Precio más alto</dt>
+        <dd className="num font-medium">{s.topPrice ?? '—'}</dd>
+      </div>
+      <div>
+        <dt className="text-ink-soft">
+          {live && s.nextClose !== null ? 'Próximo cierre' : 'Estado'}
+        </dt>
+        <dd className="font-medium">
+          {live && s.nextClose !== null ? (
+            <Countdown closesAt={s.nextClose} />
+          ) : auction.status === 'CLOSED' ? (
+            'Finalizada'
+          ) : live ? (
+            'Sin lotes abiertos'
+          ) : (
+            'Próximamente'
+          )}
+        </dd>
+      </div>
+    </dl>
   );
 }

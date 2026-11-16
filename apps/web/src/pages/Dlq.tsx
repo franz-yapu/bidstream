@@ -3,8 +3,10 @@ import { useApi } from '../auth/context';
 import { EmptyState } from '../components/EmptyState';
 import { ErrorNote } from '../components/ErrorNote';
 import { formatDateTime } from '../lib/time';
+import { usePageTitle } from '../lib/page-title';
 
 export function DlqPage() {
+  usePageTitle('Cola de errores');
   const api = useApi();
   const queryClient = useQueryClient();
   const query = useQuery({ queryKey: ['dlq'], queryFn: () => api.dlq() });

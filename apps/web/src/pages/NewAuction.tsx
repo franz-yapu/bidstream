@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router';
 import { z } from 'zod';
 import { useApi } from '../auth/context';
 import { ErrorNote } from '../components/ErrorNote';
+import { usePageTitle } from '../lib/page-title';
 
 const schema = z
   .object({
@@ -21,6 +22,7 @@ type Values = z.infer<typeof schema>;
 const toIso = (local: string): string => new Date(local).toISOString();
 
 export function NewAuctionPage() {
+  usePageTitle('Nueva subasta');
   const api = useApi();
   const navigate = useNavigate();
   const queryClient = useQueryClient();

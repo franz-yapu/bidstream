@@ -20,6 +20,9 @@ export function Layout() {
       <NavLink to="/subastas" end className={link} onClick={close}>
         Subastas
       </NavLink>
+      <NavLink to="/lotes" end className={link} onClick={close}>
+        Lotes
+      </NavLink>
       {canCreate && (
         <NavLink to="/subastas/nueva" className={link} onClick={close}>
           Nueva subasta

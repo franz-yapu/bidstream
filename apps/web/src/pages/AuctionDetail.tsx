@@ -12,7 +12,11 @@ import { LotTicket } from '../components/LotTicket';
 import { TicketSkeletons } from '../components/Skeleton';
 import { StatusBadge } from '../components/StatusBadge';
 import { parseMoneyInput } from '../lib/money';
+import { sortLots, type LotOrder } from '../lib/lots';
+import { usePageTitle } from '../lib/page-title';
 import { formatDateTime, useServerNow } from '../lib/time';
+import { CopyLink } from '../components/CopyLink';
+import { LotSort } from '../components/LotSort';
 
 export function AuctionDetailPage() {
   const { auctionId = '' } = useParams();
@@ -26,7 +30,9 @@ export function AuctionDetailPage() {
   });
   const now = useServerNow(api.clock.offsetMs);
   const [adding, setAdding] = useState(false);
+  const [order, setOrder] = useState<LotOrder>('closing');
   const auction = query.data;
+  usePageTitle(auction?.title);
   const canCreate = me !== null && CREATOR_ROLES.includes(me.role);
 
   if (query.isPending) return <TicketSkeletons />;
@@ -51,12 +57,16 @@ export function AuctionDetailPage() {
         <h1 className="text-5xl sm:text-6xl">{auction.title}</h1>
         <StatusBadge status={auction.status} upcoming={upcoming} />
       </div>
-      <p className="mt-3 mb-10 text-ink-soft">
-        {formatDateTime(auction.opensAt)} → {formatDateTime(auction.closesAt)}
-      </p>
+      <div className="mt-3 mb-10 flex flex-wrap items-center justify-between gap-4">
+        <p className="text-ink-soft">
+          {formatDateTime(auction.opensAt)} → {formatDateTime(auction.closesAt)}
+        </p>
+        <CopyLink />
+      </div>
 
       <div className="mb-6 flex items-center justify-between gap-3">
         <h2 className="text-3xl">Lotes</h2>
+        {auction.lots.length > 1 && <LotSort value={order} onChange={setOrder} />}
         {canCreate && auction.status === 'OPEN' && (
           <button
             type="button"
@@ -85,7 +95,7 @@ export function AuctionDetailPage() {
         </EmptyState>
       ) : (
         <ul className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {auction.lots.map((lot, i) => (
+          {sortLots(auction.lots, order).map((lot, i) => (
             <li
               key={lot.id}
               className="rise flex"

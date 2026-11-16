@@ -25,7 +25,8 @@ const LOT_FIELDS_BOARD = `${LOT_FIELDS} leader { displayName } winner { displayN
 const Q = {
   auctions: `query($first: Int!, $after: String, $status: AuctionStatus) {
     auctions(first: $first, after: $after, status: $status) {
-      edges { cursor node { id title opensAt closesAt status } }
+      edges { cursor node { id title opensAt closesAt status
+        lots(first: 10) { id status currency startingPrice currentPrice finalAmount closesAt } } }
       pageInfo { hasNextPage endCursor } } }`,
   auction: `query($id: ID!) { auction(id: $id) { id title opensAt closesAt status
     lots(first: 50) { ${LOT_FIELDS} } } }`,
@@ -67,7 +68,10 @@ export interface Api {
     status?: AuctionStatus | null;
   }): Promise<Page<Auction>>;
   /** Subastas con sus lotes (con líder o ganador), para el inicio. */
-  board(status: AuctionStatus): Promise<readonly AuctionWithLiveLots[]>;
+  board(
+    status: AuctionStatus,
+    size?: { auctions: number; lots: number },
+  ): Promise<readonly AuctionWithLiveLots[]>;
   getAuction(id: string): Promise<AuctionWithLots | null>;
   getLot(id: string): Promise<LotWithAuction | null>;
   getBids(lotId: string, after?: string | null): Promise<Page<Bid>>;
@@ -217,11 +221,11 @@ export function createApi(
         endCursor: data.auctions.pageInfo.endCursor,
       };
     },
-    async board(status) {
+    async board(status, size = { auctions: 6, lots: 6 }) {
       const data = await gql<{ auctions: { edges: { node: AuctionWithLiveLots }[] } }>(Q.board, {
         status,
-        auctions: 6,
-        lots: 6,
+        auctions: size.auctions,
+        lots: size.lots,
       });
       return data.auctions.edges.map((e) => e.node);
     },
