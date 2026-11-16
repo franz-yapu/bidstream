@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router';
 import { CREATOR_ROLES, useApi, useMe } from '../auth/context';
 
@@ -9,6 +10,62 @@ export function Layout() {
   const me = useMe();
   const navigate = useNavigate();
   const canCreate = me !== null && CREATOR_ROLES.includes(me.role);
+  const [open, setOpen] = useState(false);
+  const close = (): void => {
+    setOpen(false);
+  };
+
+  const navLinks = (
+    <>
+      <NavLink to="/subastas" end className={link} onClick={close}>
+        Subastas
+      </NavLink>
+      {canCreate && (
+        <NavLink to="/subastas/nueva" className={link} onClick={close}>
+          Nueva subasta
+        </NavLink>
+      )}
+      {me?.role === 'ADMIN' && (
+        <NavLink to="/admin/dlq" className={link} onClick={close}>
+          DLQ
+        </NavLink>
+      )}
+    </>
+  );
+
+  const account =
+    me === null ? (
+      <>
+        <Link to="/entrar" className="btn-secondary" onClick={close}>
+          Entrar
+        </Link>
+        <Link to="/entrar?modo=registro" className="btn" onClick={close}>
+          Crear cuenta
+        </Link>
+      </>
+    ) : (
+      <>
+        <Link
+          to="/cuenta"
+          onClick={close}
+          className="max-w-[14rem] truncate rounded-full px-3 py-1.5 text-[15px] font-medium [@media(hover:hover)]:hover:bg-sand"
+        >
+          {me.displayName}
+        </Link>
+        <button
+          type="button"
+          className="btn-secondary"
+          onClick={() => {
+            close();
+            void api.logout().then(() => {
+              void navigate('/');
+            });
+          }}
+        >
+          Salir
+        </button>
+      </>
+    );
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -18,59 +75,41 @@ export function Layout() {
       >
         Saltar al contenido
       </a>
-      <header className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-3 px-5 py-5 sm:px-8">
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-          <Link to="/" className="display text-[1.6rem] leading-none tracking-tight">
-            bidstream
-          </Link>
-          <nav aria-label="Principal" className="flex flex-wrap items-center gap-1">
-            <NavLink to="/subastas" end className={link}>
-              Subastas
-            </NavLink>
-            {canCreate && (
-              <NavLink to="/subastas/nueva" className={link}>
-                Nueva subasta
-              </NavLink>
-            )}
-            {me?.role === 'ADMIN' && (
-              <NavLink to="/admin/dlq" className={link}>
-                DLQ
-              </NavLink>
-            )}
-          </nav>
+      <header className="mx-auto w-full max-w-6xl px-5 py-4 sm:px-8 sm:py-5">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-x-6">
+            <Link
+              to="/"
+              onClick={close}
+              className="display text-[1.6rem] leading-none tracking-tight"
+            >
+              bidstream
+            </Link>
+            <nav aria-label="Principal" className="hidden items-center gap-1 md:flex">
+              {navLinks}
+            </nav>
+          </div>
+          <div className="hidden items-center gap-2 md:flex">{account}</div>
+          <button
+            type="button"
+            className="btn-secondary !px-4 md:hidden"
+            aria-expanded={open}
+            aria-controls="menu-movil"
+            onClick={() => {
+              setOpen((v) => !v);
+            }}
+          >
+            {open ? 'Cerrar' : 'Menú'}
+          </button>
         </div>
-        <div className="flex items-center gap-2">
-          {me === null ? (
-            <>
-              <Link to="/entrar" className="btn-secondary">
-                Entrar
-              </Link>
-              <Link to="/entrar?modo=registro" className="btn">
-                Crear cuenta
-              </Link>
-            </>
-          ) : (
-            <>
-              <Link
-                to="/cuenta"
-                className="max-w-[14rem] truncate rounded-full px-3 py-1.5 text-[15px] font-medium [@media(hover:hover)]:hover:bg-sand"
-              >
-                {me.displayName}
-              </Link>
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={() => {
-                  void api.logout().then(() => {
-                    void navigate('/');
-                  });
-                }}
-              >
-                Salir
-              </button>
-            </>
-          )}
-        </div>
+        {open && (
+          <div id="menu-movil" className="rise mt-4 rounded-[16px] bg-paper p-4 md:hidden">
+            <nav aria-label="Principal (móvil)" className="flex flex-col gap-1">
+              {navLinks}
+            </nav>
+            <div className="mt-4 flex flex-wrap items-center gap-2">{account}</div>
+          </div>
+        )}
       </header>
 
       <main id="contenido" className="mx-auto w-full max-w-6xl flex-1 px-5 pb-20 sm:px-8">
