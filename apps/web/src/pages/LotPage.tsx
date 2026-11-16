@@ -13,6 +13,8 @@ import { YourStatus } from '../components/YourStatus';
 import { Skeleton } from '../components/Skeleton';
 import { StatusBadge } from '../components/StatusBadge';
 import { formatMoney } from '../lib/money';
+import { usePageTitle } from '../lib/page-title';
+import { CopyLink } from '../components/CopyLink';
 import { formatCountdown, formatDateTime, useCountdown } from '../lib/time';
 import { useLiveLot } from './useLiveLot';
 
@@ -36,6 +38,7 @@ export function LotPage() {
   const me = useMe();
   const query = useLiveLot(lotId);
   const lot = query.data;
+  usePageTitle(lot?.title);
   const bids = useQuery({
     queryKey: ['bids', lotId],
     queryFn: () => api.getBids(lotId),
@@ -94,6 +97,7 @@ export function LotPage() {
       <div className="mt-4 mb-8 flex flex-wrap items-center gap-x-5 gap-y-2">
         <h1 className="rise text-5xl leading-[1.04] sm:text-6xl">{lot.title}</h1>
         <StatusBadge status={lot.status} />
+        <CopyLink />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr] lg:items-start">

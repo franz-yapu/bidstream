@@ -8,9 +8,11 @@ import { DlqPage } from './pages/Dlq';
 import { EntrarPage } from './pages/Entrar';
 import { HomePage } from './pages/Home';
 import { LotPage } from './pages/LotPage';
+import { LotsPage } from './pages/Lots';
+import { NotFoundPage } from './pages/NotFound';
 import { NewAuctionPage } from './pages/NewAuction';
 
-// Públicas (sin cuenta, solo lectura): inicio, subastas, subasta, lote y entrar. El resto exige sesión;
+// Públicas (sin cuenta, solo lectura): inicio, subastas, subasta, lotes, lote y entrar. El resto exige sesión;
 // la interfaz solo oculta lo que el backend ya deniega.
 export const routes: RouteObject[] = [
   {
@@ -30,6 +32,7 @@ export const routes: RouteObject[] = [
         ),
       },
       { path: '/subastas/:auctionId', element: <AuctionDetailPage /> },
+      { path: '/lotes', element: <LotsPage /> },
       { path: '/lotes/:lotId', element: <LotPage /> },
       {
         path: '/cuenta',
@@ -47,7 +50,7 @@ export const routes: RouteObject[] = [
           </RequireRole>
         ),
       },
-      { path: '*', element: <Navigate to="/" replace /> },
+      { path: '*', element: <NotFoundPage /> },
     ],
   },
 ];

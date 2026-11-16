@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { useApi, useMe } from '../auth/context';
 import { Avatar } from '../components/Avatar';
 import { ErrorNote } from '../components/ErrorNote';
+import { usePageTitle } from '../lib/page-title';
 
 const ROLE_LABEL = { ADMIN: 'Administrador', SELLER: 'Vendedor', BIDDER: 'Postor' } as const;
 
@@ -19,6 +20,7 @@ const schema = z.object({
 type Values = z.infer<typeof schema>;
 
 export function AccountPage() {
+  usePageTitle('Mi cuenta');
   const api = useApi();
   const me = useMe();
   const {

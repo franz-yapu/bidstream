@@ -9,6 +9,7 @@ import { ErrorNote } from '../components/ErrorNote';
 import { Eye, EyeOff } from '../components/icons';
 import { LotTicket } from '../components/LotTicket';
 import { loadConfig } from '../config';
+import { usePageTitle } from '../lib/page-title';
 
 const base = {
   tenantId: z.uuid('Debe ser un UUID'),
@@ -37,6 +38,7 @@ export function safeReturn(value: string | null): string {
 }
 
 export function EntrarPage() {
+  usePageTitle('Entrar');
   const api = useApi();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
