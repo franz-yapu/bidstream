@@ -1,0 +1,28 @@
+// Copia este archivo a infra/main.bicepparam y exporta las variables antes de desplegar:
+//   set -a; source .env.auth.private .env.auth.public .env.signing.private .env.signing.public; set +a
+//   export POSTGRES_ADMIN_PASSWORD='...'
+//   az deployment group create -g <grupo> -f infra/main.bicep -p infra/main.bicepparam
+using 'main.bicep'
+
+param namePrefix = 'bids'
+param location = 'westeurope'
+
+param postgresAdminPassword = readEnvironmentVariable('POSTGRES_ADMIN_PASSWORD')
+
+param authJwtPrivateKey = readEnvironmentVariable('AUTH_JWT_PRIVATE_KEY')
+param authJwtPublicKeys = readEnvironmentVariable('AUTH_JWT_PUBLIC_KEYS')
+param eventSigningPrivateKey = readEnvironmentVariable('EVENT_SIGNING_PRIVATE_KEY')
+param eventVerificationKeys = readEnvironmentVariable('EVENT_VERIFICATION_KEYS')
+
+param bootstrapAdminPassword = readEnvironmentVariable('BOOTSTRAP_ADMIN_PASSWORD')
+param bootstrapAdminTenantId = readEnvironmentVariable('BOOTSTRAP_ADMIN_TENANT_ID')
+param bootstrapAdminEmail = readEnvironmentVariable('BOOTSTRAP_ADMIN_EMAIL')
+
+param authJwtKeyId = readEnvironmentVariable('AUTH_JWT_KEY_ID', 'azure-1')
+param eventSigningKeyId = readEnvironmentVariable('EVENT_SIGNING_KEY_ID', 'azure-1')
+param eventSigningRequiredFrom = readEnvironmentVariable(
+  'EVENT_SIGNING_REQUIRED_FROM',
+  '2026-11-13T00:00:00.000Z'
+)
+param corsAllowedOrigins = readEnvironmentVariable('CORS_ALLOWED_ORIGINS', '')
+param imageTag = readEnvironmentVariable('IMAGE_TAG', 'latest')

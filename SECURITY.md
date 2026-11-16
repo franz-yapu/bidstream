@@ -1,137 +1,219 @@
-# Seguridad
+# Seguridad en bidstream
 
-Este documento recorre el [OWASP Top 10](https://owasp.org/Top10/) y dice, para cada punto, **qué se hizo**,
-**dónde está** y **qué prueba lo demuestra**, y qué todavía **no** está hecho. Las afirmaciones sin prueba
-no tienen cabida: las rutas de este archivo las comprueba
-[`security.test.ts`](packages/testing/src/docs/security.test.ts).
+**Fecha:** 2026-11-13 · **Alcance:** este repositorio (API, GraphQL, consumidores y paquetes) · **Revisión:** al cerrar H1/H4 (Azure y observabilidad)
 
-## Reportar una vulnerabilidad
+Este documento es el mapeo de los controles del sistema contra el **OWASP Top 10** que pide la
+[especificación §8](docs/product/bidstream_spec.md). No es un pentest ni una certificación: dice qué
+está implementado, **dónde está la evidencia** y qué queda pendiente con su bloqueo.
 
-Usa el **reporte privado de GitHub** («Security» → «Report a vulnerability») en
-<https://github.com/franz-yapu/bidstream/security/advisories/new>. No abras una incidencia pública con
-detalles de explotación. Es un proyecto personal: se responde en cuanto es posible, sin plazo garantizado.
+## Cómo reportar una vulnerabilidad
 
-## Fronteras de confianza
+Usa un **aviso de seguridad privado** del repositorio (GitHub → _Security_ → _Report a
+vulnerability_). No abras un _issue_ público con detalles explotables. Incluye la versión o commit,
+los pasos para reproducirlo y el impacto que observaste; confirma antes de publicar nada.
 
-| Frontera                         | Qué cruza            | Defensa principal                                                                   |
-| -------------------------------- | -------------------- | ----------------------------------------------------------------------------------- |
-| Cliente → API / GraphQL          | Peticiones HTTP      | JWT corto, RBAC denegando por defecto, validación con Zod, límites, CORS, cabeceras |
-| API → PostgreSQL                 | Comandos y consultas | Prisma parametrizado, tenant en toda consulta, transacciones                        |
-| Relay → Kafka → consumidores     | Eventos y comandos   | Firma Ed25519, idempotencia, DLQ                                                    |
-| Operador → API de administración | Reproceso del DLQ    | Solo rol `ADMIN`, registro del `actor`                                              |
+## Leyenda de estados
 
-## Mapeo OWASP Top 10
+| Estado | Significado                                                         |
+| ------ | ------------------------------------------------------------------- |
+| ✅     | Implementado y cubierto por pruebas en el repositorio               |
+| 🟡     | Implementado en parte; el resto depende de un bloqueo conocido      |
+| ⛔     | Pendiente y bloqueado; se indica el bloqueo y la mitigación vigente |
 
-Estados: **Hecho**, **Parcial** (hay control pero falta algo que depende de otra tarea) y **Pendiente**.
+## Índice
 
-### A01 · Control de acceso roto — _Hecho_
+| Punto                                                      | Control                        | Estado | Bloqueo                 |
+| ---------------------------------------------------------- | ------------------------------ | ------ | ----------------------- |
+| [A01](#a01--control-de-acceso)                             | Control de acceso              | ✅     | —                       |
+| [A02](#a02--fallos-criptográficos)                         | Fallos criptográficos          | 🟡     | TLS y Key Vault → H1/H3 |
+| [A03](#a03--inyección)                                     | Inyección                      | ✅     | —                       |
+| [A04](#a04--diseño-inseguro)                               | Diseño inseguro                | ✅     | —                       |
+| [A05](#a05--mala-configuración)                            | Mala configuración             | ✅     | —                       |
+| [A06](#a06--componentes-vulnerables-y-desactualizados)     | Componentes vulnerables        | ✅     | —                       |
+| [A07](#a07--fallos-de-identificación-y-autenticación)      | Fallos de autenticación        | ✅     | —                       |
+| [A08](#a08--fallos-de-integridad-de-datos-y-software)      | Integridad de datos y software | ✅     | —                       |
+| [A09](#a09--fallos-de-registro-y-monitorización)           | Registro y monitorización      | 🟡     | Alertas → H4            |
+| [A10](#a10--falsificación-de-peticiones-del-servidor-ssrf) | SSRF                           | ✅     | —                       |
 
-- **Qué se hizo:** control por rol que **deniega por defecto** ([`access-control.ts`](apps/api/src/access-control.ts)):
-  toda ruta exige token salvo las públicas y debe declarar los roles que la pueden usar, o responde `403`.
-  El tenant y el postor salen **solo del token**, nunca de una cabecera; toda consulta filtra por tenant.
-  Un `ADMIN` solo crea usuarios en **su** tenant. GraphQL verifica el mismo JWT.
-  [ADR-0013](docs/adr/0013-autenticacion-propia-y-rbac.md).
-- **Evidencia:** [`access.int.test.ts`](apps/api/src/access.int.test.ts) (matriz de roles, ruta olvidada
-  denegada, enumeración de todas las rutas), [`auth.int.test.ts`](apps/api/src/auth.int.test.ts)
-  (cabeceras de identidad ignoradas, aislamiento entre tenants),
-  [`auth.int.test.ts`](apps/graphql/src/auth.int.test.ts) (GraphQL).
+---
 
-### A02 · Fallos criptográficos — _Parcial_
+## A01 · Control de acceso
 
-- **Qué se hizo:** contraseñas con **Argon2id** ([`password.ts`](packages/auth/src/password.ts)); JWT y firma de
-  eventos con **Ed25519** ([`tokens.ts`](packages/auth/src/tokens.ts), [ADR-0012](docs/adr/0012-firma-ed25519-de-eventos.md));
-  refresh tokens opacos guardados solo como SHA-256; HSTS en producción; secretos solo por entorno, nunca
-  en las imágenes ni en los logs.
-- **Evidencia:** [`auth.test.ts`](packages/auth/src/auth.test.ts), [`signing.test.ts`](packages/signing/src/signing.test.ts),
-  [`docker-policy.test.ts`](packages/testing/src/policy/docker-policy.test.ts) (sin secretos en la imagen),
-  [`hardening.int.test.ts`](apps/api/src/hardening.int.test.ts) (HSTS).
-- **Falta:** **TLS extremo a extremo** y **custodia de claves en Key Vault** dependen del despliegue en
-  Azure (H1, bloqueado por la suscripción). Hoy el entorno local va en texto plano.
+**Qué hay.** Denegar por defecto: toda ruta de la API exige token salvo las declaradas públicas
+(salud, documentación, registro, login y refresh) y debe declarar los roles que la pueden usar o se
+deniega con `403`. El tenant y el postor salen **del token**, no de cabeceras. Los repositorios
+filtran siempre por `tenantId`; GraphQL toma el tenant de la misma identidad. La identidad por
+cabeceras (`X-Tenant-Id`/`X-Bidder-Id`) solo existe fuera de producción y el arranque falla si se
+intenta en producción.
 
-### A03 · Inyección — _Hecho_
+**Evidencia.** [access-control.ts](apps/api/src/access-control.ts),
+[auth-context.ts](apps/api/src/auth-context.ts),
+[auction-repository.ts](packages/db/src/repositories/auction-repository.ts),
+[lot-repository.ts](packages/db/src/repositories/lot-repository.ts),
+[tenant.ts](apps/graphql/src/tenant.ts), [ADR-0013](docs/adr/0013-autenticacion-propia-y-rbac.md).
 
-- **Qué se hizo:** Prisma parametrizado; el SQL crudo (outbox, cierre, bloqueos) usa solo plantillas
-  etiquetadas, nunca `*Unsafe`; validación **con Zod en el borde** de cada ruta; GraphQL con límites de
-  profundidad, complejidad, alias, tokens y tamaño ([E2](docs/sdd/E2/SDD.md)).
-- **Evidencia:** [`security.test.ts`](packages/testing/src/docs/security.test.ts) (ningún `*Unsafe`),
-  [`limits.int.test.ts`](apps/graphql/src/limits.int.test.ts), [`commands.int.test.ts`](apps/api/src/commands.int.test.ts)
-  (entradas inválidas rechazadas).
+**Estado:** ✅ implementado y probado (`access.int.test.ts`, `auth.int.test.ts` en API y GraphQL).
 
-### A04 · Diseño inseguro — _Hecho_
+**Límite.** No hay Row-Level Security en PostgreSQL: es opcional en la spec (Q6). La propiedad del
+recurso se resuelve por tenant y por el filtro de los repositorios.
 
-- **Qué se hizo:** **límite de pujas por postor y minuto** (30), contado en PostgreSQL con un bloqueo por
-  postor (exacto entre réplicas); **claves de idempotencia** obligatorias en la puja; **anti-sniping**; un
-  **único escritor por lote** (el decisor) para que ninguna puja se acepte tras el cierre
-  ([ADR-0011](docs/adr/0011-decisor-unico-por-lote.md)); tope de reprocesos del DLQ.
-- **Evidencia:** [`hardening.int.test.ts`](apps/api/src/hardening.int.test.ts) (429, ráfaga entre dos
-  instancias), [`idempotency.int.test.ts`](apps/api/src/idempotency.int.test.ts) (20 peticiones simultáneas,
-  un comando), [`closer.int.test.ts`](apps/closer/src/closer.int.test.ts) (puja y cierre a la vez).
+## A02 · Fallos criptográficos
 
-### A05 · Configuración de seguridad incorrecta — _Hecho_
+**Qué hay.** Contraseñas con **Argon2id** y los parámetros recomendados por OWASP (19 MiB, 2
+iteraciones, 1 hilo). JWT de acceso **EdDSA (Ed25519)** y firma de eventos con el mismo tipo de
+clave. El refresh es un valor aleatorio de 32 bytes; en la base solo se guarda su **SHA-256**. Los
+secretos y claves entran por variables de entorno: `.env*` está ignorado, las claves de desarrollo
+se generan con un script y nunca se versionan, y la imagen de contenedor no copia fuentes ni `.env`.
 
-- **Qué se hizo:** cabeceras de seguridad (helmet, CSP `default-src 'none'`, en [`app.ts`](apps/api/src/app.ts) y
-  [`security-headers.ts`](apps/graphql/src/security-headers.ts)), **CORS con lista blanca**
-  (vacía por defecto; `*` rechazado), **sin trazas de error al cliente** (`problem+json`), configuración
-  validada al arrancar, el modo por cabecera **prohibido en producción**, imágenes como usuario no root y
-  con la base fijada por digest ([`Dockerfile`](Dockerfile)).
-- **Evidencia:** [`hardening.int.test.ts`](apps/api/src/hardening.int.test.ts) y
-  [`hardening.int.test.ts`](apps/graphql/src/hardening.int.test.ts), [`config.test.ts`](apps/api/src/config.test.ts),
-  [`docker-policy.test.ts`](packages/testing/src/policy/docker-policy.test.ts).
+**Evidencia.** [password.ts](packages/auth/src/password.ts), [tokens.ts](packages/auth/src/tokens.ts),
+[keys.ts](packages/signing/src/keys.ts), [generate-keys.mjs](scripts/generate-keys.mjs),
+[.gitignore](.gitignore), [Dockerfile](Dockerfile).
 
-### A06 · Componentes vulnerables y desactualizados — _Hecho_
+**Estado:** 🟡. Argon2id y Ed25519 están implementados; **TLS** lo terminará el borde de Azure
+(H1/H3) y **Key Vault** es H1.
 
-- **Qué se hizo:** `npm audit` en cada PR y cada semana (producción y alto/crítico), Dependabot para npm,
-  acciones de GitHub y la imagen base, todas las acciones fijadas por SHA y `overrides` para los avisos
-  conocidos ([F6](docs/sdd/F6/SDD.md)).
-- **Evidencia:** [`repo-policy.test.ts`](packages/testing/src/policy/repo-policy.test.ts) y el flujo
-  [`security.yml`](.github/workflows/security.yml).
-- **Falta:** escaneo de vulnerabilidades de las imágenes (H1).
+**Límite.** En local y en el contenedor no hay TLS: se usa HTTP. Mitigación actual: HSTS en
+producción, contraseñas y claves fuera del repositorio y `Cache-Control: no-store` en las respuestas
+de autenticación. El Bicep de H1 ya crea Key Vault con RBAC y PostgreSQL con TLS obligatorio; falta
+desplegarlo (Q1).
 
-### A07 · Fallos de identificación y autenticación — _Hecho_
+## A03 · Inyección
 
-- **Qué se hizo:** ([`service.ts`](packages/auth/src/service.ts), [ADR-0013](docs/adr/0013-autenticacion-propia-y-rbac.md))
-  JWT de acceso de 10 minutos, **refresh token de un solo uso con rotación y revocación de
-  toda la familia si se reutiliza**, **bloqueo** de 15 minutos tras 5 fallos, **un único error** de
-  credenciales (sin enumerar usuarios) y límite de peticiones por IP en `/v1/auth/*`.
-- **Evidencia:** [`auth.int.test.ts`](packages/auth/src/auth.int.test.ts) (rotación, reutilización, bloqueo),
-  [`auth.int.test.ts`](apps/api/src/auth.int.test.ts) (respuestas idénticas, 429).
-- **Falta:** MFA, verificación de correo y recuperación de contraseña (no hay infraestructura de correo).
+**Qué hay.** Validación **Zod en el borde** (cuerpo, parámetros, cabeceras y respuestas) y cuerpos
+`strictObject`. Prisma parametriza las consultas; el SQL crudo se escribe solo con plantillas
+etiquetadas y valores ligados (`$queryRaw`, `$executeRaw`), nunca concatenando texto. GraphQL tiene
+límites de profundidad, alias, complejidad, tamaño de token y de cuerpo, _batching_ desactivado e
+introspección configurable; se aplican antes de los resolvers.
 
-### A08 · Fallos de integridad de software y datos — _Parcial_
+**Evidencia.** [bids.ts](apps/api/src/routes/bids.ts),
+[idempotency-store.ts](packages/db/src/idempotency/idempotency-store.ts),
+[lot-decision-repository.ts](packages/db/src/decision/lot-decision-repository.ts),
+[limits/](apps/graphql/src/limits/index.ts).
 
-- **Qué se hizo:** **firma Ed25519 de cada mensaje** y verificación en los cinco consumidores (uno
-  manipulado va al DLQ sin aplicarse); bitácora `audit_log` **append-only** (disparadores en la base);
-  acciones por SHA y base de imagen por digest.
-- **Evidencia:** [`signing.int.test.ts`](apps/projector/src/signing.int.test.ts), [`audit.int.test.ts`](packages/db/src/audit/audit.int.test.ts).
-- **Falta / límite conocido:** la fecha de un mensaje **sin firma** la declara el propio mensaje, así que el
-  corte `EVENT_SIGNING_REQUIRED_FROM` (que acepta el historial anterior a la firma) solo protege hasta que
-  se selle el historial; después hay que quitarlo ([ADR-0012](docs/adr/0012-firma-ed25519-de-eventos.md)).
-  Falta además un rol de base de datos con solo `INSERT`/`SELECT` sobre `audit_log` (H1).
+**Estado:** ✅ implementado y probado (`limits.test.ts`, `hardening.int.test.ts` de GraphQL y las
+pruebas de la API).
 
-### A09 · Fallos de registro y monitorización — _Parcial_
+## A04 · Diseño inseguro
 
-- **Qué se hizo:** logs JSON estructurados con **id de correlación** de la petición a los consumidores,
-  **redacción de secretos** y contraseñas de URL, la bitácora append-only y el registro del `actor` en las
-  operaciones de administración ([F4](docs/sdd/F4/SDD.md)).
-- **Evidencia:** [`logger.test.ts`](packages/logging/src/logger.test.ts) (redacción),
-  [`correlation.int.test.ts`](apps/projector/src/correlation.int.test.ts) (la cadena completa y sin fugas),
-  [`auth.int.test.ts`](apps/api/src/auth.int.test.ts) (ninguna contraseña, hash ni token en logs).
-- **Falta:** **alertas** y métricas de _consumer lag_ (H4, requiere Azure).
+**Qué hay.** Límite de **30 pujas por postor y minuto** contado en PostgreSQL (exacto entre
+réplicas), `Idempotency-Key` obligatoria que evita duplicar un comando, ventana anti-sniping que
+extiende el cierre y cierre decidido por la misma partición del lote (un solo escritor de
+`LotClosed`). El dinero usa `Decimal(12,2)` y las reglas de dominio son funciones puras con pruebas.
 
-### A10 · Falsificación de peticiones del lado del servidor (SSRF) — _Hecho_
+**Evidencia.** [place-bid.ts](apps/api/src/commands/place-bid.ts),
+[idempotency-store.ts](packages/db/src/idempotency/idempotency-store.ts),
+[decide.ts](apps/decider/src/decide.ts), [closer.ts](apps/closer/src/closer.ts),
+[schema.prisma](packages/db/prisma/schema.prisma).
 
-- **Qué se hizo:** la aplicación **no hace llamadas HTTP salientes**: solo habla con PostgreSQL ([`index.ts`](packages/db/src/index.ts)) y Kafka
-  ([`client.ts`](packages/kafka/src/client.ts)), así
-  que ninguna URL controlada por un usuario se solicita desde el servidor.
-- **Evidencia:** [`security.test.ts`](packages/testing/src/docs/security.test.ts) busca en el código de la
-  aplicación cualquier cliente HTTP (`fetch`, `axios`, `undici`, `http.request/get`) y falla si aparece.
+**Estado:** ✅ implementado y probado (`idempotency.int.test.ts`, `hardening.int.test.ts` y las
+pruebas del decisor y del closer).
 
-## Límites conocidos y pendientes
+## A05 · Mala configuración
 
-- TLS extremo a extremo, Key Vault y el escaneo de imágenes llegan con el despliegue en Azure (H1).
-- Alertas y métricas de _consumer lag_ (H4).
-- MFA, verificación de correo y recuperación de contraseña.
-- El tenant es un UUID que elige quien se registra: quien lo conozca puede registrarse como `BIDDER`
-  ([ADR-0013](docs/adr/0013-autenticacion-propia-y-rbac.md)).
-- El límite global por IP es **por réplica** (el límite de pujas, en cambio, es exacto entre réplicas).
-- Sellar el historial de eventos firmados para retirar el corte `EVENT_SIGNING_REQUIRED_FROM`.
+**Qué hay.** `@fastify/helmet` con CSP `default-src 'none'; frame-ancestors 'none'` (la
+documentación es la única excepción), `Referrer-Policy`, HSTS solo en producción y sin
+`X-Powered-By`. CORS con **lista blanca exacta** (vacía por defecto, `*` rechazado) en API y
+GraphQL. Los errores salen como `problem+json` sin pila ni mensajes de la base. `AUTH_MODE` se fuerza
+a `jwt` en producción. El contenedor corre como usuario `node`, sobre una imagen fijada por digest y
+sin secretos.
+
+**Evidencia.** [app.ts](apps/api/src/app.ts),
+[security-headers.ts](apps/graphql/src/security-headers.ts), [problem.ts](apps/api/src/problem.ts),
+[config.ts](apps/api/src/config.ts), [Dockerfile](Dockerfile).
+
+**Estado:** ✅ implementado y probado (`hardening.int.test.ts` de API y GraphQL).
+
+**Límite.** La configuración del proxy, WAF y TLS de borde corresponde al despliegue en Azure (H1).
+
+## A06 · Componentes vulnerables y desactualizados
+
+**Qué hay.** Un flujo `security` en la CI ejecuta `npm audit --omit=dev --audit-level=low` y
+`npm audit --audit-level=high`, verifica las firmas del registro con un npm fijado y corre también
+cada semana. Dependabot abre actualizaciones agrupadas de npm, acciones e imagen base; las acciones
+de GitHub van fijadas por SHA; `minimatch` está forzado a una versión corregida con `overrides`.
+
+**Evidencia.** [security.yml](.github/workflows/security.yml),
+[dependabot.yml](.github/dependabot.yml), [package.json](package.json),
+[ci.yml](.github/workflows/ci.yml).
+
+**Estado:** ✅ implementado (`docs/sdd/F6/SDD.md`).
+
+**Límite.** El escaneo de imágenes y su publicación en ACR dependen de H1.
+
+## A07 · Fallos de identificación y autenticación
+
+**Qué hay.** Autenticación propia: Argon2id, JWT de acceso EdDSA de **10 minutos** con `sub`, `tid`,
+`role` y `jti`, y refresh opaco de **7 días** de un solo uso con rotación; reutilizar un refresh
+revoca la familia. Tras **5 fallos** la cuenta se bloquea **15 minutos**. Todos los fallos de
+credenciales devuelven el mismo error. El registro público solo crea `BIDDER`; un `ADMIN` crea los
+demás roles en su tenant. El login tiene límite por IP.
+
+**Evidencia.** [service.ts](packages/auth/src/service.ts), [tokens.ts](packages/auth/src/tokens.ts),
+[password.ts](packages/auth/src/password.ts), [config.ts](packages/auth/src/config.ts),
+[ADR-0013](docs/adr/0013-autenticacion-propia-y-rbac.md).
+
+**Estado:** ✅ implementado y probado (`auth.test.ts` y `auth.int.test.ts`).
+
+**Límite.** El primer administrador se crea de forma idempotente con variables de entorno; su
+contraseña debe rotarse fuera de la demostración.
+
+## A08 · Fallos de integridad de datos y software
+
+**Qué hay.** El relay firma con **Ed25519** los bytes exactos del valor y añade `x-signature` y
+`x-key-id`; cada consumidor verifica la firma (`enforce` en producción, `off` fuera de ella, con un
+corte para el historial anterior a la firma). Un mensaje manipulado o sin firma no se aplica: va al
+DLQ como veneno, conservando la firma para un reproceso correcto. Los eventos tienen contrato Zod y
+`version`, y la bitácora `audit_log` es **append-only** por disparadores de base de datos.
+
+**Evidencia.** [relay.ts](apps/relay/src/relay.ts), [verifier.ts](packages/signing/src/verifier.ts),
+[dlq.ts](packages/consumer/src/dlq.ts),
+[migración 0003](packages/db/prisma/migrations/0003_audit_log/migration.sql),
+[ADR-0012](docs/adr/0012-firma-ed25519-de-eventos.md).
+
+**Estado:** ✅ implementado y probado (`signing.test.ts`, `event-consumer.int.test.ts` y las pruebas
+de la bitácora).
+
+**Límite.** La rotación usa `kid` y exige conservar las claves públicas antiguas; el corte del
+historial sin firma se podrá quitar cuando el log esté sellado. La clave privada vivirá en Key Vault
+cuando llegue H1.
+
+## A09 · Fallos de registro y monitorización
+
+**Qué hay.** Una línea JSON por evento con `createLogger`, que **redacta** claves sensibles y
+contraseñas de URL. El `requestId` de la API viaja como `meta.correlationId` al evento, como cabecera
+de Kafka y aparece en los logs del consumidor y en el DLQ. Nunca se registra el `payload` del evento
+ni `bidderId`. La bitácora `audit_log` es append-only y solo se escribe con `recordAuditEntry`; el
+DLQ permite inspeccionar y reprocesar por HTTP para `ADMIN`.
+
+**Evidencia.** [logger.ts](packages/logging/src/logger.ts),
+[redact.ts](packages/logging/src/redact.ts),
+[migración 0003](packages/db/prisma/migrations/0003_audit_log/migration.sql),
+[dlq-admin.ts](packages/consumer/src/dlq-admin.ts).
+
+**Estado:** 🟡. Los logs y la bitácora están implementados; las **alertas** y las métricas de
+_consumer lag_ son H4.
+
+**Límite.** Hoy no hay alertas automáticas ni centralización en Azure; la detección depende de los
+logs y del DLQ. El Bicep de H1 deja Log Analytics listo; H4 añadirá las métricas y alertas, bloqueado
+por Q1.
+
+## A10 · Falsificación de peticiones del servidor (SSRF)
+
+**Qué hay.** El sistema **no hace peticiones HTTP salientes** ni acepta URLs del usuario: solo habla
+con PostgreSQL y Kafka, cuyos destinos vienen de variables de entorno. No hay webhooks, importación
+remota de imágenes ni redirecciones controladas por el cliente.
+
+**Evidencia.** [bids.ts](apps/api/src/routes/bids.ts), [app.ts](apps/api/src/app.ts),
+[Dockerfile](Dockerfile).
+
+**Estado:** ✅. Si en el futuro se añade una integración saliente (por ejemplo, notificaciones por
+webhook), deberá validar el destino contra una lista blanca y resolver el DNS de forma segura.
+
+---
+
+## Verificación automática
+
+`packages/testing/src/docs/security.test.ts` comprueba en `npm run check` que las diez secciones
+existan, que cada una cite evidencia que realmente está en el repo, que todos los enlaces relativos
+resuelvan y que los estados 🟡/⛔ nombren su bloqueo. También impide que TLS, Key Vault o las alertas
+se presenten como hechos y que el archivo incluya material secreto.

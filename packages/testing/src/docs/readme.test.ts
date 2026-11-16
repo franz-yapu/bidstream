@@ -49,12 +49,13 @@ describe('estructura (spec §12)', () => {
     }
   });
 
-  it('el vídeo del reproceso está enlazado o marcado explícitamente como pendiente', () => {
+  it('el vídeo del reproceso está enlazado, pendiente o declarado no incluido (sin ambigüedad)', () => {
     const body = section('Reproceso: el log es la fuente de verdad');
     const linked = /\*\*Vídeo:\*\*\s*\[[^\]]+\]\(https?:\/\/[^)]+\)/.test(body);
     const pending = body.includes('<!-- VIDEO-PENDIENTE -->') && /Vídeo:\*\* pendiente/.test(body);
-    expect(linked || pending).toBe(true);
-    expect(linked && pending).toBe(false);
+    const omitted = /Vídeo:\*\* no incluido/.test(body);
+    expect(linked || pending || omitted).toBe(true);
+    expect([linked, pending, omitted].filter(Boolean)).toHaveLength(1);
   });
 });
 
@@ -99,9 +100,7 @@ describe('honestidad', () => {
     expect(readme).toContain('POST /v1/lots/:id/bids');
     expect(readme).toContain('docs/adr/0011-decisor-unico-por-lote.md');
     // lo que sigue pendiente está en «Estado y límites» y no se presenta como hecho en otra parte
-    for (const pending of ['SECURITY.md', 'Despliegue en Azure']) {
-      expect(state, pending).toContain(pending);
-    }
+    expect(state).toContain('Despliegue en Azure');
     expect(state).not.toMatch(/pendiente de una decisión/);
   });
 

@@ -15,6 +15,7 @@ solo lo que toca la tarea.
 | `docs/adr/` | Architecture Decision Records — un archivo por decisión no trivial, numerado. |
 | `docs/decisions/LOG.md` | Log append-only de decisiones/respuestas de stakeholders (`DEC-###`). |
 | `docs/planning/` | Artefactos generados: backlog, roadmaps de sprint, cuerpos de tickets. Nombres de archivo con fecha, nada se edita a mano. |
+| [`SECURITY.md`](../SECURITY.md) | Política de seguridad y mapeo OWASP Top 10, con la evidencia de cada control. |
 
 ## Precedencia cuando los docs no coinciden
 

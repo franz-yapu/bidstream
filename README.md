@@ -144,9 +144,8 @@ estado antes y después:
 make up && make demo-reprocess
 ```
 
-<!-- VIDEO-PENDIENTE -->
-
-**Vídeo:** pendiente de grabar (guion en [`docs/demo/GUION.md`](docs/demo/GUION.md)).
+**Vídeo:** no incluido en esta entrega por decisión del usuario; la demostración reproducible y el
+guion siguen en [`docs/demo/GUION.md`](docs/demo/GUION.md).
 
 ## Stack y puesta en marcha
 
@@ -179,11 +178,11 @@ PostgreSQL reales):
 
 - Comandos REST de subastas, lotes y pujas (con `Idempotency-Key`; la puja la decide un consumidor en orden por lote), cierre automático por tiempo, firma Ed25519 de los mensajes, autenticación propia (JWT corto, refresh rotatorio, Argon2id) con roles y denegación por defecto, límite de pujas por postor, cabeceras de seguridad y CORS con lista blanca, outbox, relay, los tres consumidores, proyección, GraphQL con
   límites y subscriptions, DLQ con reproceso administrativo, reproceso completo desde el log, logs con
-  correlación, imágenes de contenedor y CI con auditoría de dependencias.
+  correlación, imágenes de contenedor, CI con auditoría de dependencias y [mapeo OWASP](SECURITY.md).
 
 Lo que **no** está todavía:
 
-- **Despliegue en Azure** (Bicep, Event Hubs, Container Apps) y métricas de _consumer lag_.
+- **Despliegue en Azure**: el [Bicep](infra/README.md) está listo, pero sin desplegar (Q1); faltan las métricas de _consumer lag_.
 
-Documentación: [especificación](docs/product/bidstream_spec.md) · [seguridad (OWASP)](SECURITY.md) · [ADR](docs/adr/README.md) ·
-[SDD por ticket](docs/sdd/) · [guía de desarrollo](docs/DESARROLLO.md).
+Documentación: [especificación](docs/product/bidstream_spec.md) · [seguridad](SECURITY.md) ·
+[ADR](docs/adr/README.md) · [SDD por ticket](docs/sdd/) · [guía de desarrollo](docs/DESARROLLO.md).
