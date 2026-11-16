@@ -112,6 +112,24 @@ p {
   border-radius: 8px;
 }
 
+/* Una puja nueva entra en la lista con un destello suave del fondo. */
+@keyframes bid-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+    background-color: color-mix(in srgb, var(--color-forest) 16%, transparent);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    background-color: transparent;
+  }
+}
+
+.bid-enter {
+  animation: bid-enter 650ms var(--ease-out) both;
+}
+
 @keyframes live-dot {
   0%,
   100% {

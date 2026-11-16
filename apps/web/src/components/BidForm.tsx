@@ -2,7 +2,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import type { LotWithAuction } from '../api/types';
 import { useApi } from '../auth/context';
-import { compareMoney, formatMoney, parseMoneyInput } from '../lib/money';
+import { compareMoney, formatMoney, fromCents, parseMoneyInput, toCents } from '../lib/money';
 import { Check } from './icons';
 import { ErrorNote } from './ErrorNote';
 
@@ -27,6 +27,7 @@ export function BidForm({ lot, closed }: { lot: LotWithAuction; closed: boolean 
   const [invalid, setInvalid] = useState<string | null>(null);
   const [pending, setPending] = useState<Pending | null>(null);
   const key = useRef<{ amount: string; value: string } | null>(null);
+  const input = useRef<HTMLInputElement | null>(null);
 
   const bid = useMutation({
     mutationFn: ({ amount, idempotencyKey }: { amount: string; idempotencyKey: string }) =>
@@ -70,6 +71,11 @@ export function BidForm({ lot, closed }: { lot: LotWithAuction; closed: boolean 
   }, [waitingSince]);
 
   const minimum = lot.nextMinimumBid;
+  // atajos: el mínimo y unos saltos de incremento (en céntimos, sin coma flotante)
+  const quick = [0n, 1n, 3n, 10n].map((steps) => ({
+    amount: fromCents(toCents(minimum) + steps * toCents(lot.minIncrement)),
+    label: fromCents(toCents(minimum) + steps * toCents(lot.minIncrement)),
+  }));
 
   function submit(event: React.SyntheticEvent): void {
     event.preventDefault();
@@ -95,6 +101,7 @@ export function BidForm({ lot, closed }: { lot: LotWithAuction; closed: boolean 
         </label>
         <input
           id="bid-amount"
+          ref={input}
           inputMode="decimal"
           autoComplete="off"
           className="field"
@@ -108,6 +115,26 @@ export function BidForm({ lot, closed }: { lot: LotWithAuction; closed: boolean 
         <p className="mt-1.5 text-[14px] text-ink-soft">
           Mínimo: {formatMoney(minimum, lot.currency)}
         </p>
+        {!closed && (
+          <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Importes rápidos">
+            {quick.map(({ amount, label }) => (
+              <button
+                key={amount}
+                type="button"
+                aria-label={`Usar ${formatMoney(amount, lot.currency)}`}
+                aria-pressed={text === amount}
+                onClick={() => {
+                  setText(amount);
+                  setInvalid(null);
+                  input.current?.focus();
+                }}
+                className={`num rounded-full px-3.5 py-1.5 text-[15px] font-medium transition-[background-color,transform] duration-150 ease-out active:scale-[0.96] ${text === amount ? 'bg-ink text-paper' : 'bg-sand text-ink [@media(hover:hover)]:hover:bg-sand-deep'}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
       {invalid !== null && (
         <p role="alert" className="error">

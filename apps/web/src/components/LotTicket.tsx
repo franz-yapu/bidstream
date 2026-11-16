@@ -2,6 +2,8 @@ import { Link } from 'react-router';
 import type { Lot } from '../api/types';
 import { formatMoney } from '../lib/money';
 import { Countdown } from './Countdown';
+import { FlashText } from './FlashText';
+import { LotCover } from './LotCover';
 import { ArrowRight } from './icons';
 import { StatusBadge } from './StatusBadge';
 
@@ -35,6 +37,12 @@ export function LotTicket({
       to={`/lotes/${lot.id}`}
       className="ticket group transition-transform duration-200 ease-out active:scale-[0.99] [@media(hover:hover)]:hover:-translate-y-0.5"
     >
+      <div className={featured ? 'h-44 sm:h-56' : 'h-32'}>
+        <LotCover
+          seed={lot.id}
+          className="transition-transform duration-500 ease-out [@media(hover:hover)]:group-hover:scale-[1.03]"
+        />
+      </div>
       <div className={`flex flex-1 flex-col gap-5 p-6 ${featured ? 'sm:p-8' : ''}`}>
         <div className="flex items-start justify-between gap-3">
           <p className="text-[15px] text-ink-soft">{auctionTitle ?? ' '}</p>
@@ -55,7 +63,7 @@ export function LotTicket({
                   : 'Precio vigente'}
             </p>
             <p className={`display num ${featured ? 'text-5xl' : 'text-3xl'}`}>
-              {formatMoney(price, lot.currency)}
+              <FlashText value={formatMoney(price, lot.currency)} />
             </p>
           </div>
           {!closed && (
@@ -68,7 +76,9 @@ export function LotTicket({
         </div>
       </div>
       <div className="ticket-stub">
-        <span className="font-medium">{stubText(lot)}</span>
+        <span className="font-medium">
+          <FlashText value={stubText(lot)} />
+        </span>
         <ArrowRight className="shrink-0 text-forest transition-transform duration-200 ease-out group-hover:translate-x-0.5" />
       </div>
     </Link>

@@ -74,6 +74,8 @@ test('administrador publica, postor puja y otra pestaña ve el precio en vivo', 
   await bidder.getByLabel(/tu puja/i).fill('105');
   await bidder.getByRole('button', { name: 'Pujar' }).click();
   await expect(bidder.getByText('Tu puja es la vigente')).toBeVisible();
+  await expect(bidder.getByText('Vas ganando con 105.00 USD')).toBeVisible();
+  await expect(bidder.getByText('Tú', { exact: true })).toBeVisible();
   await expect(bidder.getByTestId('price')).toHaveText('105.00 USD');
   await expect(admin.getByTestId('price')).toHaveText('105.00 USD'); // en vivo, sin recargar
   await expect(bidder.getByRole('listitem').filter({ hasText: '105.00 USD' })).toBeVisible();

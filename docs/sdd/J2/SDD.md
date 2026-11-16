@@ -181,3 +181,11 @@ mismo flujo; no se añaden canales.
 - **Líder del lote:** sale de la puja mejor clasificada (la misma lista que se ve), no de una consulta aparte.
 - **Datos de ejemplo:** `make demo-seed` (`scripts/demo-seed.mjs`) usa solo la API pública.
 - El renombrado por administrador (§7.3) queda como ticket aparte: no hay UI de moderación todavía.
+
+## Revisión 0.3 (2026-11-16) — pulido pedido por el usuario («hazlo 1 a 5»)
+
+- **Portadas de lote** generadas a partir del id (formas planas con la paleta; `LotCover`), en el billete y en la página del lote. Es la propuesta de §7.4; las fotos reales siguen pendientes.
+- **Puja rápida:** atajos con el mínimo y saltos de incremento (en céntimos con `BigInt`); rellenan el campo, no envían nada.
+- **Estado del postor** («Vas ganando», «Te han superado», con el mínimo para volver a ganar), marca «Tú» en el historial y animación de las pujas nuevas. Se reconoce al postor por su nombre público, único por tenant.
+- **Inicio en vivo:** el inicio y la columna de «Entrar» consultan cada 8 s y resaltan los cambios de precio y de líder.
+- **Menú móvil** con botón y panel accesibles (`aria-expanded`, `aria-controls`).

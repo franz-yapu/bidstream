@@ -43,7 +43,11 @@ export function EntrarPage() {
   const mode = params.get('modo') === 'registro' ? 'registro' : 'entrar';
   const volver = safeReturn(params.get('volver'));
   const [showPassword, setShowPassword] = useState(false);
-  const board = useQuery({ queryKey: ['board', 'OPEN'], queryFn: () => api.board('OPEN') });
+  const board = useQuery({
+    queryKey: ['board', 'OPEN'],
+    queryFn: () => api.board('OPEN'),
+    refetchInterval: 8000,
+  });
   const first = board.data?.find((a) => a.lots.some((l) => l.status === 'OPEN'));
   const firstLot = first?.lots.find((l) => l.status === 'OPEN');
   const teaser =

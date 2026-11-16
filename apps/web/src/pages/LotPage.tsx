@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { useApi, useMe } from '../auth/context';
 import { Avatar } from '../components/Avatar';
@@ -7,6 +8,8 @@ import { EmptyState } from '../components/EmptyState';
 import { ErrorNote } from '../components/ErrorNote';
 import { ArrowRight } from '../components/icons';
 import { LivePrice } from '../components/LivePrice';
+import { LotCover } from '../components/LotCover';
+import { YourStatus } from '../components/YourStatus';
 import { Skeleton } from '../components/Skeleton';
 import { StatusBadge } from '../components/StatusBadge';
 import { formatMoney } from '../lib/money';
@@ -41,6 +44,12 @@ export function LotPage() {
     refetchInterval: 4000,
   });
   const remaining = useCountdown(lot?.closesAt ?? new Date(0).toISOString(), api.clock.offsetMs);
+
+  // las pujas que ya estaban al abrir la página no se animan; solo las que llegan después
+  const [initialBids, setInitialBids] = useState<ReadonlySet<string> | null>(null);
+  if (initialBids === null && bids.data !== undefined) {
+    setInitialBids(new Set(bids.data.items.map((b) => b.id)));
+  }
 
   if (query.isPending) {
     return (
@@ -89,6 +98,9 @@ export function LotPage() {
 
       <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr] lg:items-start">
         <div className="ticket rise" style={{ '--i': 1 } as React.CSSProperties}>
+          <div className="h-36 sm:h-48">
+            <LotCover seed={lot.id} />
+          </div>
           <div className="p-6 sm:p-9">
             <p className="text-[15px] text-ink-soft">
               {closed
@@ -161,6 +173,13 @@ export function LotPage() {
           {me?.role === 'BIDDER' ? (
             <div className="card">
               <h2 className="mb-4 text-2xl">Hacer una puja</h2>
+              <YourStatus
+                me={me.displayName}
+                closed={closed}
+                bids={bids.data?.items ?? []}
+                currency={lot.currency}
+                nextMinimum={lot.nextMinimumBid}
+              />
               <BidForm lot={lot} closed={closed || timeUp} />
             </div>
           ) : me === null ? (
@@ -196,11 +215,12 @@ export function LotPage() {
             return (
               <li
                 key={bid.id}
-                className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b-4 border-dotted border-ground px-5 py-4 last:border-b-0 sm:px-6"
+                className={`${initialBids?.has(bid.id) === false ? 'bid-enter ' : ''}flex flex-wrap items-center gap-x-4 gap-y-1 border-b-4 border-dotted border-ground px-5 py-4 last:border-b-0 sm:px-6`}
               >
                 <Avatar name={name} />
                 <span className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
                   <span className="truncate font-medium">{name}</span>
+                  {me?.displayName === name && <span className="badge bg-sand text-ink">Tú</span>}
                   {bid.rank === 1 && !closed && (
                     <span className="badge bg-forest text-paper">Vigente</span>
                   )}

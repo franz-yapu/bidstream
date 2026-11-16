@@ -38,8 +38,17 @@ const STEPS = [
 export function HomePage() {
   const api = useApi();
   const me = useMe();
-  const open = useQuery({ queryKey: ['board', 'OPEN'], queryFn: () => api.board('OPEN') });
-  const closed = useQuery({ queryKey: ['board', 'CLOSED'], queryFn: () => api.board('CLOSED') });
+  // el inicio se mantiene al día solo: precios, líderes y cierres
+  const open = useQuery({
+    queryKey: ['board', 'OPEN'],
+    queryFn: () => api.board('OPEN'),
+    refetchInterval: 8000,
+  });
+  const closed = useQuery({
+    queryKey: ['board', 'CLOSED'],
+    queryFn: () => api.board('CLOSED'),
+    refetchInterval: 20_000,
+  });
 
   const now = useServerNow(api.clock.offsetMs);
   const live = flatten(
