@@ -94,7 +94,7 @@ describe('sitio público (sin cuenta)', () => {
     const { router } = setup('/subastas');
     expect(await screen.findByRole('heading', { name: 'Subastas' })).toBeInTheDocument();
     expect(router.state.location.pathname).toBe('/subastas');
-    expect(await screen.findByText('No hay subastas en curso ahora mismo.')).toBeInTheDocument();
+    expect(await screen.findByText('Todavía no hay subastas.')).toBeInTheDocument();
   });
 
   it('el lote lo ve un espectador: líder, historial con nombres y la invitación a entrar', async () => {

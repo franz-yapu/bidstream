@@ -86,7 +86,11 @@ const auction = (lots: Lot[]): AuctionWithLiveLots => ({
 describe('todos los lotes', () => {
   it('lista los lotes abiertos y cambia el orden', async () => {
     const user = userEvent.setup();
-    setup('/lotes', { board: vi.fn().mockResolvedValue([auction([A, B, C])]) });
+    setup('/lotes', {
+      board: vi.fn((status: string) =>
+        Promise.resolve(status === 'OPEN' ? [auction([A, B, C])] : []),
+      ),
+    });
     const titles = (): string[] =>
       screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent);
     await waitFor(() => {
@@ -99,7 +103,7 @@ describe('todos los lotes', () => {
 
   it('avisa cuando no hay lotes abiertos', async () => {
     setup('/lotes', { board: vi.fn().mockResolvedValue([]) });
-    expect(await screen.findByText('No hay lotes abiertos ahora')).toBeInTheDocument();
+    expect(await screen.findByText('Todavía no hay lotes')).toBeInTheDocument();
   });
 });
 
@@ -117,10 +121,11 @@ describe('listado de subastas con más información', () => {
     expect(card).not.toBeNull();
     const view = within(card as HTMLElement);
     expect(view.getByText('3')).toBeInTheDocument();
+    expect(view.getByText('En proceso')).toBeInTheDocument();
     expect(view.getByText('900.00 USD')).toBeInTheDocument();
     expect(view.getByText('Próximo cierre')).toBeInTheDocument();
     expect(document.title).toBe('Subastas · bidstream');
-    await user.click(screen.getByRole('tab', { name: 'Finalizadas' }));
+    await user.click(screen.getByRole('tab', { name: 'Terminadas' }));
   });
 });
 
@@ -145,5 +150,59 @@ describe('copiar enlace', () => {
     expect(writeText).toHaveBeenCalledWith(window.location.href);
     expect(await screen.findByText('Enlace copiado')).toBeInTheDocument();
     expect(document.title).toBe('Subasta de otoño · bidstream');
+  });
+});
+
+describe('estado y pujas a la vista', () => {
+  const D = lot('d', 'Viejo', '50.00', '2029-01-01T00:00:00.000Z', {
+    status: 'CLOSED',
+    finalAmount: '50.00',
+    hasWinner: true,
+    winner: { displayName: 'Ana' },
+  });
+  const bids = {
+    items: [
+      {
+        id: 'x',
+        amount: '300.00',
+        placedAt: '2026-11-16T10:00:00.000Z',
+        rank: 1,
+        awarded: false,
+        bidder: { displayName: 'Luz' },
+      },
+    ],
+    hasNextPage: false,
+    endCursor: null,
+  };
+
+  it('separa lo que está en proceso de lo que terminó, cada bloque con su cuenta', async () => {
+    setup('/lotes', {
+      board: vi.fn((status: string) =>
+        Promise.resolve(
+          status === 'OPEN' ? [auction([A, B])] : [{ ...auction([D]), status: 'CLOSED' as const }],
+        ),
+      ),
+    });
+    const live = await screen.findByRole('region', { name: /En proceso/ });
+    const done = screen.getByRole('region', { name: /Terminados/ });
+    expect(within(live).getAllByRole('heading', { level: 3 })).toHaveLength(2);
+    expect(within(done).getByRole('heading', { level: 3, name: 'Viejo' })).toBeInTheDocument();
+    expect(within(done).getByText('Terminado')).toBeInTheDocument();
+    expect(within(live).getAllByText('En proceso').length).toBeGreaterThan(0);
+  });
+
+  it('muestra las pujas de un lote sin entrar en él, y de todos con el interruptor', async () => {
+    const user = userEvent.setup();
+    const getBids = vi.fn().mockResolvedValue(bids);
+    setup('/lotes', {
+      board: vi.fn((status: string) => Promise.resolve(status === 'OPEN' ? [auction([A, B])] : [])),
+      getBids,
+    });
+    const buttons = await screen.findAllByRole('button', { name: 'Ver pujas' });
+    await user.click(buttons[0] as HTMLElement);
+    expect(await screen.findByRole('list', { name: 'Pujas del lote' })).toHaveTextContent('Luz');
+    expect(getBids).toHaveBeenCalledTimes(1);
+    await user.click(screen.getByRole('switch', { name: 'Mostrar pujas' }));
+    expect(await screen.findAllByRole('list', { name: 'Pujas del lote' })).toHaveLength(2);
   });
 });

@@ -8,11 +8,12 @@ import { CREATOR_ROLES, useApi, useMe } from '../auth/context';
 import { ArrowRight } from '../components/icons';
 import { EmptyState } from '../components/EmptyState';
 import { ErrorNote } from '../components/ErrorNote';
-import { LotTicket } from '../components/LotTicket';
+import { BidsSwitch } from '../components/BidsSwitch';
+import { LotSections } from '../components/LotSections';
 import { TicketSkeletons } from '../components/Skeleton';
 import { StatusBadge } from '../components/StatusBadge';
 import { parseMoneyInput } from '../lib/money';
-import { sortLots, type LotOrder } from '../lib/lots';
+import { type LotOrder } from '../lib/lots';
 import { usePageTitle } from '../lib/page-title';
 import { formatDateTime, useServerNow } from '../lib/time';
 import { CopyLink } from '../components/CopyLink';
@@ -31,6 +32,7 @@ export function AuctionDetailPage() {
   const now = useServerNow(api.clock.offsetMs);
   const [adding, setAdding] = useState(false);
   const [order, setOrder] = useState<LotOrder>('closing');
+  const [showBids, setShowBids] = useState(false);
   const auction = query.data;
   usePageTitle(auction?.title);
   const canCreate = me !== null && CREATOR_ROLES.includes(me.role);
@@ -55,7 +57,7 @@ export function AuctionDetailPage() {
       </Link>
       <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
         <h1 className="text-5xl sm:text-6xl">{auction.title}</h1>
-        <StatusBadge status={auction.status} upcoming={upcoming} />
+        <StatusBadge status={auction.status} upcoming={upcoming} feminine />
       </div>
       <div className="mt-3 mb-10 flex flex-wrap items-center justify-between gap-4">
         <p className="text-ink-soft">
@@ -66,7 +68,12 @@ export function AuctionDetailPage() {
 
       <div className="mb-6 flex items-center justify-between gap-3">
         <h2 className="text-3xl">Lotes</h2>
-        {auction.lots.length > 1 && <LotSort value={order} onChange={setOrder} />}
+        {auction.lots.length > 1 && (
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+            <BidsSwitch checked={showBids} onChange={setShowBids} />
+            <LotSort value={order} onChange={setOrder} />
+          </div>
+        )}
         {canCreate && auction.status === 'OPEN' && (
           <button
             type="button"
@@ -94,19 +101,7 @@ export function AuctionDetailPage() {
           {canCreate ? 'Añade el primero con «Añadir lote».' : 'Vuelve en un rato.'}
         </EmptyState>
       ) : (
-        <ul className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {sortLots(auction.lots, order).map((lot, i) => (
-            <li
-              key={lot.id}
-              className="rise flex"
-              style={{ '--i': Math.min(i, 6) } as React.CSSProperties}
-            >
-              <div className="flex w-full flex-col [&>a]:flex-1">
-                <LotTicket lot={lot} />
-              </div>
-            </li>
-          ))}
-        </ul>
+        <LotSections lots={auction.lots} order={order} showBids={showBids} />
       )}
     </section>
   );

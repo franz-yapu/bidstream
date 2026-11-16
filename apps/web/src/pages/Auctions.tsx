@@ -16,14 +16,14 @@ import { Countdown } from '../components/Countdown';
 type Tab = 'live' | 'soon' | 'closed' | 'all';
 
 const TABS: readonly { id: Tab; label: string; status: AuctionStatus | null }[] = [
-  { id: 'live', label: 'En curso', status: 'OPEN' },
-  { id: 'soon', label: 'Próximas', status: 'OPEN' },
-  { id: 'closed', label: 'Finalizadas', status: 'CLOSED' },
   { id: 'all', label: 'Todas', status: null },
+  { id: 'live', label: 'En proceso', status: 'OPEN' },
+  { id: 'soon', label: 'Próximas', status: 'OPEN' },
+  { id: 'closed', label: 'Terminadas', status: 'CLOSED' },
 ];
 
 const EMPTY: Record<Tab, string> = {
-  live: 'No hay subastas en curso ahora mismo.',
+  live: 'No hay subastas en proceso ahora mismo.',
   soon: 'No hay subastas programadas.',
   closed: 'Todavía no ha terminado ninguna subasta.',
   all: 'Todavía no hay subastas.',
@@ -32,7 +32,7 @@ const EMPTY: Record<Tab, string> = {
 export function AuctionsPage() {
   usePageTitle('Subastas');
   const api = useApi();
-  const [tab, setTab] = useState<Tab>('live');
+  const [tab, setTab] = useState<Tab>('all');
   const status = TABS.find((t) => t.id === tab)?.status ?? null;
   const query = useInfiniteQuery({
     queryKey: ['auctions', status],
@@ -83,32 +83,29 @@ export function AuctionsPage() {
       <ErrorNote error={query.error} />
       {query.isSuccess && auctions.length === 0 && <EmptyState title={EMPTY[tab]} />}
 
-      <ul className="grid gap-4 sm:grid-cols-2">
-        {auctions.map((auction, i) => (
-          <li
-            key={auction.id}
-            className="rise"
-            style={{ '--i': Math.min(i, 6) } as React.CSSProperties}
-          >
-            <Link
-              to={`/subastas/${auction.id}`}
-              className="card-link group flex h-full flex-col gap-4"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <h2 className="text-3xl leading-tight">{auction.title}</h2>
-                <StatusBadge status={auction.status} upcoming={!started(auction)} />
-              </div>
-              <AuctionFacts auction={auction} live={started(auction)} />
-              <p className="mt-auto flex items-center justify-between gap-3 text-[15px] text-ink-soft">
-                <span>
-                  {formatDateTime(auction.opensAt)} → {formatDateTime(auction.closesAt)}
-                </span>
-                <ArrowRight className="shrink-0 text-forest transition-transform duration-200 ease-out group-hover:translate-x-0.5" />
-              </p>
-            </Link>
-          </li>
-        ))}
-      </ul>
+      {tab === 'all' ? (
+        <div className="space-y-12">
+          <AuctionGroup
+            title="En proceso"
+            live
+            auctions={auctions.filter((a) => a.status === 'OPEN' && started(a))}
+            started={started}
+          />
+          <AuctionGroup
+            title="Próximas"
+            auctions={auctions.filter((a) => a.status === 'OPEN' && !started(a))}
+            started={started}
+          />
+          <AuctionGroup
+            title="Terminadas"
+            muted
+            auctions={auctions.filter((a) => a.status === 'CLOSED')}
+            started={started}
+          />
+        </div>
+      ) : (
+        <AuctionList auctions={auctions} started={started} />
+      )}
 
       {query.hasNextPage && (
         <div className="mt-8 text-center">
@@ -158,7 +155,7 @@ function AuctionFacts({ auction, live }: { auction: Auction; live: boolean }) {
           {live && s.nextClose !== null ? (
             <Countdown closesAt={s.nextClose} />
           ) : auction.status === 'CLOSED' ? (
-            'Finalizada'
+            'Terminada'
           ) : live ? (
             'Sin lotes abiertos'
           ) : (
@@ -167,5 +164,70 @@ function AuctionFacts({ auction, live }: { auction: Auction; live: boolean }) {
         </dd>
       </div>
     </dl>
+  );
+}
+
+function AuctionGroup({
+  title,
+  auctions,
+  started,
+  live = false,
+  muted = false,
+}: {
+  title: string;
+  auctions: readonly Auction[];
+  started: (a: Auction) => boolean;
+  live?: boolean;
+  muted?: boolean;
+}) {
+  if (auctions.length === 0) return null;
+  return (
+    <section aria-label={title}>
+      <h2 className={`mb-5 flex items-center gap-3 text-3xl ${muted ? 'text-ink-soft' : ''}`}>
+        {live && <span className="live-dot text-forest" aria-hidden="true" />}
+        {title} <span className="num text-ink-soft">{auctions.length}</span>
+      </h2>
+      <AuctionList auctions={auctions} started={started} />
+    </section>
+  );
+}
+
+function AuctionList({
+  auctions,
+  started,
+}: {
+  auctions: readonly Auction[];
+  started: (a: Auction) => boolean;
+}) {
+  return (
+    <ul className="grid gap-4 sm:grid-cols-2">
+      {auctions.map((auction, i) => {
+        const closed = auction.status === 'CLOSED';
+        return (
+          <li
+            key={auction.id}
+            className="rise"
+            style={{ '--i': Math.min(i, 6) } as React.CSSProperties}
+          >
+            <Link
+              to={`/subastas/${auction.id}`}
+              className={`card-link group flex h-full flex-col gap-4 ${closed ? 'bg-sand/70' : 'border-t-[5px] border-forest'}`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <h3 className="text-3xl leading-tight">{auction.title}</h3>
+                <StatusBadge status={auction.status} upcoming={!started(auction)} feminine />
+              </div>
+              <AuctionFacts auction={auction} live={started(auction)} />
+              <p className="mt-auto flex items-center justify-between gap-3 text-[15px] text-ink-soft">
+                <span>
+                  {formatDateTime(auction.opensAt)} → {formatDateTime(auction.closesAt)}
+                </span>
+                <ArrowRight className="shrink-0 text-forest transition-transform duration-200 ease-out group-hover:translate-x-0.5" />
+              </p>
+            </Link>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
