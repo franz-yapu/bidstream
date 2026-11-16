@@ -21,11 +21,23 @@ export const typeDefs = /* GraphQL */ `
 
   type Query {
     auction(id: ID!): Auction
+    "Subastas del tenant, de la más reciente (opensAt) a la más antigua. Paginación por cursor opaco."
+    auctions(first: Int = 20, after: String, status: AuctionStatus): AuctionConnection!
     lot(id: ID!): Lot
     "Pujas de un lote en orden de ranking (mayor monto; a igual monto, la más antigua)."
     lotBids(lotId: ID!, first: Int = 20, after: String): BidConnection!
     "Lotes abiertos de una subasta, por orden de cierre."
     activeLots(auctionId: ID!, first: Int = 50): [Lot!]!
+  }
+
+  type AuctionConnection {
+    edges: [AuctionEdge!]!
+    pageInfo: PageInfo!
+  }
+
+  type AuctionEdge {
+    cursor: String!
+    node: Auction!
   }
 
   type Auction {

@@ -2,7 +2,14 @@ import { formatMoney, minimumBid, primitives } from '@bidstream/domain';
 import { toLotState, type Auction, type Lot } from '@bidstream/db';
 import { GraphQLScalarType } from 'graphql';
 import type { GraphQLContext } from './context.js';
-import { checkPageSize, findActiveLots, findLot, findLotBids, type RankedBid } from './data.js';
+import {
+  checkPageSize,
+  findActiveLots,
+  findAuctions,
+  findLot,
+  findLotBids,
+  type RankedBid,
+} from './data.js';
 import { badInput } from './errors.js';
 import { subscriptionResolvers } from './subscriptions/lot-updated.js';
 
@@ -43,6 +50,11 @@ export const resolvers = {
   Query: {
     auction: (_: unknown, args: { id: string }, ctx: GraphQLContext) =>
       ctx.loaders.auctionById.load(uuid(args.id)),
+    auctions: (
+      _: unknown,
+      args: { first: number; after?: string | null; status?: Auction['status'] | null },
+      ctx: GraphQLContext,
+    ) => findAuctions(ctx, args.first, args.after, args.status),
     lot: (_: unknown, args: { id: string }, ctx: GraphQLContext) => findLot(ctx, uuid(args.id)),
     lotBids: (
       _: unknown,

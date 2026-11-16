@@ -490,3 +490,87 @@ describe('servidor HTTP', () => {
     }
   });
 });
+
+describe('auctions: listado paginado (J1)', () => {
+  const LIST_TENANT = '55555555-5555-4555-8555-555555555555' as const;
+  const base = Date.parse('2031-03-01T10:00:00.000Z');
+  // 5 subastas; la 3.ª y la 4.ª empatan en opensAt para probar el desempate por id
+  const ids: string[] = Array.from({ length: 5 }, () => randomUUID());
+  const opens = [0, 1, 2, 2, 3].map((d) => new Date(base + d * 3_600_000).toISOString());
+
+  beforeAll(async () => {
+    for (const [index, auctionId] of ids.entries()) {
+      await prisma.$transaction((tx) =>
+        applyEventToProjection(
+          tx,
+          buildEvent('AuctionOpened', LIST_TENANT, {
+            auctionId,
+            title: `Subasta ${String(index)}`,
+            opensAt: opens[index] ?? '',
+            closesAt: new Date(Date.parse(opens[index] ?? '') + 3_600_000).toISOString(),
+          }),
+        ),
+      );
+    }
+  });
+
+  const page = async (first: number, after?: string | null, status?: string) => {
+    const { body } = await gql(
+      `query($first: Int, $after: String, $status: AuctionStatus) {
+         auctions(first: $first, after: $after, status: $status) {
+           edges { cursor node { id title status opensAt } }
+           pageInfo { hasNextPage endCursor }
+         } }`,
+      { tenant: LIST_TENANT, variables: { first, after, status } },
+    );
+    expect(body.errors).toBeUndefined();
+    return body.data?.['auctions'] as {
+      edges: { cursor: string; node: { id: string; opensAt: string; status: string } }[];
+      pageInfo: { hasNextPage: boolean; endCursor: string | null };
+    };
+  };
+
+  it('ordena de la más reciente a la más antigua (empates por id) y no filtra otros tenants', async () => {
+    const result = await page(20);
+    const expected = ids
+      .map((id, i) => ({ id, opensAt: opens[i] ?? '' }))
+      .sort((a, b) =>
+        a.opensAt === b.opensAt ? a.id.localeCompare(b.id) : b.opensAt.localeCompare(a.opensAt),
+      )
+      .map((a) => a.id);
+    expect(result.edges.map((e) => e.node.id)).toEqual(expected);
+    expect(result.pageInfo.hasNextPage).toBe(false);
+    // el tenant de la historia general tiene las suyas y ninguna se mezcla
+    const other = await gql('{ auctions(first: 20) { edges { node { id } } } }');
+    const otherIds = (
+      other.body.data?.['auctions'] as { edges: { node: { id: string } }[] }
+    ).edges.map((e) => e.node.id);
+    expect(otherIds.every((id) => !ids.includes(id))).toBe(true);
+  });
+
+  it('recorrer páginas de 2 reproduce el listado completo sin repetir ni omitir', async () => {
+    const full = (await page(20)).edges.map((e) => e.node.id);
+    const seen: string[] = [];
+    let after: string | null = null;
+    for (let guard = 0; guard < 10; guard += 1) {
+      const result: Awaited<ReturnType<typeof page>> = await page(2, after);
+      seen.push(...result.edges.map((e) => e.node.id));
+      if (!result.pageInfo.hasNextPage) break;
+      after = result.pageInfo.endCursor;
+    }
+    expect(seen).toEqual(full);
+  });
+
+  it('filtra por estado y valida first y el cursor', async () => {
+    expect((await page(20, null, 'CLOSED')).edges).toHaveLength(0);
+    expect((await page(20, null, 'OPEN')).edges).toHaveLength(5);
+    const invalidSize = await gql('{ auctions(first: 0) { edges { cursor } } }', {
+      tenant: LIST_TENANT,
+    });
+    expect(invalidSize.body.errors?.[0]?.extensions?.code).toBe('BAD_USER_INPUT');
+    const badCursor = await gql('{ auctions(first: 2, after: "basura") { edges { cursor } } }', {
+      tenant: LIST_TENANT,
+    });
+    expect(badCursor.body.errors?.[0]?.extensions?.code).toBe('BAD_USER_INPUT');
+  });
+});
