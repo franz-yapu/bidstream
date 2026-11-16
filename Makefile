@@ -40,7 +40,7 @@ images: ## Construye las imágenes de los ocho procesos (H2)
 	  docker build -q --build-arg APP=$$app -t bidstream-$$app:test . || exit 1; \
 	done
 
-demo: ## Todo el sistema en un comando: infraestructura, migraciones y los ocho procesos, con eventos firmados (requiere `npm ci`)
+demo: ## Todo el sistema en un comando: infraestructura, migraciones y los ocho procesos y el front, con eventos firmados (requiere `npm ci`)
 	@node scripts/generate-keys.mjs --if-missing
 	@$(MAKE) --no-print-directory up
 	@$(MAKE) --no-print-directory migrate
@@ -49,6 +49,7 @@ demo: ## Todo el sistema en un comando: infraestructura, migraciones y los ocho 
 	@echo "bidstream en marcha:"
 	@echo "  API REST   http://localhost:$${API_PORT:-3000}/v1/docs   (POST /v1/auth/login → Authorization: Bearer)"
 	@echo "  Admin      admin@demo.local · contraseña en .env.auth.private · tenant 11111111-1111-4111-8111-111111111111"
+	@echo "  Web        http://localhost:$${WEB_PORT:-8080}   (entra con el administrador o regístrate como postor)"
 	@echo "  GraphQL    http://localhost:$${GRAPHQL_PORT:-4000}/graphql"
 	@echo "  Prueba     scripts/demo-smoke.sh"
 	@echo "  Detener    make demo-down"

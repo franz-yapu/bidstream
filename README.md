@@ -159,15 +159,20 @@ Requisitos: Docker y Node 22 (`nvm use`).
 npm ci && make demo
 ```
 
-Levanta Kafka y PostgreSQL, aplica las migraciones y arranca los ocho procesos en contenedores. Después:
+Levanta Kafka y PostgreSQL, aplica las migraciones y arranca los ocho procesos y el front en contenedores. Después:
 
 ```bash
 scripts/demo-smoke.sh   # una subasta entra por REST y aparece por GraphQL
 make demo-down          # detener
 ```
 
+- **Web** (interfaz de postores y administradores): <http://localhost:8080>
 - API REST (comandos): <http://localhost:3000/v1/docs>
 - GraphQL (lecturas): <http://localhost:4000/graphql>
+
+El administrador de la demo es `admin@demo.local` (contraseña en `.env.auth.private`, tenant
+`11111111-1111-4111-8111-111111111111`); cualquiera puede registrarse como postor desde la web.
+El front es una SPA de React + Vite ([ADR-0014](docs/adr/0014-front-spa-react-vite.md)).
 
 Para desarrollar, probar o depurar proceso a proceso: [`docs/DESARROLLO.md`](docs/DESARROLLO.md).
 

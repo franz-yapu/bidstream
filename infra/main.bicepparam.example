@@ -26,3 +26,5 @@ param eventSigningRequiredFrom = readEnvironmentVariable(
 )
 param corsAllowedOrigins = readEnvironmentVariable('CORS_ALLOWED_ORIGINS', '')
 param imageTag = readEnvironmentVariable('IMAGE_TAG', 'latest')
+param webApiUrl = readEnvironmentVariable('WEB_API_URL')
+param webGraphqlUrl = readEnvironmentVariable('WEB_GRAPHQL_URL')

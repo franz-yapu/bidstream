@@ -19,6 +19,8 @@ x-app: &app
     DATABASE_URL: postgresql://${POSTGRES_USER:-bidstream}:${POSTGRES_PASSWORD:-bidstream}@postgres:5432/${POSTGRES_DB:-bidstream}
     KAFKA_BROKERS: kafka:19092
     KAFKA_LOG_LEVEL: error
+    # J1: orígenes del front que pueden llamar a la API y a GraphQL desde el navegador (lista blanca exacta)
+    CORS_ALLOWED_ORIGINS: http://localhost:${WEB_PORT:-8080},http://localhost:5173
 
 x-health-api: &health-api
   test:
@@ -171,6 +173,24 @@ services:
     <<: *app
     build: { context: ., args: { APP: notifier } }
     image: bidstream-notifier:local
+
+  # Front (J1): SPA estática. La URL de la API y de GraphQL son las que ve el NAVEGADOR (el host).
+  web:
+    profiles: [app]
+    restart: unless-stopped
+    build: { context: ., dockerfile: apps/web/Dockerfile }
+    image: bidstream-web:local
+    ports: ['${WEB_PORT:-8080}:8080']
+    environment:
+      API_URL: http://localhost:${API_PORT:-3000}
+      GRAPHQL_URL: http://localhost:${GRAPHQL_PORT:-4000}/graphql
+      DEFAULT_TENANT_ID: 11111111-1111-4111-8111-111111111111
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1:8080/healthz']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 3s
 
 volumes:
   bidstream_kafka:

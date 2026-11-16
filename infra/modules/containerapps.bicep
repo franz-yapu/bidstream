@@ -1,5 +1,5 @@
-// Container Apps (spec §9): un proceso por app de `apps/`. API y GraphQL son los únicos con entrada
-// externa; relay, decisor, closer y consumidores viven en la red interna del entorno.
+// Container Apps (spec §9): un proceso por app de `apps/`. API, GraphQL y el front son los únicos con
+// entrada externa; relay, decisor, closer y consumidores viven en la red interna del entorno.
 // Los secretos se resuelven desde Key Vault con la identidad administrada, nunca como literales.
 
 @description('Prefijo de nombres.')
@@ -28,6 +28,12 @@ param eventHubsNamespaceName string
 
 @description('Orígenes CORS permitidos (vacío = ninguno).')
 param corsAllowedOrigins string = ''
+
+@description('URL pública de la API REST que verá el navegador (https://…, sin barra final). La usa el front.')
+param webApiUrl string
+
+@description('URL pública del endpoint GraphQL que verá el navegador (https://…/graphql). La usa el front.')
+param webGraphqlUrl string
 
 @description('Corte para aceptar eventos sin firma del historial.')
 param eventSigningRequiredFrom string
@@ -162,6 +168,20 @@ var apps = [
         { name: 'GRAPHQL_PORT', value: '4000' }
       ]
     )
+  }
+  {
+    // Front (J1): SPA estática con nginx sin privilegios; las URL se validan al arrancar.
+    name: 'web'
+    external: true
+    targetPort: 8080
+    minReplicas: 1
+    maxReplicas: 2
+    secrets: []
+    env: [
+      { name: 'API_URL', value: webApiUrl }
+      { name: 'GRAPHQL_URL', value: webGraphqlUrl }
+      { name: 'DEFAULT_TENANT_ID', value: bootstrapAdminTenantId }
+    ]
   }
   {
     name: 'relay'

@@ -53,7 +53,7 @@ export function buildYoga(deps: ServerDeps) {
             credentials: false,
             methods: ['GET', 'POST', 'OPTIONS'],
             allowedHeaders: ['authorization', 'content-type', 'accept', 'x-request-id'],
-            exposedHeaders: ['x-request-id'],
+            exposedHeaders: ['x-request-id', 'date'],
           },
     plugins: [
       securityHeaders(config),

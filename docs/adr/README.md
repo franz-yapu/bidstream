@@ -20,3 +20,4 @@ opinión: se escribe otro que lo **reemplace** (ver [`do-not-touch.md`](../do-no
 | [0011](0011-decisor-unico-por-lote.md) | Decisor único por lote con estado propio | Aceptada | 2026-11-13 | Q2; C3 |
 | [0012](0012-firma-ed25519-de-eventos.md) | Firma Ed25519 de los mensajes y verificación en el consumidor | Aceptada | 2026-11-13 | Q5; F3 |
 | [0013](0013-autenticacion-propia-y-rbac.md) | Autenticación propia, JWT corto con refresh rotatorio y RBAC denegando por defecto | Aceptada | 2026-11-13 | Q4; F1 |
+| [0014](0014-front-spa-react-vite.md) | Front como SPA de React + Vite, con la sesión en memoria y el refresco en `sessionStorage` | Aceptada | 2026-11-16 | J1 |

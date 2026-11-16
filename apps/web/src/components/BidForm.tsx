@@ -1,0 +1,135 @@
+import { useMutation } from '@tanstack/react-query';
+import { useEffect, useRef, useState } from 'react';
+import type { LotWithAuction } from '../api/types';
+import { useApi } from '../auth/context';
+import { compareMoney, formatMoney, parseMoneyInput } from '../lib/money';
+import { ErrorNote } from './ErrorNote';
+
+/** Tiempo que se espera la confirmación de una puja aceptada antes de avisar de que no es la vigente. */
+export const CONFIRMATION_WAIT_MS = 10_000;
+
+interface Pending {
+  readonly amount: string;
+  readonly sentAt: number;
+  /** Pasó el tiempo de espera sin que la puja figure como precio vigente. */
+  readonly expired: boolean;
+}
+
+/**
+ * Formulario de puja. El `202` solo significa «aceptada»: el decisor la resuelve después y el
+ * resultado llega por el canal en vivo (precio vigente). La `Idempotency-Key` es estable mientras el
+ * importe no cambie —un reintento tras un fallo de red repite la misma— y se renueva tras cada puja.
+ */
+export function BidForm({ lot, closed }: { lot: LotWithAuction; closed: boolean }) {
+  const api = useApi();
+  const [text, setText] = useState('');
+  const [invalid, setInvalid] = useState<string | null>(null);
+  const [pending, setPending] = useState<Pending | null>(null);
+  const key = useRef<{ amount: string; value: string } | null>(null);
+
+  const bid = useMutation({
+    mutationFn: ({ amount, idempotencyKey }: { amount: string; idempotencyKey: string }) =>
+      api.placeBid(lot.id, amount, idempotencyKey),
+    onSuccess: (_result, { amount }) => {
+      key.current = null; // la siguiente puja usa una clave nueva
+      setPending({ amount, sentAt: Date.now(), expired: false });
+    },
+  });
+
+  // ¿quedó como precio vigente? Se deduce del precio que llega por el canal en vivo; sin confirmación
+  // tras un tiempo se avisa, sin inventar el motivo (el rechazo no se publica por GraphQL).
+  const reached =
+    pending !== null &&
+    lot.currentPrice !== null &&
+    compareMoney(lot.currentPrice, pending.amount) >= 0;
+  const outcome: 'waiting' | 'won' | 'lost' | null =
+    pending === null
+      ? null
+      : reached
+        ? lot.currentPrice === pending.amount
+          ? 'won'
+          : 'lost'
+        : pending.expired
+          ? 'lost'
+          : 'waiting';
+  const waitingSince = pending !== null && outcome === 'waiting' ? pending.sentAt : null;
+  useEffect(() => {
+    if (waitingSince === null) return;
+    const timer = setTimeout(
+      () => {
+        setPending((current) =>
+          current?.sentAt === waitingSince ? { ...current, expired: true } : current,
+        );
+      },
+      Math.max(0, waitingSince + CONFIRMATION_WAIT_MS - Date.now()),
+    );
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [waitingSince]);
+
+  const minimum = lot.nextMinimumBid;
+
+  function submit(event: React.SyntheticEvent): void {
+    event.preventDefault();
+    const amount = parseMoneyInput(text);
+    if (amount === null) {
+      setInvalid('Escribe un importe válido (hasta 2 decimales).');
+      return;
+    }
+    if (compareMoney(amount, minimum) < 0) {
+      setInvalid(`La puja mínima es ${formatMoney(minimum, lot.currency)}.`);
+      return;
+    }
+    setInvalid(null);
+    if (key.current?.amount !== amount) key.current = { amount, value: crypto.randomUUID() };
+    bid.mutate({ amount, idempotencyKey: key.current.value });
+  }
+
+  return (
+    <form noValidate onSubmit={submit} className="space-y-3" aria-label="Pujar">
+      <div>
+        <label htmlFor="bid-amount" className="label">
+          Tu puja ({lot.currency})
+        </label>
+        <input
+          id="bid-amount"
+          inputMode="decimal"
+          autoComplete="off"
+          className="field"
+          placeholder={minimum}
+          value={text}
+          disabled={closed}
+          onChange={(e) => {
+            setText(e.target.value);
+          }}
+        />
+        <p className="mt-1 text-xs opacity-70">Mínimo: {formatMoney(minimum, lot.currency)}</p>
+      </div>
+      {invalid !== null && (
+        <p role="alert" className="error">
+          {invalid}
+        </p>
+      )}
+      <ErrorNote error={bid.error} />
+      <button type="submit" className="btn w-full" disabled={closed || bid.isPending}>
+        {bid.isPending ? 'Enviando…' : closed ? 'Lote cerrado' : 'Pujar'}
+      </button>
+      {outcome === 'waiting' && pending !== null && (
+        <p role="status" className="text-sm">
+          Puja de {formatMoney(pending.amount, lot.currency)} enviada. Esperando confirmación…
+        </p>
+      )}
+      {outcome === 'won' && (
+        <p role="status" className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
+          Tu puja es la vigente ✔
+        </p>
+      )}
+      {outcome === 'lost' && (
+        <p role="status" className="text-sm font-medium text-amber-600 dark:text-amber-400">
+          Tu puja no quedó como vigente: otra fue mayor o no cumplió las reglas del lote.
+        </p>
+      )}
+    </form>
+  );
+}

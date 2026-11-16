@@ -2,7 +2,7 @@
 
 - **Ticket:** ClickUp **J1** (`868mwftc2`, https://app.clickup.com/t/868mwftc2).
 - **Autor:** generado con Claude (Entregable 1).
-- **Estado:** Aprobado (2026-11-16) — con las propuestas de §7
+- **Estado:** Implementado (2026-11-16) — aprobado con las propuestas de §7; ver la revisión 0.2 al pie
 - **Versión:** 0.1 · **Fecha:** 2026-11-16
 - **Fuentes de verdad citadas:**
   1. `docs/product/bidstream_spec.md` §7 (GraphQL solo lectura, subscriptions), §8 (seguridad)
@@ -177,3 +177,21 @@ No se prueba: el aspecto visual píxel a píxel ni los componentes de librería 
 3. **Lista de subastas.** Propuesta: añadir `Query.auctions` (§2.5), solo lectura y por tenant.
 4. **Tenant en el login.** El login pide `tenantId` (UUID). Propuesta: en la demo, campo precargado con el tenant de demostración y editable; un selector por nombre queda fuera.
 5. **Diseño.** Propuesta: interfaz sobria en español, claro/oscuro automático, sin marca propia; ajustes visuales después.
+
+---
+
+## Revisión 0.2 (2026-11-16) — desviaciones del diseño aprobado, ya implementadas
+
+- **Sin `graphql-request` ni el paquete `graphql`:** las consultas son `fetch` con cadenas (menos peso y
+  sin riesgo de dos copias de `graphql`). Solo `graphql-sse` para la subscription.
+- **Reloj del servidor:** en vez de `occurredAt` de los eventos (que llegan con retraso del relay), se usa
+  la cabecera `Date` de las respuestas; por eso API y GraphQL **exponen `date`** por CORS (cambio de una
+  línea en `apps/api/src/app.ts` y `apps/graphql/src/server.ts`).
+- **Subastas:** el filtro por defecto es «Abiertas» (la lista no empieza por el histórico cerrado).
+- **Imagen:** `apps/web/Dockerfile` propio (contexto: la raíz) con nginx sin privilegios; la configuración
+  y la CSP se generan al arrancar y se validan (§2.6).
+- **Revisión visual:** una pasada de diseño (`impeccable`, sin hallazgos del detector): el precio se resalta
+  al cambiar y se anuncia por `aria-live`, la cuenta atrás avisa de la urgencia (`role="timer"`), la puja
+  vigente se marca, `prefers-reduced-motion` se respeta y las tarjetas y botones responden al pulsar.
+- La lista de pujas se refresca cada 4 s porque la proyección llega un instante después del aviso en vivo.
+

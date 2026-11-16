@@ -17,3 +17,7 @@ packages/db/src/generated
 # parámetros de despliegue con secretos (H1): se copian del ejemplo y no se versionan
 infra/main.bicepparam
 infra/main.json
+
+# front (J1): resultados de Playwright
+test-results/
+playwright-report/

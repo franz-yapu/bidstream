@@ -112,6 +112,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
       allowedHeaders: ['authorization', 'content-type', 'idempotency-key', 'x-request-id'],
       exposedHeaders: [
         'x-request-id',
+        'date',
         'idempotency-replayed',
         'retry-after',
         'ratelimit-limit',

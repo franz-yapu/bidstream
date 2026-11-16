@@ -125,6 +125,7 @@ describe('Container Apps y procesos reales', () => {
       'notifier',
       'projector',
       'relay',
+      'web',
     ]);
     for (const app of apps) {
       expect(containerApps, app).toMatch(new RegExp(`name: '${app}'`));
@@ -132,11 +133,11 @@ describe('Container Apps y procesos reales', () => {
     expect(containerApps).toContain('bidstream-${app.name}:${imageTag}');
   });
 
-  it('solo API y GraphQL tienen ingress externo', () => {
-    for (const app of ['api', 'graphql']) {
+  it('solo API, GraphQL y el front tienen ingress externo', () => {
+    for (const app of ['api', 'graphql', 'web']) {
       expect(containerApps, app).toMatch(new RegExp(`name: '${app}'\\n\\s+external: true`));
     }
-    for (const app of apps.filter((name) => name !== 'api' && name !== 'graphql')) {
+    for (const app of apps.filter((name) => !['api', 'graphql', 'web'].includes(name))) {
       expect(containerApps, app).toMatch(new RegExp(`name: '${app}'\\n\\s+external: false`));
     }
   });

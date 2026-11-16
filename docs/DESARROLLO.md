@@ -155,3 +155,22 @@ Límites: 500 suscripciones simultáneas por tenant y una cola de 50 por suscrip
 ## Seguridad de dependencias
 
 `npm run audit:prod` y `npm run audit:high` aplican en local la misma política que la CI (`.github/workflows/security.yml`): **falla ante cualquier aviso en dependencias de producción y ante uno alto o crítico en cualquiera**; los demás se informan. Se ejecuta en cada PR, en `main` y cada lunes (los avisos aparecen sin que cambie el código). Dependabot propone las actualizaciones cada semana, agrupadas, y todas las acciones de GitHub están fijadas por SHA (una prueba lo exige). `npm audit` no lo ve todo: es una capa, no la única.
+
+## Front web (J1)
+
+`apps/web` es una SPA de React + Vite ([ADR-0014](adr/0014-front-spa-react-vite.md)).
+
+```bash
+make demo                          # todo en contenedores, front en http://localhost:8080
+npm run dev:web                    # Vite con recarga en caliente (http://localhost:5173), contra la demo
+npm run test -w @bidstream/web     # pruebas de componentes (jsdom)
+npx playwright install chromium    # una sola vez
+npm run e2e -w @bidstream/web      # flujo completo con navegador contra `make demo`
+```
+
+- `npm run dev:web` necesita la API y GraphQL en marcha (`make demo` o los procesos con `make up`) y el
+  origen `http://localhost:5173` en `CORS_ALLOWED_ORIGINS` (la demo ya lo incluye). Las URL se cambian con
+  `VITE_API_URL`, `VITE_GRAPHQL_URL` y `VITE_DEFAULT_TENANT_ID`.
+- En el contenedor la configuración llega al arrancar: `API_URL`, `GRAPHQL_URL` y `DEFAULT_TENANT_ID`.
+- El e2e lee la contraseña del administrador de `.env.auth.private` (o de `AUTH_ENV_FILE`).
+
