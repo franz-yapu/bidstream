@@ -383,7 +383,7 @@ describe('lote aún desconocido para el decisor', () => {
       startingPrice: '100.00',
       minIncrement: '5.00',
       currency: 'USD',
-      closesAt: '2026-11-14T13:00:00.000Z',
+      closesAt: new Date(Date.now() + 86_400_000).toISOString(), // la puja se decide con la hora real de recepción,
     });
     await new PrismaOutbox(db.prisma).enqueue([published], events.name);
     await waitFor(async () => (await db.prisma.lotDecision.count({ where: { lotId } })) === 1, {
