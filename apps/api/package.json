@@ -10,7 +10,7 @@
     "@bidstream/db": "^0.0.0",
     "@bidstream/domain": "^0.0.0",
     "@bidstream/kafka": "^0.0.0",
-    "@fastify/swagger": "^9.9.3",
+    "@fastify/swagger": "^9.9.4",
     "@fastify/swagger-ui": "^6.1.3",
     "@fastify/cors": "^11.1.0",
     "@fastify/helmet": "^13.0.1",

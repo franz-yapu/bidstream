@@ -14,7 +14,7 @@
   "dependencies": {
     "@bidstream/db": "^0.0.0",
     "@bidstream/signing": "^0.0.0",
-    "argon2": "^0.44.0",
+    "argon2": "^0.45.2",
     "jose": "^6.1.0",
     "zod": "^4.6.7"
   },
