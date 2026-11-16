@@ -45,7 +45,12 @@ function counting(real: ReadDb): ReadDb {
         };
       },
     });
-  return { auction: wrap(real.auction), lot: wrap(real.lot), bid: wrap(real.bid) };
+  return {
+    auction: wrap(real.auction),
+    lot: wrap(real.lot),
+    bid: wrap(real.bid),
+    appUser: wrap(real.appUser),
+  };
 }
 
 beforeAll(async () => {
@@ -429,14 +434,25 @@ describe('N+1, privacidad y errores', () => {
     expect(withoutBids).toBeGreaterThan(calls);
   });
 
-  it('el esquema no tiene ningún campo con la identidad de postores o ganadores', async () => {
+  it('el esquema solo expone el nombre público del postor, nunca su identidad (ADR-0015)', async () => {
     const { body } = await gql(`{ __schema { types { name fields { name } } } }`);
     const types = (
       body.data?.['__schema'] as { types: { name: string; fields: { name: string }[] | null }[] }
     ).types;
     const names = types.flatMap((t) => (t.fields ?? []).map((f) => f.name));
-    // `hasWinner` (en Lot y en LotClosedUpdate) es lo único permitido: un booleano, nunca la identidad.
-    expect([...new Set(names.filter((n) => /bidder|winner/i.test(n)))]).toEqual(['hasWinner']);
+    // `hasWinner` es un booleano; `bidder`, `leader` y `winner` devuelven `Bidder`, que solo tiene el nombre.
+    expect([...new Set(names.filter((n) => /bidder|winner|leader/i.test(n)))].sort()).toEqual([
+      'bidder',
+      'hasWinner',
+      'leader',
+      'winner',
+    ]);
+    const fieldsOf = (type: string): string[] =>
+      (types.find((t) => t.name === type)?.fields ?? []).map((f) => f.name);
+    expect(fieldsOf('Bidder')).toEqual(['displayName']);
+    for (const forbidden of ['bidderId', 'winnerId', 'userId', 'email', 'currentBidder']) {
+      expect(names, forbidden).not.toContain(forbidden);
+    }
   });
 
   it('un error interno se enmascara: el cliente no ve ni el mensaje ni la traza', async () => {

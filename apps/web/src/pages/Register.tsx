@@ -10,6 +10,7 @@ import { loadConfig } from '../config';
 const schema = z.object({
   tenantId: z.uuid('Debe ser un UUID'),
   email: z.email('Correo no válido'),
+  displayName: z.string().trim().min(2, 'Mínimo 2 caracteres').max(30, 'Máximo 30 caracteres'),
   password: z.string().min(12, 'Mínimo 12 caracteres').max(128, 'Máximo 128 caracteres'),
 });
 type Values = z.infer<typeof schema>;
@@ -23,11 +24,16 @@ export function RegisterPage() {
     formState: { errors },
   } = useForm<Values>({
     resolver: zodResolver(schema),
-    defaultValues: { tenantId: loadConfig().defaultTenantId, email: '', password: '' },
+    defaultValues: {
+      tenantId: loadConfig().defaultTenantId,
+      email: '',
+      displayName: '',
+      password: '',
+    },
   });
   const signUp = useMutation({
     mutationFn: async (v: Values) => {
-      await api.register(v.tenantId, v.email, v.password);
+      await api.register(v.tenantId, v.email, v.password, v.displayName);
       await api.login(v.tenantId, v.email, v.password);
     },
     onSuccess: () => navigate('/', { replace: true }),
@@ -67,6 +73,21 @@ export function RegisterPage() {
             {...register('email')}
           />
           {errors.email && <p className="error">{errors.email.message}</p>}
+        </div>
+        <div>
+          <label htmlFor="displayName" className="label">
+            Nombre público
+          </label>
+          <input
+            id="displayName"
+            autoComplete="nickname"
+            className="field"
+            {...register('displayName')}
+          />
+          <p className="mt-1 text-xs opacity-70">
+            Será visible para todos en las subastas. No uses tu correo.
+          </p>
+          {errors.displayName && <p className="error">{errors.displayName.message}</p>}
         </div>
         <div>
           <label htmlFor="password" className="label">

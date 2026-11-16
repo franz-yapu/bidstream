@@ -51,7 +51,7 @@ export interface Api {
   readonly clock: ServerClock;
   restore(): Promise<Me | null>;
   login(tenantId: string, email: string, password: string): Promise<Me>;
-  register(tenantId: string, email: string, password: string): Promise<void>;
+  register(tenantId: string, email: string, password: string, displayName: string): Promise<void>;
   logout(): Promise<void>;
   listAuctions(options?: {
     after?: string | null;
@@ -169,11 +169,11 @@ export function createApi(
       session.setTokens((await res.json()) as TokenPair);
       return loadMe();
     },
-    async register(tenantId, email, password) {
+    async register(tenantId, email, password, displayName) {
       const res = await observed(`${config.apiUrl}/v1/auth/register`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ tenantId, email, password }),
+        body: JSON.stringify({ tenantId, email, password, displayName }),
       });
       if (!res.ok) throw await toApiError(res);
     },

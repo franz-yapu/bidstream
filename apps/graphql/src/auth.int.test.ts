@@ -178,3 +178,119 @@ describe('configuración', () => {
     expect(response.status).toBeGreaterThanOrEqual(400);
   });
 });
+
+// J2 (ADR-0015): lectura anónima del tenant público y nombre público de los postores.
+describe('visitante anónimo y nombre público', () => {
+  const ANA = randomUUID();
+  const BEN = randomUUID();
+  const lotId = randomUUID();
+  let anon: ReturnType<typeof buildYoga>;
+
+  const run = async (
+    source: string,
+    headers: Record<string, string> = {},
+    instance: ReturnType<typeof buildYoga> = anon,
+  ) => {
+    const response = await instance.fetch('http://localhost/graphql', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        accept: 'application/graphql-response+json',
+        ...headers,
+      },
+      body: JSON.stringify({ query: source }),
+    });
+    return {
+      status: response.status,
+      text: await response.text(),
+    };
+  };
+
+  beforeAll(async () => {
+    for (const [id, displayName, email] of [
+      [ANA, 'Ana Torres', 'ana@privado.test'],
+      [BEN, 'Ben', 'ben@privado.test'],
+    ] as const) {
+      await prisma.appUser.create({
+        data: { id, tenantId: TENANT_A, email, displayName, passwordHash: 'x', role: 'BIDDER' },
+      });
+    }
+    await prisma.lot.create({
+      data: {
+        id: lotId,
+        auctionId: auctionA,
+        tenantId: TENANT_A,
+        title: 'Reloj',
+        startingPrice: '100.00',
+        minIncrement: '5.00',
+        currency: 'USD',
+        closesAt: new Date('2026-11-14T20:00:00.000Z'),
+        status: 'OPEN',
+        currentPrice: '120.00',
+        currentBidder: BEN,
+      },
+    });
+    for (const [bidderId, amount, second] of [
+      [ANA, '110.00', 1],
+      [BEN, '120.00', 2],
+    ] as const) {
+      await prisma.bid.create({
+        data: {
+          id: randomUUID(),
+          lotId,
+          bidderId,
+          amount,
+          placedAt: new Date(NOW.getTime() + second * 1000),
+        },
+      });
+    }
+    anon = buildYoga({
+      config: loadConfig({
+        LOG_LEVEL: 'silent',
+        NODE_ENV: 'test',
+        AUTH_MODE: 'jwt',
+        PUBLIC_TENANT_ID: TENANT_A,
+        DATABASE_URL: 'postgresql://u:p@localhost:5432/d',
+      }),
+      db: prisma,
+      verifier: verifierConfig.verifier,
+      now: () => NOW,
+    });
+  });
+
+  const lotQuery = `{ lot(id: "${lotId}") { leader { displayName } winner { displayName }
+    bids(first: 10) { edges { node { rank bidder { displayName } } } } } }`;
+
+  it('sin credenciales lee el tenant público: líder e historial con nombre público', async () => {
+    const res = await run(lotQuery);
+    expect(res.status).toBe(200);
+    const data = (JSON.parse(res.text) as { data: { lot: Record<string, unknown> } }).data.lot;
+    expect(data['leader']).toEqual({ displayName: 'Ben' });
+    expect(data['winner']).toBeNull();
+    expect(JSON.stringify(data['bids'])).toContain('Ana Torres');
+  });
+
+  it('nunca devuelve el correo, el id del usuario ni el tenant', async () => {
+    const res = await run(lotQuery);
+    expect(res.text).not.toMatch(/privado\.test|@|bidderId|currentBidder/);
+    expect(res.text).not.toContain(ANA);
+    expect(res.text).not.toContain(BEN);
+  });
+
+  it('solo ve el tenant público: no hay forma de elegir otro', async () => {
+    const res = await run(`{ auction(id: "${auctionB}") { id } }`);
+    expect(res.status).toBe(200);
+    expect(JSON.parse(res.text)).toMatchObject({ data: { auction: null } });
+  });
+
+  it('un token inválido no se degrada a anónimo', async () => {
+    const res = await run(lotQuery, { authorization: 'Bearer basura' });
+    expect(res.status).toBe(401);
+    expect(res.text).toContain('UNAUTHENTICATED');
+  });
+
+  it('sin PUBLIC_TENANT_ID el anónimo sigue rechazado', async () => {
+    const res = await run(lotQuery, {}, yoga);
+    expect(res.status).toBe(401);
+  });
+});

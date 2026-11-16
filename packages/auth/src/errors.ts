@@ -29,6 +29,22 @@ export class EmailAlreadyRegistered extends Error {
   }
 }
 
+/** El nombre público ya lo usa otro usuario del tenant (sin distinguir mayúsculas). */
+export class DisplayNameTaken extends Error {
+  override readonly name = 'DisplayNameTaken';
+  constructor() {
+    super('el nombre público ya está en uso');
+  }
+}
+
+/** El nombre público no cumple el formato. */
+export class InvalidDisplayName extends Error {
+  override readonly name = 'InvalidDisplayName';
+  constructor(readonly problems: readonly string[]) {
+    super(`nombre público no válido: ${problems.join('; ')}`);
+  }
+}
+
 export class WeakPassword extends Error {
   override readonly name = 'WeakPassword';
   constructor(readonly problems: readonly string[]) {

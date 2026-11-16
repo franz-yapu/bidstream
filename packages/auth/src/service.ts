@@ -1,8 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import { Prisma, type PrismaClient } from '@bidstream/db';
 import type { AuthConfig } from './config.js';
+import { defaultDisplayName, displayNameProblems, normalizeDisplayName } from './display-name.js';
 import {
+  DisplayNameTaken,
   EmailAlreadyRegistered,
+  InvalidDisplayName,
   InvalidCredentials,
   InvalidRefreshToken,
   WeakPassword,
@@ -35,6 +38,7 @@ export interface CreatedUser {
   readonly id: string;
   readonly tenantId: string;
   readonly email: string;
+  readonly displayName: string;
   readonly role: Role;
 }
 
@@ -65,28 +69,62 @@ export class AuthService {
     email: string;
     password: string;
     role: Role;
+    /** Nombre público; si falta se asigna un alias («Postor 7a3f»). */
+    displayName?: string | undefined;
   }): Promise<CreatedUser> {
     const email = normalizeEmail(input.email);
     const problems = passwordProblems(input.password, email);
     if (problems.length > 0) throw new WeakPassword(problems);
     const id = randomUUID();
+    const displayName =
+      input.displayName === undefined
+        ? defaultDisplayName(input.role, id)
+        : normalizeDisplayName(input.displayName);
+    const nameProblems = displayNameProblems(displayName);
+    if (nameProblems.length > 0) throw new InvalidDisplayName(nameProblems);
     try {
       await this.deps.db.appUser.create({
         data: {
           id,
           tenantId: input.tenantId,
           email,
+          displayName,
           passwordHash: await hashPassword(input.password),
           role: input.role,
         },
       });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-        throw new EmailAlreadyRegistered();
+        // Dos únicos posibles: el correo o el nombre público. Se distingue mirando si el correo existe.
+        const existing = await this.deps.db.appUser.findUnique({
+          where: { tenantId_email: { tenantId: input.tenantId, email } },
+          select: { id: true },
+        });
+        throw existing === null ? new DisplayNameTaken() : new EmailAlreadyRegistered();
       }
       throw error;
     }
-    return { id, tenantId: input.tenantId, email, role: input.role };
+    return { id, tenantId: input.tenantId, email, displayName, role: input.role };
+  }
+
+  /** Cambia el nombre público del usuario. Lanza `InvalidDisplayName` o `DisplayNameTaken`. */
+  async updateDisplayName(identity: Identity, value: string): Promise<string> {
+    const displayName = normalizeDisplayName(value);
+    const problems = displayNameProblems(displayName);
+    if (problems.length > 0) throw new InvalidDisplayName(problems);
+    try {
+      const { count } = await this.deps.db.appUser.updateMany({
+        where: { id: identity.userId, tenantId: identity.tenantId, status: 'ACTIVE' },
+        data: { displayName },
+      });
+      if (count === 0) throw new InvalidCredentials();
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new DisplayNameTaken();
+      }
+      throw error;
+    }
+    return displayName;
   }
 
   /**
@@ -195,13 +233,13 @@ export class AuthService {
   }
 
   /** Datos públicos del usuario autenticado. */
-  async profile(identity: Identity): Promise<{ email: string } | null> {
+  async profile(identity: Identity): Promise<{ email: string; displayName: string } | null> {
     const user = await this.deps.db.appUser.findUnique({
       where: { id: identity.userId },
-      select: { email: true, tenantId: true, status: true },
+      select: { email: true, displayName: true, tenantId: true, status: true },
     });
     return user !== null && user.tenantId === identity.tenantId && user.status === 'ACTIVE'
-      ? { email: user.email }
+      ? { email: user.email, displayName: user.displayName }
       : null;
   }
 

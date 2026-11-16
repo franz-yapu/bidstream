@@ -24,7 +24,13 @@ export async function bootstrapAdmin(
   const password = config.BOOTSTRAP_ADMIN_PASSWORD;
   if (tenantId === undefined || email === undefined || password === undefined) return false;
   if ((await db.appUser.count({ where: { tenantId, role: 'ADMIN' } })) > 0) return false;
-  await service.createUser({ tenantId, email, password, role: 'ADMIN' });
+  await service.createUser({
+    tenantId,
+    email,
+    password,
+    role: 'ADMIN',
+    displayName: 'Administrador',
+  });
   log?.info({ tenantId }, 'administrador inicial creado');
   return true;
 }

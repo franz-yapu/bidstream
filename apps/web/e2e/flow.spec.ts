@@ -58,6 +58,7 @@ test('administrador publica, postor puja y otra pestaña ve el precio en vivo', 
   const bidder = await bidderCtx.newPage();
   await bidder.goto('/registro');
   await bidder.getByLabel('Correo').fill(`postor-${stamp}@demo.local`);
+  await bidder.getByLabel('Nombre público').fill(`Postor ${stamp}`);
   await bidder.getByLabel('Contraseña').fill(`clave-segura-${stamp}`);
   await bidder.getByRole('button', { name: 'Crear cuenta' }).click();
   await expect(bidder.getByRole('heading', { name: 'Subastas' })).toBeVisible();

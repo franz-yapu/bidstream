@@ -13,7 +13,7 @@ ambos en una sola API acopla su escalado y su superficie de ataque.
 
 Los comandos van por la API REST (`apps/api`) y las lecturas por GraphQL (`apps/graphql`), que
 **no define mutaciones**. GraphQL lee solo de la proyección y expone una subscription por SSE.
-Ningún campo expone la identidad de postores ni ganadores.
+Ningún campo expone la identidad de postores ni ganadores. (Matizado por [ADR-0015](0015-nombre-publico-y-lectura-anonima.md): desde J2 se muestra solo el nombre público.)
 
 ## Alternativas descartadas
 

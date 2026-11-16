@@ -42,7 +42,7 @@ echo "API: subasta $auction_id aceptada (201)"
 bidder_email="postor-$RANDOM@demo.local"
 bidder_password="contraseña-del-postor-$RANDOM"
 reg="$(status -X POST "$API/v1/auth/register" -H 'content-type: application/json' \
-  -d "{\"tenantId\":\"$TENANT\",\"email\":\"$bidder_email\",\"password\":\"$bidder_password\"}")"
+  -d "{\"tenantId\":\"$TENANT\",\"email\":\"$bidder_email\",\"password\":\"$bidder_password\",\"displayName\":\"Postor $RANDOM\"}")"
 [ "$reg" = 201 ] || fail "el registro del postor devolvió $reg"
 bidder_login="$(curl -fsS -X POST "$API/v1/auth/login" -H 'content-type: application/json' \
   -d "{\"tenantId\":\"$TENANT\",\"email\":\"$bidder_email\",\"password\":\"$bidder_password\"}")"
@@ -64,10 +64,13 @@ wait_for() { # descripción, consulta, texto esperado
   fail "$1: $out"
 }
 
-# GraphQL tampoco responde sin token
-[ "$(status -X POST "$GQL" -H 'content-type: application/json' -d '{"query":"{ __typename }"}')" = 401 ] \
-  || fail "GraphQL respondió sin token"
-echo "GraphQL: sin token → 401"
+# GraphQL: un token inválido se rechaza; sin credenciales solo se lee el tenant público (J2, ADR-0015)
+[ "$(status -X POST "$GQL" -H 'content-type: application/json' -H 'authorization: Bearer basura' -d '{"query":"{ __typename }"}')" = 401 ] \
+  || fail "GraphQL aceptó un token inválido"
+echo "GraphQL: token inválido → 401"
+anon="$(curl -fsS -X POST "$GQL" -H 'content-type: application/json' -d '{"query":"{ auctions(first: 1) { edges { node { id } } } }"}')"
+case "$anon" in *'"edges"'*) ;; *) fail "GraphQL no respondió a un visitante anónimo: $anon" ;; esac
+echo "GraphQL: visitante anónimo → solo lectura del tenant público"
 
 wait_for "la subasta no apareció en GraphQL" "{ auction(id: \\\"$auction_id\\\") { id title status } }" "\"id\":\"$auction_id\""
 

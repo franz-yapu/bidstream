@@ -32,6 +32,11 @@ const envSchema = z
         message:
           'CORS_ALLOWED_ORIGINS solo admite orígenes exactos (https://host[:puerto]); no `*` ni rutas',
       }),
+    /**
+     * Tenant que ve un visitante **sin credenciales** (J2, ADR-0015): solo lectura. Vacío (por defecto):
+     * sin acceso anónimo. Un token presente pero inválido sigue siendo `UNAUTHENTICATED`.
+     */
+    PUBLIC_TENANT_ID: z.uuid().optional(),
     /** Tope de `first` en las listas paginadas. */
     GQL_MAX_PAGE_SIZE: z.coerce.number().int().min(1).max(1_000).default(100),
     /** Límites de abuso (docs/sdd/E2/SDD.md §2.2). */

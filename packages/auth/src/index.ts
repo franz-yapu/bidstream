@@ -1,6 +1,15 @@
 export { loadAuthConfig, type AuthConfig } from './config.js';
 export {
+  defaultDisplayName,
+  DISPLAY_NAME_MAX_LENGTH,
+  DISPLAY_NAME_MIN_LENGTH,
+  displayNameProblems,
+  normalizeDisplayName,
+} from './display-name.js';
+export {
+  DisplayNameTaken,
   EmailAlreadyRegistered,
+  InvalidDisplayName,
   InvalidAccessToken,
   InvalidCredentials,
   InvalidRefreshToken,

@@ -44,6 +44,16 @@ function uuid(value: string): string {
 
 const money = (value: { toFixed(decimals: number): string }): string => value.toFixed(2);
 
+/** `{ displayName }` del usuario, o nulo si no existe: el `id` nunca sale del servidor. */
+async function bidderByName(
+  ctx: GraphQLContext,
+  userId: string | null,
+): Promise<{ displayName: string } | null> {
+  if (userId === null) return null;
+  const displayName = await ctx.loaders.displayNameById.load(userId);
+  return displayName === null ? null : { displayName };
+}
+
 export const resolvers = {
   Money,
   DateTime,
@@ -84,9 +94,14 @@ export const resolvers = {
     nextMinimumBid: (lot: Lot) => formatMoney(minimumBid(toLotState(lot))),
     bids: (lot: Lot, args: { first: number; after?: string | null }, ctx: GraphQLContext) =>
       findLotBids(ctx, lot.id, args.first, args.after),
+    leader: (lot: Lot, _: unknown, ctx: GraphQLContext) =>
+      lot.status === 'OPEN' ? bidderByName(ctx, lot.currentBidder) : null,
+    winner: (lot: Lot, _: unknown, ctx: GraphQLContext) =>
+      lot.status === 'CLOSED' ? bidderByName(ctx, lot.winnerId) : null,
   },
   Bid: {
     amount: (bid: RankedBid) => money(bid.amount),
+    bidder: (bid: RankedBid, _: unknown, ctx: GraphQLContext) => bidderByName(ctx, bid.bidderId),
   },
   ...subscriptionResolvers,
 };

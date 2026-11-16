@@ -262,6 +262,7 @@ describe('perfil', () => {
     const { id, address } = await newUser();
     expect(await auth.profile({ userId: id, tenantId: TENANT, role: 'BIDDER' })).toEqual({
       email: address,
+      displayName: expect.stringMatching(/^Postor [0-9a-f]{4}$/) as unknown,
     });
     expect(await auth.profile({ userId: id, tenantId: OTHER_TENANT, role: 'BIDDER' })).toBeNull();
     expect(
