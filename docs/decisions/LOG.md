@@ -290,3 +290,8 @@ Toda ruta de la API exige token y declara sus roles o se deniega; `X-Admin-Key` 
 **Fecha:** 2026-11-13 · **Fuente:** usuario · **Estado:** activa
 
 El usuario decide no grabar el vídeo (H5). El README deja de presentarlo como pendiente y lo declara no incluido; la prueba de documentación acepta las tres variantes honestas (enlace, pendiente marcado o no incluido explícito) y exige que no se mezclen. El guion y `make demo-reprocess` se conservan para que la demostración siga siendo reproducible.
+
+## DEC-056 — Se añade el front web (J1): React + Vite como SPA
+**Fecha:** 2026-11-16 · **Fuente:** usuario (eligió React + Vite) · **Estado:** activa
+
+Se abre J1 (ClickUp `868mwftc2`): SPA en `apps/web` con React 19, TypeScript y Vite, sin SSR (todo está tras login). Requiere `Query.auctions` en GraphQL, que hoy no existe. SDD en borrador (`docs/sdd/J1/SDD.md`); no se escribe código hasta su aprobación. Preguntas abiertas en §7 (refresh token en `sessionStorage`, motivo del rechazo de puja, lista de subastas, tenant en el login, diseño).

@@ -85,6 +85,7 @@ B1 (5 h), B2 (3 h), C1 (5 h), C2 (5 h), D1 (5 h), D2 (3 h), D3 (5 h), D4 (5 h), 
 | H5 | H Azure | Grabar el video del reproceso | 2 | ⬜ Descartada por el usuario | 2 | 868mvty20 | spec §5, §12 | G2 | — |
 | I1 | I Docs | README (§12) con comparación contra la versión de WebSockets | 5 | ✅ Listo | 2 | 868mvty22 | spec §12 | G2 | — |
 | I2 | I Docs | ADRs: outbox, 202 en la puja, GraphQL solo lecturas | 3 | ✅ Listo | 2 | 868mvty26 | spec §10 | A1 | — |
+| J1 | J Front | SPA React + Vite: login, subastas, puja en vivo, administración (incluye `Query.auctions`) | 8 | 🟡 SDD en borrador | 3 | 868mwftc2 | spec §7, §8 | F1, C3, E1 | Aprobación del SDD (`docs/sdd/J1/SDD.md`) |
 
 **El board del tracker no es la verdad.** Los estados de esta tabla salen del repo, no del board.
 

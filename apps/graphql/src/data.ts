@@ -1,6 +1,6 @@
-import type { Bid, Lot } from '@bidstream/db';
+import type { Auction, Bid, Lot } from '@bidstream/db';
 import type { GraphQLContext } from './context.js';
-import { decodeCursor, encodeCursor } from './cursor.js';
+import { decodeAuctionCursor, decodeCursor, encodeAuctionCursor, encodeCursor } from './cursor.js';
 import { badInput } from './errors.js';
 
 /** Valida `first` contra el tope configurado: fuera de rango se rechaza, no se recorta en silencio. */
@@ -97,4 +97,47 @@ function after_(cursor: { amount: string; placedAt: Date; id: string }): object[
     { amount: cursor.amount, placedAt: { gt: cursor.placedAt } },
     { amount: cursor.amount, placedAt: cursor.placedAt, id: { gt: cursor.id } },
   ];
+}
+
+export interface AuctionConnectionData {
+  readonly edges: readonly { readonly cursor: string; readonly node: Auction }[];
+  readonly pageInfo: { readonly hasNextPage: boolean; readonly endCursor: string | null };
+}
+
+/**
+ * Página de subastas del tenant del token, de la más reciente a la más antigua. Paginación *keyset*
+ * sobre `(opensAt DESC, id)` (índice `auction_tenant_id_opens_at_id_idx`): estable ante inserciones.
+ */
+export async function findAuctions(
+  ctx: GraphQLContext,
+  first: number,
+  after: string | null | undefined,
+  status: Auction['status'] | null | undefined,
+): Promise<AuctionConnectionData> {
+  const size = checkPageSize(first, ctx.maxPageSize);
+  const cursor = after === null || after === undefined ? null : decodeAuctionCursor(after);
+  const rows = await ctx.db.auction.findMany({
+    where: {
+      tenantId: ctx.tenantId,
+      ...(status === null || status === undefined ? {} : { status }),
+      ...(cursor === null
+        ? {}
+        : {
+            OR: [
+              { opensAt: { lt: cursor.opensAt } },
+              { opensAt: cursor.opensAt, id: { gt: cursor.id } },
+            ],
+          }),
+    },
+    orderBy: [{ opensAt: 'desc' }, { id: 'asc' }],
+    take: size + 1,
+  });
+  const edges = rows.slice(0, size).map((auction) => ({
+    cursor: encodeAuctionCursor({ opensAt: auction.opensAt, id: auction.id }),
+    node: auction,
+  }));
+  return {
+    edges,
+    pageInfo: { hasNextPage: rows.length > size, endCursor: edges.at(-1)?.cursor ?? null },
+  };
 }

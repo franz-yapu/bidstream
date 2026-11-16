@@ -49,6 +49,7 @@ model Auction {
   status   AuctionStatus
 
   @@index([tenantId, status])
+  @@index([tenantId, opensAt(sort: Desc), id])
   @@map("auction")
 }
 

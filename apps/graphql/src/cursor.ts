@@ -35,3 +35,29 @@ export function decodeCursor(value: string): BidCursor {
   if (!parsed.success) throw badInput('cursor inválido');
   return { amount: parsed.data.a, placedAt: new Date(parsed.data.t), id: parsed.data.i };
 }
+
+/** Posición de una subasta en el listado `(opensAt DESC, id)`. */
+const auctionCursorSchema = z.strictObject({ t: z.number().int(), i: primitives.uuid });
+
+export interface AuctionCursor {
+  readonly opensAt: Date;
+  readonly id: string;
+}
+
+export function encodeAuctionCursor(cursor: AuctionCursor): string {
+  return Buffer.from(JSON.stringify({ t: cursor.opensAt.getTime(), i: cursor.id })).toString(
+    'base64url',
+  );
+}
+
+export function decodeAuctionCursor(value: string): AuctionCursor {
+  let json: unknown;
+  try {
+    json = JSON.parse(Buffer.from(value, 'base64url').toString('utf8'));
+  } catch {
+    throw badInput('cursor inválido');
+  }
+  const parsed = auctionCursorSchema.safeParse(json);
+  if (!parsed.success) throw badInput('cursor inválido');
+  return { opensAt: new Date(parsed.data.t), id: parsed.data.i };
+}
