@@ -46,6 +46,7 @@ export function LotTicket({
       <div className={featured ? 'h-44 sm:h-56' : 'h-32'}>
         <LotCover
           seed={lot.id}
+          title={lot.title}
           className={`transition-transform duration-500 ease-out [@media(hover:hover)]:group-hover:scale-[1.03] ${closed ? 'grayscale-[0.7]' : ''}`}
         />
       </div>
