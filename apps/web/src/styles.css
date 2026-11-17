@@ -21,6 +21,10 @@
   --color-forest-deep: #143527;
   --color-forest-tint: #dce7df;
   --color-crimson: #a3162f;
+  --color-night: #0b1712;
+  --color-night-2: #13271d;
+  --color-lime: #b6d96c;
+  --color-lime-deep: #6f9a2f;
 
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
@@ -32,6 +36,7 @@
 }
 
 html {
+  overflow-x: clip;
   scrollbar-color: var(--color-sand-deep) var(--color-ground);
   scroll-padding-top: 5rem;
 }
@@ -76,6 +81,106 @@ p {
 
 .num {
   font-variant-numeric: lining-nums tabular-nums;
+}
+
+/* ---------- Composición de la portada ---------- */
+
+/* Una banda a todo el ancho dentro de la columna central (la columna recorta el exceso con overflow-x). */
+.bleed {
+  margin-inline: calc(50% - 50vw);
+  padding-inline: calc(50vw - 50%);
+}
+
+/* Rótulo pequeño en mayúsculas con filete: marca el inicio de cada sección. */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-forest);
+}
+.eyebrow::before {
+  content: '';
+  width: 28px;
+  height: 2px;
+  background: var(--color-lime-deep);
+}
+.on-dark .eyebrow,
+.eyebrow.on-dark {
+  color: var(--color-lime);
+}
+.eyebrow.on-dark::before {
+  background: var(--color-lime);
+}
+
+/* Palabra de acento del titular: del verde bosque al lima. */
+.accent-text {
+  background: linear-gradient(100deg, var(--color-forest) 10%, var(--color-lime-deep) 90%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.on-dark .accent-text {
+  background: linear-gradient(100deg, var(--color-lime) 0%, #e6f5b8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* Resplandores suaves detrás del contenido (decorativos). */
+.glow {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(70px);
+  pointer-events: none;
+}
+
+/* Cifra grande en contorno, como en un índice. */
+.outline-num {
+  font-family: var(--font-display);
+  font-weight: 400;
+  line-height: 1;
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--color-sand-deep);
+  transition:
+    color 300ms var(--ease-out),
+    -webkit-text-stroke-color 300ms var(--ease-out);
+}
+.outline-num.is-on {
+  -webkit-text-stroke-color: var(--color-lime-deep);
+  color: color-mix(in srgb, var(--color-lime) 35%, transparent);
+}
+
+.glass {
+  background: color-mix(in srgb, white 7%, transparent);
+  border: 1px solid color-mix(in srgb, white 14%, transparent);
+  backdrop-filter: blur(14px);
+}
+
+@keyframes spin-slow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.spin-slow {
+  transform-origin: center;
+  animation: spin-slow 70s linear infinite;
+}
+
+/* Aparece al entrar en pantalla; sin JavaScript o con movimiento reducido se ve desde el principio. */
+.reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity 700ms var(--ease-out),
+    transform 700ms var(--ease-out);
+  transition-delay: calc(var(--i, 0) * 80ms);
+}
+.reveal.is-in {
+  opacity: 1;
+  transform: none;
 }
 
 /* ---------- Movimiento ---------- */

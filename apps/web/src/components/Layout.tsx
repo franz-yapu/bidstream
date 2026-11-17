@@ -84,8 +84,14 @@ export function Layout() {
             <Link
               to="/"
               onClick={close}
-              className="display text-[1.6rem] leading-none tracking-tight"
+              className="display flex items-center gap-2 text-[1.6rem] leading-none tracking-tight"
             >
+              <span
+                aria-hidden="true"
+                className="grid h-8 w-8 place-items-center rounded-full bg-ink text-[1.15rem] text-lime"
+              >
+                b
+              </span>
               bidstream
             </Link>
             <nav aria-label="Principal" className="hidden items-center gap-1 md:flex">
@@ -119,7 +125,7 @@ export function Layout() {
         <Outlet />
       </main>
 
-      <footer className="bg-forest-deep text-paper">
+      <footer className="bg-night text-paper">
         <div className="mx-auto flex max-w-6xl flex-col gap-8 px-5 py-12 sm:px-8 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="display text-5xl leading-none sm:text-6xl">bidstream</p>

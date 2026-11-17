@@ -103,7 +103,7 @@ export function LotPage() {
       <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr] lg:items-start">
         <div className="ticket rise" style={{ '--i': 1 } as React.CSSProperties}>
           <div className="h-36 sm:h-48">
-            <LotCover seed={lot.id} />
+            <LotCover seed={lot.id} title={lot.title} />
           </div>
           <div className="p-6 sm:p-9">
             <p className="text-[15px] text-ink-soft">

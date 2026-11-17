@@ -209,3 +209,11 @@ Reclamo del usuario: no se distingue bien lo que está en proceso de lo que term
 - **12, accesibilidad:** `e2e/a11y.spec.ts` ejecuta axe (WCAG 2.2 AA, con contraste, movimiento reducido) sobre inicio, subastas, lotes, entrar, registro, 404 y un lote con pujas abiertas.
 - **13, renombrado por el administrador:** `GET /v1/auth/users` y `PATCH /v1/auth/users/{userId}` (solo `ADMIN`, solo usuarios de su tenant; mismas reglas de formato y unicidad; 404 si el usuario es de otro tenant) y la pantalla `/admin/usuarios` con búsqueda y cambio de nombre en línea. El menú pasa de «DLQ» a «Administración», con las secciones Usuarios y Cola de errores.
 
+## Revisión 0.6 (2026-11-17) — identidad visual («toma todo, quiero ver el diseño»)
+
+Reclamo: la web se ve genérica frente a TECAB y al portfolio de referencia. Se toma de ambas: de la primera, rótulos con filete, recorrido numerado con cifras en contorno y banda de cierre oscura; de la segunda, titular enorme con palabra de acento, resplandores y alternancia de secciones claras y oscuras.
+
+- **Inicio:** sello propio (anillo de texto que gira, «b» y punto en vivo), titular con acento, tarjeta «Cierra primero», cifras de situación, banda oscura «En proceso ahora», recorrido de 4 pasos, «Para quién es» con pestañas, resultados y banda de cierre. Las secciones entran con `Reveal` (IntersectionObserver; sin él o con movimiento reducido se ven de inicio).
+- **Portadas:** fotografías reales de dominio público (colección de acceso abierto del Metropolitan Museum of Art, CC0) en `apps/web/public/lots` con créditos en `CREDITS.md`; se eligen por palabras del título (reloj, mapa, jarrón, tetera, cuadro, escritorio) y, sin coincidencia, formas abstractas. Sigue pendiente subir fotos propias de cada lote (requiere almacenamiento).
+- Los tokens añaden `night`, `lime` y `lime-deep`; los degradados y sombras quedan para el sello, los resplandores y la tarjeta flotante.
+
