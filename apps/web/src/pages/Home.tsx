@@ -247,7 +247,7 @@ export function HomePage() {
             </ul>
           )}
           {open.isSuccess && live.length === 0 && (
-            <EmptyState title="Ahora mismo no hay lotes en curso">
+            <EmptyState onDark title="Ahora mismo no hay lotes en curso">
               Cuando se abra una subasta, los lotes que cierren antes aparecerán aquí con su cuenta
               atrás.
             </EmptyState>

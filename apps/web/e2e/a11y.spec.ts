@@ -46,3 +46,21 @@ test('accesibilidad: una subasta y un lote con las pujas abiertas', async ({ pag
     second.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(' | ')}`),
   ).toEqual([]);
 });
+
+// Con la base vacía (como en CI) el inicio muestra los estados vacíos: también deben ser legibles.
+test('accesibilidad: el inicio sin subastas', async ({ page }) => {
+  await page.route('**/graphql', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({ data: { auctions: { edges: [] } } }),
+    }),
+  );
+  await page.goto('/');
+  await expect(page.getByText('Ahora mismo no hay lotes en curso')).toBeVisible();
+  const result = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag22aa'])
+    .analyze();
+  expect(
+    result.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(' | ')}`),
+  ).toEqual([]);
+});
