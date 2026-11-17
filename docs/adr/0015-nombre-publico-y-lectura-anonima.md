@@ -37,7 +37,7 @@ forma y leer sin cuenta.
 ## Consecuencias
 
 - **Riesgo asumido:** un nombre real identifica a la persona. Se avisa al registrarse y se puede cambiar.
-- Un nombre ofensivo solo se corrige a mano (renombrado por administrador: pendiente, ticket aparte).
+- Un nombre ofensivo lo corrige el administrador (`GET /v1/auth/users`, `PATCH /v1/auth/users/{id}`, solo de su tenant; pantalla `/admin/usuarios`).
 - El tenant público y el de la demo coinciden: `PUBLIC_TENANT_ID` y `DEFAULT_TENANT_ID` del front.
 
 ## Verificación

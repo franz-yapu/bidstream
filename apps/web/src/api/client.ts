@@ -4,6 +4,7 @@ import { ServerClock } from './clock';
 import { ApiError, createAuthedFetch, toApiError, type FetchFn } from './http';
 import { SessionStore, type Me, type TokenPair } from './session';
 import type {
+  AdminUser,
   Auction,
   AuctionStatus,
   AuctionWithLiveLots,
@@ -63,6 +64,9 @@ export interface Api {
   logout(): Promise<void>;
   /** Cambia el nombre público del usuario con sesión. */
   updateDisplayName(displayName: string): Promise<string>;
+  /** Administración: usuarios del tenant y moderación de su nombre público. */
+  listUsers(): Promise<readonly AdminUser[]>;
+  renameUser(userId: string, displayName: string): Promise<string>;
   listAuctions(options?: {
     after?: string | null;
     status?: AuctionStatus | null;
@@ -206,6 +210,15 @@ export function createApi(
     async updateDisplayName(displayName) {
       const reply = await rest<{ displayName: string }>('PATCH', '/v1/auth/me', { displayName });
       if (session.me !== null) session.setMe({ ...session.me, displayName: reply.displayName });
+      return reply.displayName;
+    },
+    async listUsers() {
+      return (await rest<{ users: AdminUser[] }>('GET', '/v1/auth/users')).users;
+    },
+    async renameUser(userId, displayName) {
+      const reply = await rest<{ displayName: string }>('PATCH', `/v1/auth/users/${userId}`, {
+        displayName,
+      });
       return reply.displayName;
     },
     async listAuctions({ after = null, status = null } = {}) {

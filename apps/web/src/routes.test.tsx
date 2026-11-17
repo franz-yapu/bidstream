@@ -37,17 +37,17 @@ describe('rutas protegidas por rol', () => {
     expect(router.state.location.search).toBe('?volver=%2Fsubastas%2Fnueva');
   });
 
-  it('un postor no ve crear subasta ni el DLQ, y su menú no los ofrece', async () => {
+  it('un postor no ve crear subasta ni la administración, y su menú no los ofrece', async () => {
     renderAt('/subastas/nueva', user('BIDDER'));
     expect(await screen.findByRole('alert')).toHaveTextContent('No tienes permiso');
     expect(screen.queryByRole('link', { name: 'Nueva subasta' })).toBeNull();
-    expect(screen.queryByRole('link', { name: 'DLQ' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Administración' })).toBeNull();
   });
 
-  it('el administrador ve crear subasta y el DLQ en el menú', async () => {
+  it('el administrador ve crear subasta y la administración en el menú', async () => {
     renderAt('/subastas/nueva', user('ADMIN'));
     expect(await screen.findByRole('heading', { name: 'Nueva subasta' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'DLQ' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Administración' })).toBeInTheDocument();
   });
 
   it('el DLQ es solo del administrador: un vendedor recibe el aviso', async () => {

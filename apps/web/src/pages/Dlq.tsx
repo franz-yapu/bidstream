@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApi } from '../auth/context';
+import { AdminTabs } from '../components/AdminTabs';
 import { EmptyState } from '../components/EmptyState';
 import { ErrorNote } from '../components/ErrorNote';
 import { formatDateTime } from '../lib/time';
@@ -18,7 +19,7 @@ export function DlqPage() {
   const pending = query.data?.pending ?? 0;
   return (
     <section className="pt-6">
-      <p className="text-[15px] font-medium text-forest">Administración</p>
+      <AdminTabs />
       <div className="mt-1 mb-8 flex flex-wrap items-end justify-between gap-4">
         <h1 className="text-5xl">Cola de errores</h1>
         <button

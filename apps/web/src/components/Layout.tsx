@@ -29,8 +29,8 @@ export function Layout() {
         </NavLink>
       )}
       {me?.role === 'ADMIN' && (
-        <NavLink to="/admin/dlq" className={link} onClick={close}>
-          DLQ
+        <NavLink to="/admin/usuarios" className={link} onClick={close}>
+          Administración
         </NavLink>
       )}
     </>

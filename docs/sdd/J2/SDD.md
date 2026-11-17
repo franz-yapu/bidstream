@@ -207,5 +207,5 @@ Reclamo del usuario: no se distingue bien lo que está en proceso de lo que term
 - **10, administración:** la cola de errores con tarjetas de pendientes y total, motivo con insignia y aviso del resultado.
 - **11, carga:** las páginas de cuenta, nueva subasta y administración se descargan al visitarlas; librerías en trozos aparte. El mayor trozo pasa de 533 kB a 314 kB (sin aviso de tamaño).
 - **12, accesibilidad:** `e2e/a11y.spec.ts` ejecuta axe (WCAG 2.2 AA, con contraste, movimiento reducido) sobre inicio, subastas, lotes, entrar, registro, 404 y un lote con pujas abiertas.
-- **13, renombrado por el administrador:** va en un PR aparte (backend + front).
+- **13, renombrado por el administrador:** `GET /v1/auth/users` y `PATCH /v1/auth/users/{userId}` (solo `ADMIN`, solo usuarios de su tenant; mismas reglas de formato y unicidad; 404 si el usuario es de otro tenant) y la pantalla `/admin/usuarios` con búsqueda y cambio de nombre en línea. El menú pasa de «DLQ» a «Administración», con las secciones Usuarios y Cola de errores.
 

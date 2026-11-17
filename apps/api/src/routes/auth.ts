@@ -225,5 +225,75 @@ export const authRoutes =
       },
     );
 
+    app.get(
+      '/users',
+      {
+        config: { roles: ['ADMIN'] },
+        schema: {
+          tags: ['autenticación'],
+          summary: 'Lista los usuarios del tenant del administrador (sin datos secretos)',
+          response: {
+            200: z.object({
+              users: z.array(
+                z.object({
+                  userId: z.uuid(),
+                  email: z.string(),
+                  displayName: z.string(),
+                  role: z.enum(ROLES),
+                  status: z.enum(['ACTIVE', 'DISABLED']),
+                }),
+              ),
+            }),
+            401: problem,
+            403: problem,
+          },
+        },
+      },
+      async (request) => {
+        const admin = requireIdentity(request);
+        const users = await deps.service.listUsers(admin.tenantId);
+        return {
+          users: users.map((u) => ({
+            userId: u.id,
+            email: u.email,
+            displayName: u.displayName,
+            role: u.role,
+            status: u.status,
+          })),
+        };
+      },
+    );
+
+    app.patch(
+      '/users/:userId',
+      {
+        config: { roles: ['ADMIN'] },
+        schema: {
+          tags: ['autenticación'],
+          summary: 'Cambia el nombre público de un usuario del tenant (moderación)',
+          params: z.object({ userId: z.uuid() }),
+          body: z.strictObject({ displayName }),
+          response: {
+            200: z.object({ displayName: z.string() }),
+            400: problem,
+            401: problem,
+            403: problem,
+            404: problem,
+            409: problem,
+          },
+        },
+      },
+      async (request) => {
+        const admin = requireIdentity(request);
+        return {
+          displayName: await deps.service.renameUser(
+            admin,
+            request.params.userId,
+            request.body.displayName,
+          ),
+        };
+      },
+    );
+
     return Promise.resolve();
   };

@@ -37,6 +37,14 @@ export class DisplayNameTaken extends Error {
   }
 }
 
+/** El usuario no existe en el tenant del administrador (o no se puede modificar). */
+export class UserNotFound extends Error {
+  override readonly name = 'UserNotFound';
+  constructor() {
+    super('el usuario no existe');
+  }
+}
+
 /** El nombre público no cumple el formato. */
 export class InvalidDisplayName extends Error {
   override readonly name = 'InvalidDisplayName';
