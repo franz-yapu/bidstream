@@ -13,6 +13,7 @@ export {
   InvalidAccessToken,
   InvalidCredentials,
   InvalidRefreshToken,
+  UserNotFound,
   WeakPassword,
 } from './errors.js';
 export {

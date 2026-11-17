@@ -128,6 +128,15 @@ export interface DlqEntry {
   readonly failedAt: string;
 }
 
+/** Usuario tal como lo ve la administración. */
+export interface AdminUser {
+  readonly userId: string;
+  readonly email: string;
+  readonly displayName: string;
+  readonly role: 'ADMIN' | 'SELLER' | 'BIDDER';
+  readonly status: 'ACTIVE' | 'DISABLED';
+}
+
 export interface DlqSnapshot {
   readonly entries: readonly DlqEntry[];
   readonly pending: number;

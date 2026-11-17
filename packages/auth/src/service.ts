@@ -8,6 +8,7 @@ import {
   InvalidDisplayName,
   InvalidCredentials,
   InvalidRefreshToken,
+  UserNotFound,
   WeakPassword,
 } from './errors.js';
 import { hashPassword, passwordProblems, verifyAgainstDummy, verifyPassword } from './password.js';
@@ -118,6 +119,47 @@ export class AuthService {
         data: { displayName },
       });
       if (count === 0) throw new InvalidCredentials();
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new DisplayNameTaken();
+      }
+      throw error;
+    }
+    return displayName;
+  }
+
+  /** Usuarios del tenant (más recientes primero), sin datos secretos: para la administración. */
+  async listUsers(tenantId: string): Promise<
+    {
+      id: string;
+      email: string;
+      displayName: string;
+      role: 'ADMIN' | 'SELLER' | 'BIDDER';
+      status: 'ACTIVE' | 'DISABLED';
+    }[]
+  > {
+    return this.deps.db.appUser.findMany({
+      where: { tenantId },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      take: 200,
+      select: { id: true, email: true, displayName: true, role: true, status: true },
+    });
+  }
+
+  /**
+   * Un administrador cambia el nombre público de un usuario de su tenant (p. ej. uno ofensivo).
+   * Lanza `UserNotFound`, `InvalidDisplayName` o `DisplayNameTaken`.
+   */
+  async renameUser(admin: Identity, userId: string, value: string): Promise<string> {
+    const displayName = normalizeDisplayName(value);
+    const problems = displayNameProblems(displayName);
+    if (problems.length > 0) throw new InvalidDisplayName(problems);
+    try {
+      const { count } = await this.deps.db.appUser.updateMany({
+        where: { id: userId, tenantId: admin.tenantId },
+        data: { displayName },
+      });
+      if (count === 0) throw new UserNotFound();
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
         throw new DisplayNameTaken();

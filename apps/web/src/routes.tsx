@@ -12,6 +12,7 @@ import { NotFoundPage } from './pages/NotFound';
 
 const NewAuctionPage = lazyPage(() => import('./pages/NewAuction').then((m) => m.NewAuctionPage));
 const AccountPage = lazyPage(() => import('./pages/Account').then((m) => m.AccountPage));
+const UsersPage = lazyPage(() => import('./pages/Users').then((m) => m.UsersPage));
 const DlqPage = lazyPage(() => import('./pages/Dlq').then((m) => m.DlqPage));
 
 // Públicas (sin cuenta, solo lectura): inicio, subastas, subasta, lotes, lote y entrar. El resto exige sesión;
@@ -41,6 +42,14 @@ export const routes: RouteObject[] = [
         element: (
           <RequireRole>
             <AccountPage />
+          </RequireRole>
+        ),
+      },
+      {
+        path: '/admin/usuarios',
+        element: (
+          <RequireRole roles={['ADMIN']}>
+            <UsersPage />
           </RequireRole>
         ),
       },

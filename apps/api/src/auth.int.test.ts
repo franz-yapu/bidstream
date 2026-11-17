@@ -510,3 +510,73 @@ describe('administrador inicial', () => {
     expect(await bootstrapAdmin(service, db.prisma, {})).toBe(false);
   });
 });
+
+// Va al final: crea administradores en el tenant y «administrador inicial» exige que no haya ninguno.
+describe('moderación de nombres por el administrador', () => {
+  const adminToken = async (): Promise<string> => (await userWithRole('ADMIN')).accessToken;
+  const rename = (userId: string, displayName: string, token: string) =>
+    app.inject({
+      method: 'PATCH',
+      url: `/v1/auth/users/${userId}`,
+      payload: { displayName },
+      headers: bearer(token),
+    });
+
+  it('el administrador lista y renombra a un usuario de su tenant', async () => {
+    const admin = await adminToken();
+    const victim = await registerAndLogin();
+    const list = await app.inject({ method: 'GET', url: '/v1/auth/users', headers: bearer(admin) });
+    expect(list.statusCode).toBe(200);
+    const users = list.json<{ users: { userId: string; email: string; displayName: string }[] }>()
+      .users;
+    const target = users.find((u) => u.email === victim.address);
+    expect(target).toBeDefined();
+    expect(JSON.stringify(users)).not.toMatch(/argon2|passwordHash/);
+    const next = name();
+    const ok = await rename(target?.userId ?? '', next, admin);
+    expect(ok.statusCode).toBe(200);
+    const me = await app.inject({
+      method: 'GET',
+      url: '/v1/auth/me',
+      headers: bearer(victim.accessToken),
+    });
+    expect(me.json<{ displayName: string }>().displayName).toBe(next);
+  });
+
+  it('respeta formato y unicidad, y no cruza tenants', async () => {
+    const admin = await adminToken();
+    const a = await registerAndLogin();
+    const b = await registerAndLogin();
+    const outsider = await registerAndLogin(OTHER_TENANT);
+    const users = (
+      await app.inject({ method: 'GET', url: '/v1/auth/users', headers: bearer(admin) })
+    ).json<{ users: { userId: string; email: string; displayName: string }[] }>().users;
+    const idA = users.find((u) => u.email === a.address)?.userId ?? '';
+    const nameB = users.find((u) => u.email === b.address)?.displayName ?? '';
+    expect((await rename(idA, '<b>x</b>', admin)).statusCode).toBe(400);
+    expect((await rename(idA, nameB.toUpperCase(), admin)).statusCode).toBe(409);
+    const outsiderId = (
+      await db.prisma.appUser.findFirstOrThrow({ where: { email: outsider.address } })
+    ).id;
+    expect((await rename(outsiderId, name(), admin)).statusCode).toBe(404);
+    expect((await rename(randomUUID(), name(), admin)).statusCode).toBe(404);
+    expect(users.every((u) => u.email !== outsider.address)).toBe(true);
+  });
+
+  it('un postor no puede listar ni renombrar a otros, y sin sesión es 401', async () => {
+    const bidder = await registerAndLogin();
+    const other = await registerAndLogin();
+    const id = (await db.prisma.appUser.findFirstOrThrow({ where: { email: other.address } })).id;
+    expect(
+      (
+        await app.inject({
+          method: 'GET',
+          url: '/v1/auth/users',
+          headers: bearer(bidder.accessToken),
+        })
+      ).statusCode,
+    ).toBe(403);
+    expect((await rename(id, name(), bidder.accessToken)).statusCode).toBe(403);
+    expect((await app.inject({ method: 'GET', url: '/v1/auth/users' })).statusCode).toBe(401);
+  });
+});

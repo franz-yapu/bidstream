@@ -19,6 +19,7 @@ import {
   InvalidAccessToken,
   InvalidCredentials,
   InvalidRefreshToken,
+  UserNotFound,
   WeakPassword,
 } from '@bidstream/auth';
 import { ProblemError } from './problem.js';
@@ -129,6 +130,9 @@ export function registerErrorHandlers(app: FastifyInstance): void {
         title: 'Nombre público no aceptable',
         errors: error.problems.map((message) => ({ path: 'displayName', message })),
       });
+    }
+    if (error instanceof UserNotFound) {
+      return sendProblem(request, reply, 404, { detail: 'El usuario no existe.' });
     }
     if (error instanceof DisplayNameTaken) {
       return sendProblem(request, reply, 409, {
