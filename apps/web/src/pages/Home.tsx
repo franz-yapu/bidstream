@@ -113,14 +113,13 @@ export function HomePage() {
   return (
     <>
       <section className="relative pt-8 pb-20 lg:pt-14 lg:pb-28">
-        <div className="glow top-0 -right-24 h-[420px] w-[420px] bg-lime/40" aria-hidden="true" />
+        <div className="glow top-0 -right-24 h-[420px] w-[420px] bg-lime/20" aria-hidden="true" />
         <div
           className="glow -bottom-10 left-1/3 h-[300px] w-[300px] bg-forest/15"
           aria-hidden="true"
         />
         <div className="relative grid items-center gap-12 lg:grid-cols-[1.1fr_1fr]">
           <div>
-            <p className="eyebrow rise">Subastas en vivo · a la vista de todos</p>
             <h1 className="rise mt-6 text-[clamp(2.8rem,6.6vw,5.6rem)] leading-[0.98]">
               Subastas en vivo, <span className="accent-text">a la vista de todos.</span>
             </h1>
@@ -202,12 +201,9 @@ export function HomePage() {
 
       <section
         aria-labelledby="en-vivo"
-        className="bleed on-dark relative overflow-hidden bg-night py-20 text-paper"
+        className="bleed on-dark relative overflow-hidden bg-night py-20 text-ink"
       >
-        <div
-          className="glow -top-24 left-1/4 h-[380px] w-[380px] bg-forest/60"
-          aria-hidden="true"
-        />
+        <div className="glow -top-24 left-1/4 h-[380px] w-[380px] bg-sand/60" aria-hidden="true" />
         <div
           className="glow -right-20 bottom-0 h-[320px] w-[320px] bg-lime/20"
           aria-hidden="true"
@@ -215,7 +211,6 @@ export function HomePage() {
         <div className="relative">
           <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
             <Reveal>
-              <p className="eyebrow">En proceso ahora</p>
               <h2 id="en-vivo" className="mt-4 text-4xl sm:text-6xl">
                 Lo que se puja <span className="accent-text">ahora mismo</span>
               </h2>
@@ -255,7 +250,7 @@ export function HomePage() {
 
           {upcoming.length > 0 && (
             <div className="mt-16">
-              <h3 className="mb-5 text-2xl text-paper/90">Próximas subastas</h3>
+              <h3 className="mb-5 text-2xl text-ink/90">Próximas subastas</h3>
               <ul className="grid gap-4 md:grid-cols-2">
                 {upcoming.map((a) => (
                   <li key={a.id}>
@@ -264,7 +259,7 @@ export function HomePage() {
                       className="glass block rounded-[16px] p-6 transition-transform duration-200 ease-out active:scale-[0.99] [@media(hover:hover)]:hover:-translate-y-0.5"
                     >
                       <p className="display text-2xl">{a.title}</p>
-                      <p className="mt-1 text-paper/75">Abre el {formatDateTime(a.opensAt)}</p>
+                      <p className="mt-1 text-ink-soft">Abre el {formatDateTime(a.opensAt)}</p>
                     </Link>
                   </li>
                 ))}
@@ -278,7 +273,6 @@ export function HomePage() {
         <div className="grid gap-14 lg:grid-cols-[0.9fr_1.1fr]">
           <div className="lg:sticky lg:top-24 lg:self-start">
             <Reveal>
-              <p className="eyebrow">El recorrido</p>
               <h2 id="como" className="mt-4 text-4xl sm:text-6xl">
                 Cómo funciona
               </h2>
@@ -327,7 +321,6 @@ export function HomePage() {
 
       <section aria-labelledby="para-quien" className="bleed bg-paper py-24">
         <Reveal>
-          <p className="eyebrow">Para quién es</p>
           <h2 id="para-quien" className="mt-4 mb-12 max-w-2xl text-4xl sm:text-6xl">
             Cada persona, <span className="accent-text">su propio espacio</span>
           </h2>
@@ -383,7 +376,6 @@ export function HomePage() {
 
       <section aria-labelledby="finalizadas" className="py-24">
         <Reveal>
-          <p className="eyebrow">Resultados</p>
           <h2 id="finalizadas" className="mt-4 mb-10 text-4xl sm:text-6xl">
             Finalizadas
           </h2>
@@ -424,7 +416,7 @@ export function HomePage() {
 
       <section
         aria-labelledby="cierre"
-        className="bleed on-dark relative -mb-20 overflow-hidden bg-forest-deep py-24 text-paper"
+        className="bleed on-dark relative -mb-20 overflow-hidden bg-night py-24 text-ink"
       >
         <div className="glow top-0 left-1/3 h-[360px] w-[360px] bg-lime/25" aria-hidden="true" />
         <svg
@@ -435,23 +427,22 @@ export function HomePage() {
         >
           <path
             d="M0 200 L140 140 L260 175 L420 80 L520 130 L640 60 L780 150 L900 100 L1040 160 L1200 110 V220 H0 Z"
-            fill="#1e4a38"
-            opacity="0.55"
+            fill="#38243f"
+            opacity="0.8"
           />
           <path
             d="M0 200 L140 140 L260 175 L420 80 L520 130 L640 60 L780 150 L900 100 L1040 160 L1200 110"
             fill="none"
-            stroke="#b6d96c"
+            stroke="#b6f500"
             strokeOpacity="0.6"
             strokeWidth="1.5"
           />
         </svg>
         <Reveal className="relative">
-          <p className="eyebrow on-dark">Tu turno</p>
           <h2 id="cierre" className="mt-4 max-w-3xl text-4xl sm:text-6xl">
             {me === null ? '¿Listo para pujar?' : 'Hay lotes esperando tu puja'}
           </h2>
-          <p className="mt-5 max-w-xl text-lg text-paper/80">
+          <p className="mt-5 max-w-xl text-lg text-ink-soft">
             {me === null
               ? 'Crea tu cuenta en un minuto. Si ya tienes una, entra con tu correo y tu contraseña.'
               : 'Elige un lote en proceso y haz tu primera puja.'}
@@ -459,18 +450,15 @@ export function HomePage() {
           <div className="mt-8 flex flex-wrap gap-3">
             {me === null ? (
               <>
-                <Link
-                  to="/entrar?modo=registro"
-                  className="btn !bg-lime !text-night [@media(hover:hover)]:hover:!bg-paper"
-                >
+                <Link to="/entrar?modo=registro" className="btn">
                   Crear cuenta <ArrowRight />
                 </Link>
-                <Link to="/entrar" className="btn-secondary !bg-white/10 !text-paper">
+                <Link to="/entrar" className="btn-secondary">
                   Entrar
                 </Link>
               </>
             ) : (
-              <Link to="/lotes" className="btn !bg-lime !text-night">
+              <Link to="/lotes" className="btn">
                 Ver lotes en proceso <ArrowRight />
               </Link>
             )}

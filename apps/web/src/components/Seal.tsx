@@ -8,9 +8,9 @@ export function Seal({ className = '' }: { className?: string }) {
     <svg viewBox="0 0 520 520" aria-hidden="true" className={className} data-testid="seal">
       <defs>
         <radialGradient id="seal-glow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#b6d96c" stopOpacity="0.55" />
-          <stop offset="70%" stopColor="#b6d96c" stopOpacity="0.12" />
-          <stop offset="100%" stopColor="#b6d96c" stopOpacity="0" />
+          <stop offset="0%" stopColor="#b6f500" stopOpacity="0.55" />
+          <stop offset="70%" stopColor="#b6f500" stopOpacity="0.12" />
+          <stop offset="100%" stopColor="#b6f500" stopOpacity="0" />
         </radialGradient>
         <path id="seal-ring" d="M260 260 m-205 0 a205 205 0 1 1 410 0 a205 205 0 1 1 -410 0" />
       </defs>
@@ -20,7 +20,7 @@ export function Seal({ className = '' }: { className?: string }) {
           fontFamily="Hanken Grotesk Variable, system-ui, sans-serif"
           fontSize="19"
           fontWeight="600"
-          fill="#1e4a38"
+          fill="#b6f500"
         >
           <textPath href="#seal-ring" startOffset="0" textLength="1280" lengthAdjust="spacing">
             {ring}
@@ -32,14 +32,14 @@ export function Seal({ className = '' }: { className?: string }) {
         cy="260"
         r="168"
         fill="none"
-        stroke="#1e4a38"
+        stroke="#b6f500"
         strokeOpacity="0.35"
         strokeWidth="1.5"
         strokeDasharray="2 9"
         strokeLinecap="round"
       />
-      <circle cx="260" cy="260" r="136" fill="#fbf8f2" stroke="#17211b" strokeWidth="4" />
-      <circle cx="260" cy="260" r="122" fill="none" stroke="#1e4a38" strokeWidth="1.5" />
+      <circle cx="260" cy="260" r="136" fill="#38243f" stroke="#efe9d6" strokeWidth="4" />
+      <circle cx="260" cy="260" r="122" fill="none" stroke="#b6f500" strokeWidth="1.5" />
       <text
         x="260"
         y="292"
@@ -47,11 +47,11 @@ export function Seal({ className = '' }: { className?: string }) {
         fontFamily="Fraunces Variable, Georgia, serif"
         fontSize="132"
         fontWeight="500"
-        fill="#17211b"
+        fill="#efe9d6"
       >
         b
       </text>
-      <circle cx="318" cy="262" r="11" fill="#6f9a2f" />
+      <circle cx="318" cy="262" r="11" fill="#b6f500" />
     </svg>
   );
 }

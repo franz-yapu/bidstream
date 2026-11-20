@@ -1,11 +1,11 @@
 // Portada de un lote generada a partir de su id: formas planas con los colores de la paleta, siempre la
 // misma para el mismo lote. No pretende ser una foto del objeto: es una marca visual para reconocerlo.
 const PALETTES = [
-  { ground: '#1e4a38', a: '#dce7df', b: '#143527' },
-  { ground: '#e4dccb', a: '#1e4a38', b: '#d7ccb5' },
-  { ground: '#17211b', a: '#e4dccb', b: '#1e4a38' },
-  { ground: '#dce7df', a: '#143527', b: '#1e4a38' },
-  { ground: '#d7ccb5', a: '#17211b', b: '#fbf8f2' },
+  { ground: '#b6f500', a: '#d9d2be', b: '#2a1a33' },
+  { ground: '#46304f', a: '#b6f500', b: '#5d4568' },
+  { ground: '#1b0f22', a: '#46304f', b: '#b6f500' },
+  { ground: '#d9d2be', a: '#2a1a33', b: '#b6f500' },
+  { ground: '#5d4568', a: '#1b0f22', b: '#efe9d6' },
 ] as const;
 
 /** Hash estable (FNV-1a de 32 bits) de una cadena. */
