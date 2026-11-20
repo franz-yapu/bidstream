@@ -89,15 +89,15 @@ export function EntrarPage() {
 
   return (
     <section className="grid gap-6 pt-4 lg:grid-cols-[1fr_1.1fr]">
-      <div className="order-2 hidden rounded-[28px] bg-forest p-10 text-paper lg:order-1 lg:flex lg:flex-col lg:justify-between">
+      <div className="order-2 hidden rounded-[28px] bg-night p-10 text-ink lg:order-1 lg:flex lg:flex-col lg:justify-between">
         <h2 className="max-w-sm text-5xl leading-[1.05]">Entra a la sala.</h2>
         {teaser !== undefined && (
           <div className="my-8">
-            <p className="mb-3 text-paper/80">Ahora mismo, en la sala:</p>
+            <p className="mb-3 text-ink-soft">Ahora mismo, en la sala:</p>
             <LotTicket lot={teaser.lot} auctionTitle={teaser.auctionTitle} />
           </div>
         )}
-        <ul className="space-y-4 text-lg text-paper/90">
+        <ul className="space-y-4 text-lg text-ink/90">
           <li>Sigue el precio de cada lote en tiempo real, sin recargar.</li>
           <li>Tu nombre público es lo único que ven los demás.</li>
           <li>Cada puja queda registrada: sabes cuándo entró y si va ganando.</li>

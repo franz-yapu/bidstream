@@ -125,11 +125,11 @@ export function Layout() {
         <Outlet />
       </main>
 
-      <footer className="bg-night text-paper">
+      <footer className="bg-night text-ink">
         <div className="mx-auto flex max-w-6xl flex-col gap-8 px-5 py-12 sm:px-8 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="display text-5xl leading-none sm:text-6xl">bidstream</p>
-            <p className="mt-3 max-w-sm text-paper/80">
+            <p className="mt-3 max-w-sm text-ink-soft">
               Subastas en vivo, a la vista de todos. Cada puja queda registrada y cada cierre es
               limpio.
             </p>

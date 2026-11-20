@@ -3,28 +3,31 @@
 @import '@fontsource-variable/fraunces/wght.css';
 
 /*
- * Sistema de diseño de bidstream (J2): una casa de subastas moderna. Marfil de fondo, tinta casi
- * negra y un solo acento (verde bosque). Los niveles se separan con un cambio de tono, no con líneas
- * ni sombras; solo lo que flota (menús) lleva sombra.
+ * Sistema de diseño de bidstream (rediseño, regla 60-30-10): una sala de subastas de noche.
+ *   60 % principal  · noche berenjena  (fondos y superficies: ground, paper, night)
+ *   30 % secundario · crema almendra   (texto, bloques claros: ink, sand)
+ *   10 % acento     · verde voltio     (CTA, precio, estado «en vivo»: forest, lime) con resplandor
+ * Los nombres de token se conservan (semánticos): ink = texto, paper = superficie, forest = acento.
  */
 @theme {
   --font-display: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
   --font-sans: 'Hanken Grotesk Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
-  --color-ground: #f1ece1;
-  --color-paper: #fbf8f2;
-  --color-sand: #e4dccb;
-  --color-sand-deep: #d7ccb5;
-  --color-ink: #17211b;
-  --color-ink-soft: #4e5a53;
-  --color-forest: #1e4a38;
-  --color-forest-deep: #143527;
-  --color-forest-tint: #dce7df;
-  --color-crimson: #a3162f;
-  --color-night: #0b1712;
-  --color-night-2: #13271d;
-  --color-lime: #b6d96c;
-  --color-lime-deep: #6f9a2f;
+  --color-ground: #2a1a33;
+  --color-paper: #38243f;
+  --color-sand: #46304f;
+  --color-sand-deep: #5d4568;
+  --color-ink: #efe9d6;
+  --color-ink-soft: #bdb2c4;
+  --color-forest: #b6f500;
+  --color-forest-deep: #cdfa4a;
+  --color-forest-tint: #3a3f22;
+  --color-crimson: #ff7a8f;
+  --color-night: #1b0f22;
+  --color-night-2: #241530;
+  --color-lime: #b6f500;
+  --color-lime-deep: #8fc400;
+  --color-cream: #d9d2be;
 
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
@@ -32,7 +35,7 @@
 }
 
 :root {
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 html {
@@ -93,40 +96,15 @@ p {
 
 /* Rótulo pequeño en mayúsculas con filete: marca el inicio de cada sección. */
 .eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 600;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--color-forest);
-}
-.eyebrow::before {
-  content: '';
-  width: 28px;
-  height: 2px;
-  background: var(--color-lime-deep);
-}
-.on-dark .eyebrow,
-.eyebrow.on-dark {
-  color: var(--color-lime);
-}
-.eyebrow.on-dark::before {
-  background: var(--color-lime);
+  color: var(--color-ink-soft);
 }
 
 /* Palabra de acento del titular: del verde bosque al lima. */
 .accent-text {
-  background: linear-gradient(100deg, var(--color-forest) 10%, var(--color-lime-deep) 90%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-.on-dark .accent-text {
-  background: linear-gradient(100deg, var(--color-lime) 0%, #e6f5b8 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
+  color: var(--color-forest);
+  font-style: italic;
 }
 
 /* Resplandores suaves detrás del contenido (decorativos). */
@@ -154,8 +132,8 @@ p {
 }
 
 .glass {
-  background: color-mix(in srgb, white 7%, transparent);
-  border: 1px solid color-mix(in srgb, white 14%, transparent);
+  background: color-mix(in srgb, var(--color-ink) 7%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-ink) 14%, transparent);
   backdrop-filter: blur(14px);
 }
 
@@ -293,9 +271,12 @@ p {
   }
 
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-full bg-forest px-5 py-2.5 text-[15px] font-medium text-paper;
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-forest px-5 py-2.5 text-[15px] font-semibold text-night;
     @apply cursor-pointer transition-[transform,background-color] duration-150 ease-out;
     @apply active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn:not(:disabled) {
+    box-shadow: 0 6px 22px -6px color-mix(in srgb, var(--color-forest) 55%, transparent);
   }
   @media (hover: hover) and (pointer: fine) {
     .btn:hover:not(:disabled) {
@@ -329,7 +310,7 @@ p {
   }
   @media (hover: hover) and (pointer: fine) {
     .card-link:hover {
-      @apply -translate-y-0.5 bg-white;
+      @apply -translate-y-0.5 bg-sand;
     }
   }
 

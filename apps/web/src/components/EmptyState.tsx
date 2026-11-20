@@ -13,11 +13,11 @@ export function EmptyState({
 }) {
   return (
     <div
-      className={`rounded-[16px] px-6 py-10 text-center ${onDark ? 'glass text-paper' : 'bg-sand/60'}`}
+      className={`rounded-[16px] px-6 py-10 text-center ${onDark ? 'glass text-ink' : 'bg-sand/60'}`}
     >
       <p className="display text-2xl">{title}</p>
       {children !== undefined && (
-        <div className={`mx-auto mt-2 max-w-md ${onDark ? 'text-paper/80' : 'text-ink-soft'}`}>
+        <div className={`mx-auto mt-2 max-w-md ${onDark ? 'text-ink-soft' : 'text-ink-soft'}`}>
           {children}
         </div>
       )}
